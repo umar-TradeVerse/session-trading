@@ -1,0 +1,585 @@
+date,session,range_high,range_low,range_pct,range_points,sub_agent,setup,direction,breakout,rejection,momentum_shift,tp,action,reason,entry,sl,pnl_inr,exit_reason
+2025-12-30,New York,88097.7,87884.0,0.002431614400801023,213.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",88013.4,87488.52,22.71,trailing_stop
+2025-12-31,London,88596.0,88476.2,0.001354036452740996,119.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2025-12-31,New York,88805.8,88705.3,0.0011329649975818806,100.5,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 51%),88972.09,88672.59,6.42,trailing_stop
+2026-01-01,London,87637.5,87572.7,0.0007399566303197562,64.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (64.8 pts),,,,
+2026-01-01,New York,87950.0,87901.1,0.000556307031425024,48.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (48.9 pts),,,,
+2026-01-02,London,88883.4,88800.9,0.0009290446380611008,82.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (82.5 pts),,,,
+2026-01-02,New York,89539.6,89355.7,0.002058066804915733,183.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-01-03,London,89555.0,89261.2,0.003291463704274678,293.8,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"2 tap(s) of the high, rejected by upper_wick_rejection",89467.3,89958.0,-109.0,stop_loss
+2026-01-03,New York,90007.2,89902.4,0.0011657085906494479,104.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-01-04,London,91463.1,91264.0,0.0021815830995793066,199.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-01-04,New York,91231.0,91116.2,0.0012599296283207916,114.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2026-01-05,London,92571.6,92502.8,0.0007437612699291579,68.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (68.8 pts),,,,
+2026-01-05,New York,92755.6,92496.9,0.0027968504890435427,258.7,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"2 tap(s) of the high, rejected by doji_at_high",92688.96,93173.0,-107.77,stop_loss
+2026-01-06,London,93379.6,93160.5,0.002351855131735079,219.1,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",93226.04,92741.28,11.02,trailing_stop
+2026-01-06,New York,93724.6,93619.9,0.001118351974313278,104.7,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,trail/partial,ENTER,no reversal candle in the momentum window,94073.11,93584.01,-108.91,stop_loss
+2026-01-07,London,92862.4,92735.5,0.0013684079990941352,126.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-01-07,New York,92217.0,92017.6,0.0021669767522734147,199.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-08,London,90429.2,90165.6,0.0029235096311674437,263.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2026-01-08,New York,90067.8,89845.7,0.0024720159117242765,222.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x5) with no resolution",,,,
+2026-01-09,London,90993.7,90866.6,0.0013987537775155146,127.1,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,second candle closed below the low (strength 65%),90693.96,91002.9,15.8,trailing_stop
+2026-01-09,New York,91000.0,90346.9,0.007228803644618751,653.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (653.1 pts),,,,
+2026-01-10,London,90650.4,90562.3,0.0009728109820531421,88.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (88.1 pts),,,,
+2026-01-10,New York,90694.3,90663.8,0.00033640769524330546,30.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (30.5 pts),,,,
+2026-01-11,London,90698.9,90654.7,0.0004875643513242787,44.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (44.2 pts),,,,
+2026-01-11,New York,90841.6,90780.0,0.000678563560255627,61.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (61.6 pts),,,,
+2026-01-12,London,91858.5,91487.6,0.004054101320834672,370.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-12,New York,90753.5,90555.9,0.0021820775896435884,197.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x5) with no resolution",,,,
+2026-01-13,London,92000.0,91898.7,0.0011023006854286614,101.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-01-13,New York,92555.1,91836.3,0.007826970380993168,718.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (718.8 pts),,,,
+2026-01-14,London,95009.7,94812.0,0.002085179091254241,197.7,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,"second candle closed above the high (strength 63%, fully clear)",95185.63,94867.19,-118.97,stop_loss
+2026-01-14,New York,95169.8,95008.0,0.0017030144829909366,161.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-15,London,96744.2,96408.0,0.003487262467844962,336.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-15,New York,96896.2,96562.5,0.0034557928802588693,333.7,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",96781.54,97332.23,77.9,trailing_stop
+2026-01-16,London,95548.0,95432.6,0.0012092303887769396,115.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-16,New York,95537.9,95238.0,0.0031489531489530876,299.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",95385.42,95967.82,8.98,trailing_stop
+2026-01-17,London,95147.8,95102.2,0.0004794841759707538,45.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (45.6 pts),,,,
+2026-01-17,New York,95396.8,95276.1,0.0012668444657159255,120.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-01-18,London,95073.0,94980.0,0.0009791535060012634,93.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (93.0 pts),,,,
+2026-01-18,New York,95158.0,94903.5,0.002681671381982751,254.5,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",95085.98,95586.21,-72.48,session_end
+2026-01-19,London,92665.1,92527.3,0.0014892901878689091,137.8,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 60%),92806.36,92526.1,35.04,trailing_stop
+2026-01-19,New York,93117.1,92906.2,0.0022700314941307333,210.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-20,London,91184.1,90950.0,0.0025739417262232635,234.1,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",91117.87,91594.43,19.89,trailing_stop
+2026-01-20,New York,91078.4,90735.0,0.0037846476001542314,343.4,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",90964.89,90326.69,8.34,trailing_stop
+2026-01-21,London,89585.7,89125.1,0.005168016641776461,460.6,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by doji_at_low",89189.13,88724.04,11.11,trailing_stop
+2026-01-21,New York,88999.1,88636.2,0.0040942639688976825,362.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-22,London,89942.5,89840.7,0.0011331167277192065,101.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-01-22,New York,90309.5,89500.1,0.009043565314452096,809.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (809.4 pts),,,,
+2026-01-23,London,89640.8,89502.4,0.0015463272493252554,138.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-23,New York,89322.0,89202.1,0.0013441387590650239,119.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-01-24,London,89650.6,89560.5,0.0010060238609655575,90.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (90.1 pts),,,,
+2026-01-24,New York,89498.1,89474.0,0.00026935199052245147,24.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (24.1 pts),,,,
+2026-01-25,London,88759.1,88690.8,0.0007700911481236262,68.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (68.3 pts),,,,
+2026-01-25,New York,88812.6,88610.0,0.0022864236542151656,202.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-01-26,London,87990.4,87665.6,0.003704988045481789,324.8,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"2 tap(s) of the high, rejected by bearish_close_at_high",87862.42,88386.36,16.77,trailing_stop
+2026-01-26,New York,88010.3,87832.3,0.0020265893071227782,178.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-01-27,London,88519.5,88414.0,0.0011932499377926573,105.5,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,"second candle closed below the low (strength 90%, fully clear)",88270.34,88546.62,24.77,trailing_stop
+2026-01-27,New York,88042.6,87764.7,0.0031664211237548666,277.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-01-28,London,89239.6,89127.3,0.0012599955344771232,112.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-01-28,New York,90444.4,90053.7,0.004338522459376984,390.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-29,London,88337.5,88211.0,0.0014340615116028613,126.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-01-29,New York,88132.9,88015.2,0.0013372690171697286,117.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-30,London,82694.3,82431.6,0.003186884641326834,262.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2026-01-30,New York,83062.0,82372.1,0.008375408663855773,689.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (689.9 pts),,,,
+2026-01-31,London,83681.9,83368.0,0.003765233662796207,313.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-01-31,New York,82822.1,82449.0,0.004525221652172929,373.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-01,London,78687.2,78139.5,0.0070092590815144335,547.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (547.7 pts),,,,
+2026-02-01,New York,78653.8,78422.3,0.002951966468721269,231.5,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-02,London,76680.1,76380.0,0.003929039015449147,300.1,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",76597.28,77025.16,-93.97,stop_loss
+2026-02-02,New York,77978.5,77771.7,0.0026590649297881224,206.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-02-03,London,78898.9,78600.0,0.003802798982188221,298.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-02-03,New York,78425.8,78244.7,0.0023145337639483036,181.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-02-04,London,76597.7,76345.0,0.0033099744580522244,252.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-02-04,New York,75915.2,75219.0,0.009255640197290539,696.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (696.2 pts),,,,
+2026-02-05,London,71406.4,70900.0,0.007142454160789763,506.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (506.4 pts),,,,
+2026-02-05,New York,69611.0,69229.6,0.005509204155447874,381.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2026-02-06,London,65509.6,64860.8,0.010002960185504891,648.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (648.8 pts),,,,
+2026-02-06,New York,67348.7,66750.5,0.008961730623740602,598.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (598.2 pts),,,,
+2026-02-07,London,68662.0,67500.1,0.017213307832136458,1161.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (1161.9 pts),,,,
+2026-02-07,New York,69333.0,68771.8,0.008160321527137535,561.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (561.2 pts),,,,
+2026-02-08,London,69575.2,69365.3,0.0030260086815741324,209.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-08,New York,71446.6,71150.4,0.0041630124356294785,296.2,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-02-09,London,70713.3,70329.8,0.0054528805712514465,383.5,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by doji_at_low",70407.58,70013.32,-86.52,stop_loss
+2026-02-09,New York,69237.9,69008.1,0.0033300438644157473,229.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-02-10,London,69097.3,68825.0,0.003956411187795175,272.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-02-10,New York,69026.8,68657.5,0.005378873393292836,369.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",68968.0,69337.42,-122.73,stop_loss
+2026-02-11,London,67184.9,66905.5,0.004176039339067703,279.4,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",66986.6,67487.23,21.29,trailing_stop
+2026-02-11,New York,67638.4,66836.5,0.011997935259925253,801.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (801.9 pts),,,,
+2026-02-12,London,67224.3,67095.1,0.001925624971123034,129.2,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-02-12,New York,68141.5,67691.5,0.00664780659314685,450.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-02-13,London,66489.1,66094.0,0.00597784972917369,395.1,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",66196.54,65796.58,17.31,trailing_stop
+2026-02-13,New York,67600.0,67163.1,0.006505060070187262,436.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",67251.55,66860.87,-85.15,stop_loss
+2026-02-14,London,69165.0,68915.0,0.0036276572589421753,250.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-14,New York,69540.0,69230.8,0.004466220237235408,309.2,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",69416.11,69852.93,-93.95,stop_loss
+2026-02-15,London,70907.7,70550.0,0.0050701630049609795,357.7,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",70685.76,71226.78,44.95,trailing_stop
+2026-02-15,New York,69146.7,68840.0,0.004455258570598447,306.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by doji_at_low",68920.98,68530.22,14.55,trailing_stop
+2026-02-16,London,68612.5,68394.2,0.0031917911167906477,218.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"2 tap(s) of the high, rejected by bearish_close_at_high",68498.3,68921.26,-91.21,stop_loss
+2026-02-16,New York,68857.9,68225.0,0.009276658116526115,632.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (632.9 pts),,,,
+2026-02-17,London,68451.8,68133.1,0.004677608974198988,318.7,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",68339.73,68759.83,13.56,trailing_stop
+2026-02-17,New York,68100.0,67924.9,0.002577847004559533,175.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-02-18,London,68076.0,67707.2,0.005446983481815862,368.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-18,New York,67455.3,67179.3,0.004108408393656974,276.0,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",67215.74,66876.99,-114.07,stop_loss
+2026-02-19,London,67299.4,67080.1,0.0032692258956082106,219.3,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",67193.84,66778.24,-89.52,stop_loss
+2026-02-19,New York,66267.3,65885.3,0.005797954930766043,382.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-02-20,London,67917.0,67825.3,0.0013520028661870582,91.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (91.7 pts),,,,
+2026-02-20,New York,67184.4,66408.1,0.011689839040719255,776.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (776.3 pts),,,,
+2026-02-21,London,67852.5,67785.0,0.00099579552998451,67.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (67.5 pts),,,,
+2026-02-21,New York,68222.3,68136.0,0.001266584478102661,86.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (86.3 pts),,,,
+2026-02-22,London,68067.2,67984.7,0.001213508333492683,82.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (82.5 pts),,,,
+2026-02-22,New York,67934.4,67538.0,0.005869288400604018,396.4,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by doji_at_low",67634.22,67234.08,-87.32,stop_loss
+2026-02-23,London,65980.0,65638.1,0.005208864973239538,341.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",65902.52,66276.91,22.06,trailing_stop
+2026-02-23,New York,66397.8,66104.2,0.004441472705213978,293.6,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-24,London,63273.9,63050.0,0.0035511498810468114,223.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",63168.03,62766.28,16.65,trailing_stop
+2026-02-24,New York,63083.7,62401.7,0.010929189429134142,682.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (682.0 pts),,,,
+2026-02-25,London,65159.9,64818.1,0.005273218437442673,341.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-25,New York,66399.9,66105.5,0.004453487228747898,294.4,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",66196.26,66698.7,-104.6,stop_loss
+2026-02-26,London,68165.7,67958.3,0.0030518715153262247,207.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x6) with no resolution",,,,
+2026-02-26,New York,68159.6,67940.0,0.0032322637621431533,219.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-02-27,London,67590.2,67417.4,0.00256313651965224,172.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-27,New York,66032.0,65626.1,0.006185039184105015,405.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-02-28,London,64298.7,63422.0,0.013823278988363613,876.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (876.7 pts),,,,
+2026-02-28,New York,64069.2,63870.8,0.0031062707841454026,198.4,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,"second candle closed above the high (strength 86%, fully clear)",65082.51,63973.1,62.66,trailing_stop
+2026-03-01,London,67201.2,66877.5,0.004840192889985377,323.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-03-01,New York,66358.6,66207.2,0.002286760352348517,151.4,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,"second candle closed above the high (strength 54%, fully clear)",66920.58,66259.06,8.95,trailing_stop
+2026-03-02,London,65956.4,65750.1,0.0031376378134784335,206.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-03-02,New York,65907.5,65475.8,0.0065932756835349405,431.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-03,London,68208.7,68027.7,0.002660680869704547,181.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-03-03,New York,67076.8,66810.0,0.003993414159556996,266.8,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",66907.08,66509.36,21.68,trailing_stop
+2026-03-04,London,68988.0,68601.3,0.0056369194169789355,386.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-04,New York,71533.3,71216.7,0.004445586498672444,316.6,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-05,London,72495.4,72141.1,0.004911208728450056,354.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-05,New York,72519.0,72150.1,0.005112952026400437,368.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",72421.01,72845.34,37.5,trailing_stop
+2026-03-06,London,71046.3,70827.8,0.0030849468711438162,218.5,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",71012.49,71366.01,12.99,trailing_stop
+2026-03-06,New York,70328.5,69753.1,0.00824909573911402,575.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (575.4 pts),,,,
+2026-03-07,London,67767.0,67624.4,0.002108706324936056,142.6,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-07,New York,68009.1,67810.0,0.0029361451113405963,199.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-03-08,London,67331.9,67260.0,0.0010689860243829048,71.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (71.9 pts),,,,
+2026-03-08,New York,67123.7,66800.0,0.004845808383233489,323.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-09,London,67446.2,67173.3,0.004062626073156956,272.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-09,New York,69247.2,68683.6,0.008205743438025834,563.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (563.6 pts),,,,
+2026-03-10,London,70375.1,70260.0,0.0016382009678338433,115.1,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,trail/partial,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-03-10,New York,70888.0,69680.0,0.017336394948335245,1208.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (1208.0 pts),,,,
+2026-03-11,London,69746.8,69456.4,0.004181040192120651,290.4,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"2 tap(s) of the high, rejected by upper_wick_rejection",69588.78,70060.66,16.59,trailing_stop
+2026-03-11,New York,71060.7,70161.3,0.012819032714616093,899.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (899.4 pts),,,,
+2026-03-12,London,69739.3,69561.2,0.0025603353593670873,178.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-12,New York,70419.7,69901.4,0.0074147298909607385,518.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (518.3 pts),,,,
+2026-03-13,London,71561.7,71348.0,0.002995178561417238,213.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-13,New York,73299.0,72706.9,0.008143656241704789,592.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (592.1 pts),,,,
+2026-03-14,London,70706.0,70444.0,0.003719266367611152,262.0,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",70579.71,70127.0,6.89,session_end
+2026-03-14,New York,70878.1,70818.0,0.0008486542969302411,60.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (60.1 pts),,,,
+2026-03-15,London,71530.5,71400.3,0.001823521749908573,130.2,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-03-15,New York,71560.0,71250.0,0.004350877192982456,310.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-16,London,73836.8,73389.2,0.00609899004213162,447.6,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",73442.49,73058.95,18.16,trailing_stop
+2026-03-16,New York,74481.5,73800.0,0.009234417344173441,681.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (681.5 pts),,,,
+2026-03-17,London,74365.8,74255.4,0.0014867605588281625,110.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-03-17,New York,74167.2,73646.2,0.007074363646732622,521.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (521.0 pts),,,,
+2026-03-18,London,73804.6,73636.5,0.00228283527870018,168.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-18,New York,72547.5,72188.8,0.004968914845516161,358.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-19,London,70199.9,69746.5,0.006500684622167337,453.4,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"2 tap(s) of the high, rejected by doji_at_high",70117.27,70515.8,14.32,trailing_stop
+2026-03-19,New York,69797.0,69209.3,0.008491633349853228,587.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (587.7 pts),,,,
+2026-03-20,London,70823.0,70386.7,0.0061986142268355094,436.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",70797.84,71141.7,-116.59,stop_loss
+2026-03-20,New York,70480.0,69808.0,0.00962640385056154,672.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (672.0 pts),,,,
+2026-03-21,London,70840.9,70717.1,0.0017506373988750718,123.8,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,"second candle closed below the low (strength 34%, fully clear)",70673.26,70823.18,17.52,trailing_stop
+2026-03-21,New York,70761.6,70682.1,0.0011247543578925922,79.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (79.5 pts),,,,
+2026-03-22,London,69146.4,68872.3,0.003979829336322314,274.1,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by lower_wick_rejection",68963.69,68562.37,-87.37,stop_loss
+2026-03-22,New York,68814.6,68500.9,0.004579501875158015,313.7,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"3 tap(s) of the high, rejected by doji_at_high",68786.84,69124.27,7.67,trailing_stop
+2026-03-23,London,68307.7,67739.3,0.008390993116255912,568.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (568.4 pts),,,,
+2026-03-23,New York,71388.0,70620.0,0.010875106202209005,768.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (768.0 pts),,,,
+2026-03-24,London,70930.8,70781.5,0.002109308223193955,149.3,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 56%),71269.45,70824.4,-95.66,stop_loss
+2026-03-24,New York,70752.8,70192.4,0.007983770322713125,560.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (560.4 pts),,,,
+2026-03-25,London,71233.6,71000.0,0.0032901408450705045,233.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-03-25,New York,71931.9,71587.2,0.004815106611237722,344.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-26,London,70079.1,69722.6,0.005113119705805577,356.5,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",70039.79,70394.46,6.8,trailing_stop
+2026-03-26,New York,69519.0,69158.9,0.005206849733006249,360.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-27,London,68918.0,68482.8,0.006354880349518376,435.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-27,New York,66693.5,66025.4,0.01011883305515765,668.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (668.1 pts),,,,
+2026-03-28,London,66431.4,66391.7,0.0005979663120540232,39.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (39.7 pts),,,,
+2026-03-28,New York,67148.7,66419.5,0.010978703543387064,729.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (729.2 pts),,,,
+2026-03-29,London,66685.1,66583.2,0.0015304160809334597,101.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-03-29,New York,66658.1,66571.8,0.0012963446985060176,86.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (86.3 pts),,,,
+2026-03-30,London,67399.9,67255.0,0.0021544866552671797,144.9,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 57%),67609.42,67298.8,24.44,trailing_stop
+2026-03-30,New York,68008.5,67660.4,0.0051448114406655275,348.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-03-31,London,67350.0,67179.7,0.0025349919693002936,170.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-03-31,New York,67166.5,66691.9,0.0071163064779981655,474.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x5, L x2) with no resolution",,,,
+2026-04-01,London,68962.9,68817.1,0.002118659461093076,145.8,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,second candle closed below the low (strength 63%),68638.17,68920.33,7.02,trailing_stop
+2026-04-01,New York,68650.0,67883.7,0.01128842417251863,766.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (766.3 pts),,,,
+2026-04-02,London,66860.0,66644.1,0.0032395966034501804,215.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-02,New York,66209.8,65676.1,0.008126243793404252,533.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (533.7 pts),,,,
+2026-04-03,London,67233.3,66882.4,0.005246522253986232,350.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by bullish_close_at_low",66948.49,66581.43,45.49,trailing_stop
+2026-04-03,New York,66651.4,66546.7,0.0015733312095114723,104.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-04,London,66970.2,66927.4,0.0006394989197249992,42.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (42.8 pts),,,,
+2026-04-04,New York,67245.3,67061.6,0.0027392725494172084,183.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-05,London,66786.3,66685.3,0.0015145766758191085,101.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-05,New York,66832.8,66666.0,0.002502025020250246,166.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-06,London,69117.2,68945.9,0.002484556732162506,171.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-06,New York,69521.4,69200.1,0.0046430568741950996,321.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",69302.34,69834.25,-110.7,stop_loss
+2026-04-07,London,68677.8,68546.3,0.001918411351159727,131.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-07,New York,68571.8,68260.8,0.004556055598527999,311.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-08,London,71780.1,71586.0,0.002711424021456791,194.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-08,New York,72579.0,71631.0,0.01323449344557524,948.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (948.0 pts),,,,
+2026-04-09,London,71047.2,70914.2,0.0018755058930369378,133.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-04-09,New York,71128.4,70765.6,0.005126784765479108,362.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-04-10,London,71763.8,71618.0,0.0020358010556005878,145.8,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,second candle closed below the low (strength 55%),71446.91,71725.43,-132.92,stop_loss
+2026-04-10,New York,72381.0,71868.5,0.007131079680249344,512.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (512.5 pts),,,,
+2026-04-11,London,72776.7,72698.0,0.0010825607306940643,78.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (78.7 pts),,,,
+2026-04-11,New York,72678.2,72533.7,0.001992177429250128,144.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2026-04-12,London,71707.0,71589.9,0.0016357055953424412,117.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-04-12,New York,71060.0,70900.0,0.002256699576868829,160.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-04-13,London,70776.6,70652.8,0.0017522306263871058,123.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-04-13,New York,71188.2,70780.0,0.005767165866063819,408.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-14,London,74648.4,74459.6,0.0025356031995872707,188.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-04-14,New York,75197.6,74452.8,0.010003653321298902,744.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (744.8 pts),,,,
+2026-04-15,London,73681.1,73530.1,0.0020535807784839133,151.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-15,New York,74380.0,73801.8,0.007834497261584366,578.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (578.2 pts),,,,
+2026-04-16,London,74869.4,74800.0,0.0009278074866309382,69.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (69.4 pts),,,,
+2026-04-16,New York,74977.9,74440.0,0.007225953788285789,537.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (537.9 pts),,,,
+2026-04-17,London,74979.0,74897.5,0.0010881538102072833,81.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (81.5 pts),,,,
+2026-04-17,New York,76886.6,76023.0,0.011359720084711282,863.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (863.6 pts),,,,
+2026-04-18,London,77054.6,76925.5,0.0016782471352153165,129.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-18,New York,76059.2,75738.0,0.004240935857825623,321.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-19,London,75188.4,74930.4,0.003443195285224689,258.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-19,New York,76066.0,75883.1,0.0024102863483436254,182.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-20,London,75209.7,74802.6,0.005442324197287143,407.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-20,New York,75392.0,74811.7,0.007756808092851826,580.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (580.3 pts),,,,
+2026-04-21,London,76272.4,75981.0,0.0038351693186453742,291.4,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",76034.79,76615.63,-60.42,stop_loss
+2026-04-21,New York,76144.0,75688.0,0.006024733114892718,456.0,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by lower_wick_rejection",75810.16,75347.4,35.38,trailing_stop
+2026-04-22,London,78034.5,77805.6,0.0029419476233072447,228.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",77964.1,78385.66,-93.83,stop_loss
+2026-04-22,New York,78654.0,78232.9,0.0053826459200669525,421.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-23,London,78135.9,77991.6,0.0018501992522270134,144.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-23,New York,77649.9,77475.4,0.0022523278356742916,174.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-24,London,77700.1,77576.2,0.001597139328814878,123.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-24,New York,78255.2,78000.0,0.0032717948717948344,255.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-25,London,77533.2,77467.1,0.0008532654507525293,66.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (66.1 pts),,,,
+2026-04-25,New York,77638.5,77560.0,0.0010121196493037647,78.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (78.5 pts),,,,
+2026-04-26,London,77960.5,77920.5,0.0005133437285438364,40.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (40.0 pts),,,,
+2026-04-26,New York,77953.2,77825.1,0.0016459985274672473,128.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-27,London,77647.6,77534.1,0.0014638720253411079,113.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-27,New York,77930.3,77581.7,0.0044933276790790335,348.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-04-28,London,76846.2,76588.0,0.003371285318848868,258.2,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"2 tap(s) of the high, rejected by bearish_close_at_high",76782.04,77192.01,19.96,trailing_stop
+2026-04-28,New York,76338.5,76030.0,0.004057608838616336,308.5,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",76143.17,76682.02,29.23,trailing_stop
+2026-04-29,London,77140.0,77012.2,0.0016594773295660027,127.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-04-29,New York,76897.6,76529.9,0.004804658048684392,367.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",76763.95,76185.52,-60.3,stop_loss
+2026-04-30,London,76047.8,75852.6,0.0025734121177124723,195.2,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 65%),76145.13,75933.73,7.27,trailing_stop
+2026-04-30,New York,76599.9,76066.6,0.007010961446942394,533.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (533.3 pts),,,,
+2026-05-01,London,77020.0,76922.4,0.0012688111655383325,97.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (97.6 pts),,,,
+2026-05-01,New York,78499.0,78071.4,0.005477037686015696,427.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-05-02,London,78290.6,78174.0,0.0014915445032876126,116.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-05-02,New York,78327.9,78262.3,0.0008382069016626303,65.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (65.6 pts),,,,
+2026-05-03,London,78404.9,78328.0,0.0009817689715043685,76.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (76.9 pts),,,,
+2026-05-03,New York,78670.0,78555.5,0.0014575682161019916,114.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-05-04,London,79835.2,79645.3,0.0023843214853857563,189.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-04,New York,79099.7,78802.0,0.0037778228978959556,297.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-05,London,81111.0,80970.9,0.0017302512384079446,140.1,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,"second candle closed below the low (strength 75%, fully clear)",80799.64,81092.36,12.9,trailing_stop
+2026-05-05,New York,81492.6,81151.1,0.004208199272714726,341.5,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",81262.04,81859.32,9.71,trailing_stop
+2026-05-06,London,81505.1,81360.0,0.0017834316617503173,145.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-05-06,New York,82020.0,81727.2,0.0035826505741051074,292.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-07,London,81672.0,81508.0,0.002012072434607646,164.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-07,New York,80927.2,80516.0,0.0051070594664414165,411.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-08,London,79561.6,79318.5,0.0030648587656096097,243.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-08,New York,79799.7,79524.2,0.0034643542468833386,275.5,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",79628.22,79166.34,60.85,trailing_stop
+2026-05-09,London,80240.0,80142.6,0.0012153336677371857,97.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (97.4 pts),,,,
+2026-05-09,New York,80351.8,80274.7,0.0009604520477810047,77.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (77.1 pts),,,,
+2026-05-10,London,80756.1,80725.3,0.0003815408552213855,30.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (30.8 pts),,,,
+2026-05-10,New York,80963.3,80891.4,0.0008888460330765538,71.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (71.9 pts),,,,
+2026-05-11,London,80736.6,80614.9,0.001509646479745204,121.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-05-11,New York,81219.5,80716.0,0.006237920610535705,503.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (503.5 pts),,,,
+2026-05-12,London,81067.6,80900.4,0.0020667388541961676,167.2,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,second candle closed below the low (strength 50%),80793.04,81021.75,-8.01,trailing_stop
+2026-05-12,New York,80795.0,80545.0,0.0031038549878949656,250.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-05-13,London,80940.0,80847.0,0.0011503209766596163,93.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (93.0 pts),,,,
+2026-05-13,New York,80178.9,79735.7,0.00555836344322552,443.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-14,London,79900.0,79753.5,0.0018369099788724005,146.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-05-14,New York,79953.4,79650.0,0.0038091650973006174,303.4,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",79644.97,80313.19,-68.53,stop_loss
+2026-05-15,London,80865.7,80695.5,0.002109163460168127,170.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-15,New York,79983.3,79055.0,0.011742457782556484,928.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (928.3 pts),,,,
+2026-05-16,London,78528.5,78315.1,0.0027248895806810457,213.4,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by bullish_close_at_low",78399.08,77962.68,-96.0,stop_loss
+2026-05-16,New York,77950.0,77800.0,0.0019280205655526992,150.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-17,London,78175.3,78064.7,0.0014167735224756622,110.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-05-17,New York,78312.5,78195.7,0.0014936882718615335,116.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-18,London,77050.5,76890.0,0.0020873975809598128,160.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-05-18,New York,77253.9,76714.7,0.007028639882577878,539.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (539.2 pts),,,,
+2026-05-19,London,77240.6,77096.4,0.0018703856470601954,144.2,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-05-19,New York,77033.9,76560.0,0.0061899164054335706,473.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-20,London,77374.4,77286.0,0.0011438035349221616,88.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (88.4 pts),,,,
+2026-05-20,New York,77315.7,76925.6,0.005071133666815614,390.1,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",77097.02,76579.43,32.07,trailing_stop
+2026-05-21,London,77687.0,77569.6,0.0015134795074358276,117.4,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,"second candle closed above the high (strength 84%, fully clear)",77861.67,77570.47,27.65,trailing_stop
+2026-05-21,New York,77285.7,76696.7,0.007679600295710246,589.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (589.0 pts),,,,
+2026-05-22,London,77514.5,77400.0,0.001479328165374677,114.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-05-22,New York,77340.0,77085.5,0.0033015288218925737,254.5,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-23,London,75310.9,75104.9,0.00274283036126804,206.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-23,New York,75007.5,74841.6,0.002216681631605874,165.9,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 55%),75195.84,74894.99,16.95,trailing_stop
+2026-05-24,London,76876.0,76810.0,0.0008592631167816691,66.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (66.0 pts),,,,
+2026-05-24,New York,76983.2,76838.3,0.001885778316282299,144.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-05-25,London,77304.7,77161.2,0.0018597429796322505,143.5,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 68%),77392.38,77188.74,37.82,trailing_stop
+2026-05-25,New York,77330.0,77254.8,0.0009734022999217794,75.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (75.2 pts),,,,
+2026-05-26,London,76671.1,76571.4,0.0013020527246466911,99.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (99.7 pts),,,,
+2026-05-26,New York,76961.3,76641.7,0.004170053639206931,319.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2026-05-27,London,75938.0,75810.3,0.0016844676778748678,127.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-05-27,New York,75298.8,74839.1,0.006142511067075861,459.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",75069.31,74502.32,23.07,trailing_stop
+2026-05-28,London,73485.0,73229.7,0.003486290398567834,255.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",73452.31,73815.68,23.25,trailing_stop
+2026-05-28,New York,73136.0,72739.2,0.005455105362720554,396.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-05-29,London,73734.7,73351.8,0.005220049133081862,382.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",73502.8,73021.72,18.8,trailing_stop
+2026-05-29,New York,73280.7,72866.0,0.005691268904564503,414.7,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",73099.98,73610.46,51.88,trailing_stop
+2026-05-30,London,73546.2,73460.1,0.0011720648351961304,86.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (86.1 pts),,,,
+2026-05-30,New York,73747.0,73638.2,0.0014774940180504537,108.8,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 60%),73819.66,73636.38,2.74,trailing_stop
+2026-05-31,London,73877.7,73793.2,0.001145091959692763,84.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (84.5 pts),,,,
+2026-05-31,New York,73944.1,73850.0,0.0012742044685173435,94.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (94.1 pts),,,,
+2026-06-01,London,72967.9,72830.0,0.0018934505011670216,137.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x5) with no resolution",,,,
+2026-06-01,New York,72043.3,71548.0,0.006922625370380764,495.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",71684.46,72367.49,33.08,trailing_stop
+2026-06-02,London,70216.0,69869.3,0.004962122133755413,346.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",70011.5,69554.89,-97.43,stop_loss
+2026-06-02,New York,69090.0,68746.0,0.005003927501236435,344.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-03,London,67251.2,67040.0,0.003150357995226687,211.2,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",67173.26,67553.83,9.68,trailing_stop
+2026-06-03,New York,67175.0,66682.9,0.007379703042309286,492.1,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",66898.18,66382.83,-107.12,stop_loss
+2026-06-04,London,64014.0,63660.0,0.005560791705937794,354.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-04,New York,64223.1,63159.7,0.01683668541807516,1063.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (1063.4 pts),,,,
+2026-06-05,London,62869.9,62154.3,0.011513282266874512,715.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (715.6 pts),,,,
+2026-06-05,New York,62310.0,61644.9,0.010789213706243314,665.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (665.1 pts),,,,
+2026-06-06,London,61070.0,60843.6,0.0037210158504756697,226.4,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",60963.0,61344.81,-82.05,stop_loss
+2026-06-06,New York,60874.5,60668.8,0.0033905401128751034,205.7,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",60767.34,61148.44,15.23,trailing_stop
+2026-06-07,London,62239.3,62154.6,0.0013627309965795673,84.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (84.7 pts),,,,
+2026-06-07,New York,61880.0,61637.4,0.003935922021370118,242.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x4, L x2) with no resolution",,,,
+2026-06-08,London,63248.6,63052.1,0.0031164703475379885,196.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-08,New York,63749.8,63330.4,0.006622411985397241,419.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-09,London,63179.7,62999.9,0.002853972784083715,179.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-09,New York,62485.2,62125.0,0.005797987927565346,360.2,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",62231.95,62766.38,25.85,trailing_stop
+2026-06-10,London,61783.4,61528.5,0.004142795615040208,254.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-10,New York,62357.4,61474.7,0.014358752462395171,882.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (882.7 pts),,,,
+2026-06-11,London,62812.2,62578.4,0.0037361134193267267,233.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-11,New York,62940.0,62644.7,0.004713886410183191,295.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-12,London,63063.2,62946.1,0.0018603217673533157,117.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-12,New York,63427.3,63020.6,0.006453445381351564,406.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-13,London,63810.0,63713.3,0.0015177364851608234,96.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (96.7 pts),,,,
+2026-06-13,New York,64217.0,64129.7,0.0013613037329038326,87.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (87.3 pts),,,,
+2026-06-14,London,64321.9,64262.7,0.0009212186851782506,59.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (59.2 pts),,,,
+2026-06-14,New York,64354.5,64207.3,0.002292574208851596,147.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-15,London,65924.3,65692.0,0.003536199232783336,232.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-15,New York,66853.8,66408.4,0.006706982851567103,445.4,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by doji_at_low",66429.68,66109.56,13.89,trailing_stop
+2026-06-16,London,66399.0,66280.0,0.0017954133977066988,119.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-16,New York,66137.0,65893.2,0.003699926547807709,243.8,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",65999.6,66434.62,40.89,trailing_stop
+2026-06-17,London,65552.6,65446.9,0.0016150497578953987,105.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-17,New York,65305.0,64804.1,0.007729449216947716,500.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (500.9 pts),,,,
+2026-06-18,London,64428.6,64222.8,0.003204469440759288,205.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-18,New York,64355.2,63844.7,0.00799596520932826,510.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (510.5 pts),,,,
+2026-06-19,London,62799.9,62465.6,0.005351745600778716,334.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-19,New York,63099.8,62712.5,0.0061758022722743135,387.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-20,London,63774.2,63684.8,0.001403788659146204,89.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (89.4 pts),,,,
+2026-06-20,New York,63441.3,63310.1,0.0020723391686319303,131.2,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-06-21,London,64222.8,64143.2,0.0012409733221916872,79.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (79.6 pts),,,,
+2026-06-21,New York,64140.0,63981.2,0.002481979081355194,158.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-22,London,64384.3,64215.4,0.0026302101987996877,168.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-22,New York,65454.6,64944.8,0.00784974316650441,509.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (509.8 pts),,,,
+2026-06-23,London,63003.6,62838.4,0.0026289657279624733,165.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-23,New York,62431.3,61916.9,0.008307909472211971,514.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (514.4 pts),,,,
+2026-06-24,London,62707.1,62600.8,0.0016980613666278328,106.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-24,New York,62127.5,61348.5,0.012697946975068665,779.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (779.0 pts),,,,
+2026-06-25,London,61931.1,61774.1,0.0025415182090876274,157.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-25,New York,61319.8,60050.6,0.021135509054031172,1269.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (1269.2 pts),,,,
+2026-06-26,London,60734.0,60522.0,0.003502858464690526,212.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-26,New York,59493.2,58810.0,0.011617071926543055,683.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (683.2 pts),,,,
+2026-06-27,London,60440.5,60354.1,0.0014315514604641849,86.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (86.4 pts),,,,
+2026-06-27,New York,60643.1,60419.9,0.003694147127022671,223.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-06-28,London,60247.1,60073.4,0.0028914627772025072,173.7,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,trail/partial,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-06-28,New York,60160.7,60012.2,0.002474496852306698,148.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-29,London,60110.8,60017.8,0.0015495403030434303,93.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (93.0 pts),,,,
+2026-06-29,New York,60253.3,59421.0,0.01400683260126896,832.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (832.3 pts),,,,
+2026-06-30,London,59547.0,59441.6,0.0017731689591128344,105.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-06-30,New York,58732.0,58200.0,0.009140893470790378,532.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (532.0 pts),,,,
+2026-07-01,London,58728.8,58611.2,0.0020064424546845285,117.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-01,New York,59051.0,58571.0,0.008195181915965239,480.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-02,London,60197.8,60089.9,0.0017956428617787923,107.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-02,New York,62077.3,61499.8,0.009390274439916878,577.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (577.5 pts),,,,
+2026-07-03,London,61819.0,61716.9,0.0016543280689729806,102.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-03,New York,62171.0,61991.0,0.0029036473036408513,180.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-07-04,London,62539.4,62453.4,0.001377026711115808,86.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (86.0 pts),,,,
+2026-07-04,New York,62631.0,62527.0,0.0016632814624082397,104.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-05,London,62920.1,62726.3,0.0030896131287832316,193.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-05,New York,62732.6,62648.6,0.001340812085186261,84.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (84.0 pts),,,,
+2026-07-06,London,63094.9,62888.0,0.003289975830047091,206.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",63051.89,63378.83,19.98,trailing_stop
+2026-07-06,New York,61643.6,61297.0,0.0056544365955919305,346.6,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-07,London,63249.8,63062.0,0.002978021629507515,187.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-07,New York,63232.1,62960.3,0.0043170061133761374,271.8,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",63020.69,63516.64,29.22,trailing_stop
+2026-07-08,London,62850.0,62728.9,0.00193052962828933,121.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-07-08,New York,62073.6,61806.7,0.004318302061103432,266.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by doji_at_low",61935.28,61528.57,12.93,trailing_stop
+2026-07-09,London,63022.8,62774.5,0.003955427761272537,248.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",62961.01,63306.4,7.54,trailing_stop
+2026-07-09,New York,62943.2,62490.2,0.007249136664629014,453.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-10,London,63939.6,63884.7,0.0008593606919966981,54.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (54.9 pts),,,,
+2026-07-10,New York,64423.7,64128.2,0.00460795718576227,295.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-11,London,64209.0,64146.9,0.0009680904299350171,62.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (62.1 pts),,,,
+2026-07-11,New York,64245.4,64166.2,0.001234294690974444,79.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (79.2 pts),,,,
+2026-07-12,London,63866.2,63817.5,0.0007631135660280814,48.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (48.7 pts),,,,
+2026-07-12,New York,64067.2,64006.8,0.0009436497372153299,60.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (60.4 pts),,,,
+2026-07-13,London,63027.6,62880.1,0.0023457341829927116,147.5,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-13,New York,62752.4,62226.4,0.008453003869740175,526.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (526.0 pts),,,,
+2026-07-14,London,62629.5,62534.5,0.0015191614228945622,95.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (95.0 pts),,,,
+2026-07-14,New York,63961.9,63687.7,0.004305383928136899,274.2,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",63815.56,63401.11,15.04,trailing_stop
+2026-07-15,London,64621.0,64490.0,0.0020313226856877036,131.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-15,New York,65494.4,65211.5,0.0043381918833334835,282.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-07-16,London,64476.0,64155.3,0.004998807580979234,320.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by doji_at_low",64212.94,63866.6,-114.86,stop_loss
+2026-07-16,New York,64458.7,64126.8,0.005175683177704083,331.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",64367.17,63838.23,24.19,trailing_stop
+2026-07-17,London,62947.1,62839.0,0.001720269259536252,108.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x5) with no resolution",,,,
+2026-07-17,New York,62913.9,62505.1,0.006540266314268802,408.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-18,London,63995.6,63966.2,0.0004596177356166453,29.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (29.4 pts),,,,
+2026-07-18,New York,64073.8,63993.5,0.001254814942142607,80.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (80.3 pts),,,,
+2026-07-19,London,64759.3,64681.4,0.0012043647787463082,77.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (77.9 pts),,,,
+2026-07-19,New York,64455.7,64379.7,0.001180496336578145,76.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (76.0 pts),,,,
+2026-07-20,London,64188.0,64062.4,0.00196058842628435,125.6,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 52%),64262.85,64091.72,-137.38,stop_loss
+2026-07-20,New York,64737.5,64471.0,0.00413364148221681,266.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x6) with no resolution",,,,
+2026-07-21,London,66125.1,65915.8,0.003175262987022882,209.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-21,New York,66529.2,66290.4,0.0036023315593208508,238.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-22,London,65890.0,65668.6,0.0033714743423796786,221.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-22,New York,65894.7,65571.4,0.0049305032376920875,323.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-07-23,London,65431.6,65350.0,0.0012486610558530764,81.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (81.6 pts),,,,
+2026-07-23,New York,65174.6,64938.0,0.0036434753149157434,236.6,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-24,London,65672.0,65338.0,0.0051118797636903485,334.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-24,New York,64394.0,64180.5,0.003326555573733455,213.5,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-25,London,64005.5,63968.4,0.0005799738620943863,37.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (37.1 pts),,,,
+2026-07-25,New York,64168.8,64086.1,0.0012904514395478016,82.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (82.7 pts),,,,
+2026-07-26,London,64350.0,64313.5,0.0005675324776291136,36.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (36.5 pts),,,,
+2026-07-26,New York,64534.4,64430.3,0.001615699445757641,104.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-27,London,65380.9,65190.0,0.0029283632458966323,190.9,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-27,New York,65666.6,64919.5,0.011508098491208433,747.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (747.1 pts),,,,
+2026-07-28,London,63548.4,63448.4,0.001576083872879379,100.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-28,New York,63366.4,62815.0,0.008778158083260391,551.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (551.4 pts),,,,
+2026-07-29,London,64490.0,64411.9,0.0012125088687028102,78.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (78.1 pts),,,,
+2026-07-29,New York,64467.8,64114.7,0.005507317354678503,353.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-07-30,London,64042.7,63913.6,0.0020199143844189427,129.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-30,New York,64996.9,64663.0,0.00516369484867701,333.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",64982.8,65289.39,28.26,trailing_stop
+2026-07-31,London,64002.6,63835.6,0.0026160950942734147,167.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-07-31,New York,63799.1,63430.3,0.005814255962844187,368.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-01,London,63040.0,63001.4,0.0006126847974806678,38.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (38.6 pts),,,,
+2026-08-01,New York,63069.7,63046.3,0.00037115580137128077,23.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (23.4 pts),,,,
+2026-08-02,London,63514.2,63459.0,0.0008698529759371735,55.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (55.2 pts),,,,
+2026-08-02,New York,63082.8,62974.4,0.0017213343834955386,108.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-03,London,62671.6,62566.1,0.0016862166572632785,105.5,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-03,New York,62915.9,62533.3,0.0061183401483689255,382.6,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-04,London,63736.6,63610.1,0.001988677898635594,126.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-08-04,New York,64080.0,63793.1,0.00449735159445146,286.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-08-05,London,64063.0,63962.4,0.0015727990194238887,100.6,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-05,New York,64265.7,63847.0,0.006557864895766396,418.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-06,London,64879.0,64750.0,0.001992277992277992,129.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-08-06,New York,64409.6,64143.0,0.004156338181874851,266.6,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",64391.92,64699.44,-104.77,stop_loss
+2026-08-07,London,64393.3,64337.6,0.0008657456914775243,55.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (55.7 pts),,,,
+2026-08-07,New York,65292.0,65071.2,0.003393206211042718,220.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-08,London,64974.3,64919.5,0.0008441223361240137,54.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (54.8 pts),,,,
+2026-08-08,New York,64990.9,64973.7,0.00026472249540974833,17.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (17.2 pts),,,,
+2026-08-09,London,64812.9,64806.3,0.00010184195055108137,6.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (6.6 pts),,,,
+2026-08-09,New York,65245.5,65061.8,0.002823469378344852,183.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-10,London,65348.4,65280.0,0.0010477941176470812,68.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (68.4 pts),,,,
+2026-08-10,New York,64907.0,64575.8,0.005128856320788857,331.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-11,London,64060.0,63879.9,0.0028193531924752316,180.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-11,New York,64217.2,64023.7,0.0030223182977553624,193.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-08-12,London,63752.8,63656.0,0.0015206736207113692,96.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (96.8 pts),,,,
+2026-08-12,New York,63987.1,63830.1,0.002459654614359056,157.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-13,London,63870.9,63841.3,0.00046364970638126956,29.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (29.6 pts),,,,
+2026-08-13,New York,63828.0,63534.0,0.00462744357351969,294.0,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"3 tap(s) of the high, rejected by doji_at_high",63771.24,64115.23,13.39,trailing_stop
+2026-08-14,London,63067.2,62926.9,0.002229571137303691,140.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-14,New York,62794.8,62578.2,0.0034612692599021036,216.6,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"3 tap(s) of the low, rejected by bullish_close_at_low",62661.13,62296.6,47.42,trailing_stop
+2026-08-15,London,63073.6,63041.9,0.0005028401745505306,31.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (31.7 pts),,,,
+2026-08-15,New York,63022.0,63000.0,0.0003492063492063492,22.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (22.0 pts),,,,
+2026-08-16,London,63035.1,63028.0,0.00011264834676649338,7.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (7.1 pts),,,,
+2026-08-16,New York,63040.4,63035.9,7.138789166173562e-05,4.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (4.5 pts),,,,
+2026-08-17,London,63555.7,63511.9,0.0006896345409284816,43.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (43.8 pts),,,,
+2026-08-17,New York,63776.0,63451.8,0.00510939011974439,324.2,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-18,London,64254.3,64210.0,0.0006899236878991265,44.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (44.3 pts),,,,
+2026-08-18,New York,64222.5,63979.2,0.0038027984094831276,243.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-19,London,64377.5,64306.9,0.0010978604162228088,70.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (70.6 pts),,,,
+2026-08-19,New York,65190.0,64780.0,0.006329113924050633,410.0,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",64971.1,65483.35,-106.03,stop_loss
+2026-08-20,London,69660.1,69482.0,0.002563253792349181,178.1,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 59%),69829.86,69555.61,250.39,trailing_stop
+2026-08-20,New York,71934.3,71100.0,0.011734177215189915,834.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (834.3 pts),,,,
+2026-08-21,London,76779.7,76257.0,0.006854452705981052,522.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (522.7 pts),,,,
+2026-08-21,New York,77333.0,76237.0,0.014376221519734512,1096.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (1096.0 pts),,,,
+2026-08-22,London,77497.0,77285.6,0.0027353090355770565,211.4,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by bullish_close_at_low",77429.48,76937.81,-105.58,stop_loss
+2026-08-22,New York,77206.7,77104.7,0.001322876556163243,102.0,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-08-23,London,76241.7,76056.4,0.0024363498666779247,185.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-08-23,New York,77612.9,77333.0,0.0036194121526385136,279.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",77487.19,76985.0,-107.27,stop_loss
+2026-08-24,London,77587.8,77334.7,0.0032727869895403465,253.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-24,New York,79011.5,78135.7,0.01120870485578299,875.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (875.8 pts),,,,
+2026-08-25,London,80676.7,80459.1,0.0027044796673091204,217.6,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-25,New York,79194.9,78570.3,0.007949568730168922,624.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (624.6 pts),,,,
+2026-08-26,London,79017.9,78848.8,0.002144610951593319,169.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-08-26,New York,78463.8,78011.5,0.005797863135563384,452.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",78391.22,78816.89,33.48,trailing_stop
+2026-08-27,London,78850.0,78759.9,0.0011439831691000856,90.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (90.1 pts),,,,
+2026-08-27,New York,79330.1,79070.8,0.0032793395286250158,259.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-08-28,London,79783.2,79538.9,0.003071453087734466,244.3,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"3 tap(s) of the high, rejected by bearish_close_at_high",79666.66,80142.22,33.93,trailing_stop
+2026-08-28,New York,79332.0,78980.5,0.004450465621260944,351.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-08-29,London,77630.0,77477.9,0.001963140456827119,152.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-08-29,New York,77686.9,77609.1,0.0010024597630946415,77.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (77.8 pts),,,,
+2026-08-30,London,78192.0,78106.8,0.0010908141160564393,85.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (85.2 pts),,,,
+2026-08-30,New York,78788.0,78638.6,0.0018998303632057816,149.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x6, L x2) with no resolution",,,,
+2026-08-31,London,78262.0,78095.2,0.0021358547004169644,166.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-08-31,New York,78256.2,77802.7,0.005828846556739034,453.5,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"2 tap(s) of the low, rejected by bullish_close_at_low",77879.77,77452.59,58.2,trailing_stop
+2026-09-01,London,78758.4,78467.6,0.0037059882040484013,290.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-01,New York,77995.6,77452.0,0.007018540515416075,543.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (543.6 pts),,,,
+2026-09-02,London,77597.7,77520.4,0.0009971568774155308,77.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (77.3 pts),,,,
+2026-09-02,New York,77376.9,76581.2,0.010390278554005384,795.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (795.7 pts),,,,
+2026-09-03,London,78035.8,77822.8,0.002736987104036349,213.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-03,New York,78899.0,78419.1,0.006119682577331214,479.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",78786.44,79254.05,-101.49,stop_loss
+2026-09-04,London,80879.2,80712.6,0.00206411390538765,166.6,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,second candle closed below the low (strength 58%),80611.87,80833.67,-3.44,trailing_stop
+2026-09-04,New York,79513.2,78913.4,0.007600737010444398,599.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (599.8 pts),,,,
+2026-09-05,London,79708.3,79660.6,0.0005987903681367838,47.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (47.7 pts),,,,
+2026-09-05,New York,79718.8,79601.6,0.001472332214427814,117.2,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-09-06,London,79832.6,79742.3,0.0011323977362077957,90.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (90.3 pts),,,,
+2026-09-06,New York,79823.8,79719.9,0.0013033132254306483,103.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-09-07,London,79485.3,78938.7,0.006924360294760438,546.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (546.6 pts),,,,
+2026-09-07,New York,79605.2,79268.2,0.0042513895862401315,337.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-08,London,78577.3,78400.4,0.0022563660389488924,176.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x5) with no resolution",,,,
+2026-09-08,New York,78344.7,77660.0,0.008816636621169162,684.7,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (684.7 pts),,,,
+2026-09-09,London,79261.6,79135.4,0.0015947350995889533,126.2,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,trail/partial,ENTER,reversal candle formed but the next candle did not confirm — momentum held,79676.43,79142.71,-113.36,stop_loss
+2026-09-09,New York,79648.1,79070.1,0.007309969255129309,578.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (578.0 pts),,,,
+2026-09-10,London,78011.5,77867.5,0.0018492952772337626,144.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-10,New York,77070.7,76730.0,0.004440245014987581,340.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-11,London,77306.0,77215.9,0.0011668581211901413,90.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (90.1 pts),,,,
+2026-09-11,New York,77900.0,77211.4,0.008918372157479412,688.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (688.6 pts),,,,
+2026-09-12,London,77271.6,77242.6,0.00037544049527074433,29.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (29.0 pts),,,,
+2026-09-12,New York,77296.1,77228.3,0.0008779165150599315,67.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (67.8 pts),,,,
+2026-09-13,London,77133.7,77052.1,0.0010590236995486335,81.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (81.6 pts),,,,
+2026-09-13,New York,76739.9,76545.0,0.002546214644980001,194.9,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,"second candle closed above the high (strength 47%, fully clear)",76829.06,76624.79,64.07,trailing_stop
+2026-09-14,London,77844.0,77645.2,0.0025603643238732454,198.8,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-09-14,New York,78239.0,77805.2,0.005575462822536321,433.8,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",78123.57,78591.08,-101.31,stop_loss
+2026-09-15,London,77249.0,76927.0,0.00418578652488723,322.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-15,New York,76913.3,76065.0,0.011152303950568631,848.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (848.3 pts),,,,
+2026-09-16,London,75869.4,75726.9,0.00188176196305408,142.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x4) with no resolution",,,,
+2026-09-16,New York,75770.0,75537.5,0.0030779414198245903,232.5,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",75600.38,76110.96,17.62,trailing_stop
+2026-09-17,London,76509.5,76452.5,0.00074556096922926,57.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (57.0 pts),,,,
+2026-09-17,New York,76558.8,75975.0,0.0076841066140178075,583.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (583.8 pts),,,,
+2026-09-18,London,77815.7,77700.0,0.0014890604890604516,115.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-09-18,New York,79298.0,78100.6,0.015331508336683638,1197.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (1197.4 pts),,,,
+2026-09-19,London,81096.0,81008.2,0.0010838408951192955,87.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (87.8 pts),,,,
+2026-09-19,New York,81249.8,81160.3,0.0011027559040565399,89.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (89.5 pts),,,,
+2026-09-20,London,80368.9,80262.5,0.0013256502102475525,106.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-09-20,New York,80533.5,80389.0,0.0017975096095236912,144.5,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,trail/partial,ENTER,no reversal candle in the momentum window,80617.22,80412.7,-13.18,trailing_stop
+2026-09-21,London,81586.6,81433.2,0.0018837525726608895,153.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-21,New York,85190.0,84724.9,0.005489531412843283,465.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-22,London,85299.8,85132.0,0.001971056711929743,167.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-22,New York,86131.1,85519.5,0.007151585310952541,611.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (611.6 pts),,,,
+2026-09-23,London,86383.5,85951.2,0.0050295981906012125,432.3,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-23,New York,85837.9,85480.2,0.00418459479505192,357.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",85772.15,85095.54,-69.95,stop_loss
+2026-09-24,London,84537.7,84331.4,0.002446301140500489,206.3,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",84484.89,83951.91,-114.35,stop_loss
+2026-09-24,New York,84302.9,83719.6,0.006967305147181644,583.3,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (583.3 pts),,,,
+2026-09-25,London,84059.9,83769.9,0.0034618639869451917,290.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-25,New York,84306.3,83752.4,0.006613541820891207,553.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (553.9 pts),,,,
+2026-09-26,London,84028.1,83975.0,0.0006323310509080776,53.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (53.1 pts),,,,
+2026-09-26,New York,83901.3,83815.4,0.00102487132436293,85.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (85.9 pts),,,,
+2026-09-27,London,84588.0,84483.1,0.001241668452033533,104.9,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,"second candle closed above the high (strength 84%, fully clear)",84768.25,84461.12,12.46,trailing_stop
+2026-09-27,New York,85146.4,84741.5,0.004778060336434854,404.9,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by bullish_close_at_low",85008.8,84360.16,-67.49,stop_loss
+2026-09-28,London,83018.4,82870.0,0.0017907566067333677,148.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-09-28,New York,83793.6,83349.4,0.005329372496982722,444.2,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",83592.38,84170.67,4.28,trailing_stop
+2026-09-29,London,84164.0,83917.7,0.002935018476435876,246.3,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,
+2026-09-29,New York,84316.9,83971.0,0.004119279274987724,345.9,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",84140.67,84696.33,19.01,trailing_stop
+2026-09-30,London,83396.1,83222.1,0.0020907907875432124,174.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-09-30,New York,85529.9,83963.8,0.01865208577982406,1566.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (1566.1 pts),,,,
+2026-10-01,London,83624.5,83305.0,0.003835304003361143,319.5,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"3 tap(s) of the low, rejected by bullish_close_at_low",83398.48,82930.13,29.86,trailing_stop
+2026-10-01,New York,83943.7,83426.9,0.006194644652983665,516.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (516.8 pts),,,,
+2026-10-02,London,85912.6,85734.6,0.0020761746132833183,178.0,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-10-02,New York,87123.0,86525.0,0.006911297312915342,598.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (598.0 pts),,,,
+2026-10-03,London,84615.0,84520.8,0.001114518556378987,94.2,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (94.2 pts),,,,
+2026-10-03,New York,84928.8,84770.1,0.001872122363899501,158.7,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-10-04,London,84930.7,84875.6,0.0006491853960383345,55.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (55.1 pts),,,,
+2026-10-04,New York,85286.0,85156.9,0.0015160251253862674,129.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x5) with no resolution",,,,
+2026-10-05,London,86376.6,86132.5,0.002834005746959694,244.1,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by bearish_close_at_high",86204.46,86765.29,34.84,trailing_stop
+2026-10-05,New York,86110.8,85761.3,0.00407526471730256,349.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-10-06,London,85465.3,85252.9,0.0024914108493671035,212.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-10-06,New York,86416.3,85956.5,0.005349217336676143,459.8,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by upper_wick_rejection",86257.15,86805.17,21.7,trailing_stop
+2026-10-07,London,84273.3,84178.8,0.0011226104434845828,94.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (94.5 pts),,,,
+2026-10-07,New York,83439.8,83038.1,0.004837538431153856,401.7,SA2,Line tap / rejection at the LOW,LONG,False,True,False,trail/partial,ENTER,"1 tap(s) of the low, rejected by lower_wick_rejection",83161.63,82664.43,26.87,trailing_stop
+2026-10-08,London,83169.5,83041.1,0.0015462222923346893,128.4,SA1,Second-candle clear breakout,SHORT,True,False,False,trail/partial,ENTER,"second candle closed below the low (strength 67%, fully clear)",82931.71,83165.66,3.54,trailing_stop
+2026-10-08,New York,82462.1,81715.0,0.009142752248669226,747.1,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (747.1 pts),,,,
+2026-10-09,London,82575.3,82476.7,0.001195489150269177,98.6,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (98.6 pts),,,,
+2026-10-09,New York,83024.5,82440.0,0.007090004852013586,584.5,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (584.5 pts),,,,
+2026-10-10,London,82738.3,82599.5,0.0016803975810991945,138.8,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-10-10,New York,82818.5,82742.5,0.000918512251865728,76.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (76.0 pts),,,,
+2026-10-11,London,83041.7,82969.9,0.000865374069391465,71.8,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (71.8 pts),,,,
+2026-10-11,New York,83079.0,83044.1,0.0004202586336656569,34.9,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (34.9 pts),,,,
+2026-10-12,London,84093.7,83931.2,0.0019361095754618068,162.5,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,trail/partial,ENTER,reversal candle formed but the next candle did not confirm — momentum held,83554.99,84057.1,15.44,trailing_stop
+2026-10-12,New York,82724.9,82431.8,0.003555666623802844,293.1,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-10-13,London,84046.5,83689.8,0.004262168149523563,356.7,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-10-13,New York,83661.7,83241.6,0.0050467554684195315,420.1,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x2) with no resolution",,,,
+2026-10-14,London,83478.0,83370.5,0.0012894249164872467,107.5,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-10-14,New York,83004.8,82595.3,0.004957909227280487,409.5,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-10-15,London,81402.8,81081.4,0.003963917741923656,321.4,-,no setup,-,False,False,False,trail/partial,AVOID,No sub-agent condition met this session,,,,
+2026-10-15,New York,80719.4,80027.0,0.008652079923025906,692.4,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (692.4 pts),,,,
+2026-10-16,London,82196.5,82065.0,0.0016023883506976178,131.5,SA1,Second-candle clear breakout,LONG,True,False,False,trail/partial,ENTER,second candle closed above the high (strength 54%),82276.85,82073.21,-140.22,stop_loss
+2026-10-16,New York,82043.5,81730.0,0.003835800807537012,313.5,SA2,Line tap / rejection at the HIGH,SHORT,False,True,False,trail/partial,ENTER,"1 tap(s) of the high, rejected by doji_at_high",81973.8,82412.7,-97.22,stop_loss
+2026-10-17,London,81733.0,81614.1,0.0014568561069716406,118.9,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x3, L x2) with no resolution",,,,
+2026-10-17,New York,81502.0,81443.0,0.0007244330390579915,59.0,-,no setup,-,False,False,False,trail/partial,AVOID,Outside the tested range bands (59.0 pts),,,,
+2026-10-18,London,81730.5,81628.1,0.0012544699680623972,102.4,-,no setup,-,False,False,False,trail/partial,AVOID,"Sideways market — both lines tapped repeatedly (H x2, L x3) with no resolution",,,,

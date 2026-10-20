@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+*.json.tmp
+sorb15_state.json
+.DS_Store
