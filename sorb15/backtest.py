@@ -233,8 +233,11 @@ def _run(candles):
                 d = sig["direction"]
                 level = sig["level"]
                 entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
-                buf = C.SL_LEVEL_BUFFER_SA2 if sig["sub_agent"] == "SA2" else C.SL_LEVEL_BUFFER
-                sl = level * (1 - d * buf)
+                if C.SA1_SA4_RANGE_CANDLE_SL and sig["sub_agent"] in ("SA1", "SA4"):
+                    sl = L if d == 1 else H
+                else:
+                    buf = C.SL_LEVEL_BUFFER_SA2 if sig["sub_agent"] == "SA2" else C.SL_LEVEL_BUFFER
+                    sl = level * (1 - d * buf)
                 if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
                     skip("Entry is already beyond its own stop", sig=sig)
                     done = True
@@ -446,6 +449,276 @@ def _run_range_banded(candles):
 
             if not done:
                 last = band_signal(band, sess, H, L, di_full)
+                if last and last.get("state") == "pending":
+                    skip("Still waiting on SA4 confirmation when the session ended", sig=last)
+                else:
+                    skip("No sub-agent condition met this session")
+    return trades, signals
+
+
+# ── experimental: SA2 candle-pattern exit ───────────────────────────────────
+# Built at the user's request: no R-based partial/breakeven/trail for SA2.
+# Instead, reading candle-by-candle, causally, from the entry forward:
+#   - stop = the rejection (trigger) candle's own low (LONG) / high (SHORT),
+#     fixed for the life of the trade (not trailed).
+#   - after at least one candle closes in the trade's favour, the first candle
+#     that closes against it is "rejection #1" — 50% is booked at the NEXT
+#     candle's open.
+#   - watching the remaining 50%, from the candle after that:
+#       * two consecutive candles each break the prior candle's low (LONG) /
+#         high (SHORT) -> reversal confirmed, close the rest there.
+#       * instead, a candle closes back past rejection #1's high (LONG) / low
+#         (SHORT) -> the pullback failed to continue; hold, and look for a
+#         second rejection candle (same definition) -> close the rest at the
+#         NEXT candle's open once it forms.
+#   - never flattened at session end: the position can run across session and
+#     day boundaries until one of the above fires, or data runs out.
+# SA1 / SA4 are untouched here (still simulate(), still one trade per session,
+# still flattened at session end) — only SA2's management differs. While an
+# SA2 trade from this engine is open, no new session (any sub-agent) can enter.
+
+def manage_sa2_pattern(candles, entry_i, d, entry, sl0, qty):
+    slip = C.SLIPPAGE
+    notional = qty * entry * C.USDINR
+    entry_ms = candles[entry_i]["t"]
+    legs = []
+    stop = sl0
+    phase = "await_r1"          # await_r1 -> book_partial -> watch -> await_r2
+    seen_favorable = False
+    rejection1 = None
+    consec_breaks = 0
+    n = len(candles)
+    part_q = sizing.partial_qty(qty)            # exchange-step-rounded, 0.0 if it can't split
+    part_frac = part_q / qty if part_q else 0.0
+
+    def hours(t):
+        return (t - entry_ms) / 3_600_000
+
+    j = entry_i + 1
+    while j < n:
+        c = candles[j]
+        adv = c["low"] if d == 1 else c["high"]
+        if (adv <= stop) if d == 1 else (adv >= stop):
+            gap = (c["open"] < stop) if d == 1 else (c["open"] > stop)
+            px = (c["open"] if gap else stop) * (1 - slip * d)
+            open_frac = 1.0 - sum(f for _, f, _ in legs)
+            legs.append((px, open_frac, hours(c["t"])))
+            return _sa2_pattern_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "stop_loss")
+
+        is_favorable = (c["close"] > c["open"]) if d == 1 else (c["close"] < c["open"])
+        is_counter = (c["close"] < c["open"]) if d == 1 else (c["close"] > c["open"])
+
+        if phase == "await_r1":
+            if is_favorable:
+                seen_favorable = True
+            elif seen_favorable and is_counter:
+                rejection1 = c
+                phase = "book_partial"
+
+        elif phase == "book_partial":
+            if part_frac > 0:
+                px = c["open"] * (1 - slip * d)
+                legs.append((px, part_frac, hours(c["t"])))
+            phase, consec_breaks = "watch", 0
+
+        elif phase == "watch":
+            prior = candles[j - 1]
+            broke = (c["low"] < prior["low"]) if d == 1 else (c["high"] > prior["high"])
+            consec_breaks = consec_breaks + 1 if broke else 0
+            if consec_breaks >= 2:
+                px = c["close"] * (1 - slip * d)
+                open_frac = 1.0 - sum(f for _, f, _ in legs)
+                legs.append((px, open_frac, hours(c["t"])))
+                return _sa2_pattern_result(d, entry, notional, qty, legs, c["t"] + STEP_MS,
+                                            "pattern_reversal_confirmed")
+            recovered = (c["close"] > rejection1["high"]) if d == 1 else (c["close"] < rejection1["low"])
+            if recovered:
+                phase, seen_favorable = "await_r2", False
+
+        elif phase == "await_r2":
+            if is_favorable:
+                seen_favorable = True
+            elif seen_favorable and is_counter:
+                open_frac = 1.0 - sum(f for _, f, _ in legs)
+                if j + 1 < n:
+                    nxt = candles[j + 1]
+                    px = nxt["open"] * (1 - slip * d)
+                    legs.append((px, open_frac, hours(nxt["t"])))
+                    return _sa2_pattern_result(d, entry, notional, qty, legs, nxt["t"] + STEP_MS,
+                                                "second_rejection_exit")
+                px = c["close"] * (1 - slip * d)
+                legs.append((px, open_frac, hours(c["t"])))
+                return _sa2_pattern_result(d, entry, notional, qty, legs, c["t"] + STEP_MS,
+                                            "second_rejection_exit")
+        j += 1
+
+    c = candles[-1]
+    open_frac = 1.0 - sum(f for _, f, _ in legs)
+    if open_frac > 1e-9:
+        legs.append((c["close"] * (1 - slip * d), open_frac, hours(c["t"])))
+    return _sa2_pattern_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "ran_out_of_data")
+
+
+def _sa2_pattern_result(d, entry, notional, qty, legs, exit_ms, reason):
+    gross = inr = 0.0
+    for px, frac, hh in legs:
+        g, v = leg_pnl(d, entry, px, notional, hh, frac)
+        gross += g
+        inr += v
+    inr = max(inr, -C.CAPITAL_INR)
+    return dict(exit_ms=exit_ms, exit=legs[-1][0], exit_reason=reason, legs=len(legs),
+                notional_inr=round(notional), risk_inr=notional * abs(entry - legs[0][0]) / entry,
+                mfe_R=0.0, candles_held=0, gross_inr=gross * notional, partial_hit=len(legs) > 1,
+                qty_btc=qty, R=(d * (legs[-1][0] - entry) / entry), pnl_inr=inr)
+
+
+def run_sa2_custom_exit(candles, **overrides):
+    with C.override(**overrides):
+        return _run_sa2_custom_exit(candles)
+
+
+def _run_sa2_custom_exit(candles):
+    if not candles:
+        return [], []
+    by_t = {c["t"]: i for i, c in enumerate(candles)}
+    t0 = candles[0]["t"]
+    t_end_data = candles[-1]["t"] + STEP_MS
+    days = sorted({dt.datetime.fromtimestamp(c["t"] / 1000, IST).date() for c in candles})
+
+    trades, signals = [], []
+    equity = C.CAPITAL_INR
+    day_pnl, consec, halt_through = {}, 0, None
+    busy_until_ms = None        # an open SA2 trade blocks all sessions until this time
+
+    for day in days:
+        if halt_through is not None and day > halt_through:
+            halt_through, consec = None, 0
+
+        for name, o, dl, e in session_windows(day):
+            o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
+            if o_ms < t0 or e_ms > t_end_data or o_ms not in by_t:
+                continue
+            if busy_until_ms is not None and o_ms < busy_until_ms:
+                signals.append({"date": day, "session": name, "sub_agent": "-", "setup": "no setup",
+                                 "direction": "-", "breakout": False, "rejection": False,
+                                 "momentum_shift": False, "action": "AVOID",
+                                 "reason": "A carried-over SA2 trade from an earlier session is still open"})
+                continue
+            busy_until_ms = None
+
+            i0 = by_t[o_ms]
+            rc = candles[i0]
+            sess, j = [], i0 + 1
+            while j < len(candles) and candles[j]["t"] < e_ms:
+                sess.append(candles[j])
+                j += 1
+            if len(sess) < 3:
+                continue
+            H, L = rc["high"], rc["low"]
+            log = {"date": day, "session": name, "range_high": H, "range_low": L,
+                   "range_pct": (H - L) / L, "sub_agent": "-", "setup": "no setup",
+                   "direction": "-", "breakout": False, "rejection": False,
+                   "momentum_shift": False, "tp": "trail/partial"}
+
+            def skip(reason, action="AVOID", sig=None):
+                if sig:
+                    log.update(sub_agent=sig["sub_agent"], setup=sig["setup"],
+                               direction="LONG" if sig["direction"] == 1 else "SHORT",
+                               breakout=sig["breakout"], rejection=sig["rejection"],
+                               momentum_shift=sig["momentum_shift"])
+                log.update(action=action, reason=reason)
+                signals.append(log)
+
+            if halt_through is not None and day <= halt_through:
+                skip("Halted after a losing streak"); continue
+            if C.DAILY_LOSS_LIMIT_INR and day_pnl.get(day, 0) <= -C.DAILY_LOSS_LIMIT_INR:
+                skip("Daily loss limit reached"); continue
+
+            done = False
+            for k in range(len(sess)):
+                prefix = sess[:k + 1]
+                di = sa.deadline_index(prefix, dl_ms)
+                sig = sa.detect(prefix, H, L, di, name, None)
+                if sig is None:
+                    continue
+                state = sig.get("state")
+                if state == "pending":
+                    continue
+                if state == "veto":
+                    skip("Momentum reversed against the breakout — " + sig["detail"], sig=sig)
+                    done = True
+                    break
+                assert sig["trigger_i"] == k, "a signal must fire on its trigger candle"
+                if sig["trigger_i"] > di:
+                    skip("Trigger candle closed after the entry deadline", sig=sig)
+                    done = True
+                    break
+                entry_i = k + 1
+                if entry_i >= len(sess):
+                    skip("No candle left to enter on", sig=sig)
+                    done = True
+                    break
+                d = sig["direction"]
+                level = sig["level"]
+                entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
+
+                if sig["sub_agent"] == "SA2":
+                    trigger_c = sess[k]
+                    sl = trigger_c["low"] if d == 1 else trigger_c["high"]
+                else:
+                    if C.SA1_SA4_RANGE_CANDLE_SL and sig["sub_agent"] in ("SA1", "SA4"):
+                        sl = L if d == 1 else H
+                    else:
+                        buf = C.SL_LEVEL_BUFFER
+                        sl = level * (1 - d * buf)
+
+                if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
+                    skip("Entry is already beyond its own stop", sig=sig)
+                    done = True
+                    break
+                qty = sizing.qty_for(entry, sl)
+                if qty <= 0:
+                    skip("Size below the exchange minimum (qty / notional)", sig=sig)
+                    done = True
+                    break
+
+                entry_ms = sess[entry_i]["t"]
+                entry_global_i = by_t[entry_ms]
+                if sig["sub_agent"] == "SA2":
+                    res = manage_sa2_pattern(candles, entry_global_i, d, entry, sl, qty)
+                    busy_until_ms = res["exit_ms"]
+                else:
+                    res = simulate(sess, entry_i, d, entry, sl, entry_ms, e_ms, qty)
+
+                equity += res["pnl_inr"]
+                day_pnl[day] = day_pnl.get(day, 0) + res["pnl_inr"]
+                consec = consec + 1 if res["pnl_inr"] <= 0 else 0
+                if C.MAX_CONSEC_LOSSES and consec >= C.MAX_CONSEC_LOSSES:
+                    halt_through = day + dt.timedelta(days=C.HALT_DAYS)
+
+                risk_pct = abs(entry - sl) / entry
+                cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / risk_pct
+                skip(sig["detail"], action="ENTER", sig=sig)
+                log.update(entry=round(entry, 2), sl=round(sl, 2),
+                           pnl_inr=round(res["pnl_inr"], 2), exit_reason=res["exit_reason"])
+                trades.append(dict(
+                    date=day, weekday=day.strftime("%a"), session=name,
+                    sub_agent=sig["sub_agent"], setup=sig["setup"],
+                    side="LONG" if d == 1 else "SHORT",
+                    range_high=H, range_low=L, range_pct=(H - L) / L, level=level,
+                    breakout=sig["breakout"], rejection=sig["rejection"],
+                    momentum_shift=sig["momentum_shift"],
+                    trigger_time=dt.datetime.fromtimestamp(sess[k]["t"] / 1000, IST),
+                    entry_time=dt.datetime.fromtimestamp(entry_ms / 1000, IST),
+                    entry=entry, sl=sl, risk_pct=risk_pct, cost_in_R=cost_in_R,
+                    exit_time=dt.datetime.fromtimestamp(res["exit_ms"] / 1000, IST),
+                    equity_after=round(equity), reason=sig["detail"],
+                    **{k2: v for k2, v in res.items() if k2 != "exit_ms"}))
+                done = True
+                break
+
+            if not done:
+                last = sa.detect(sess, H, L, sa.deadline_index(sess, dl_ms), name, None)
                 if last and last.get("state") == "pending":
                     skip("Still waiting on SA4 confirmation when the session ended", sig=last)
                 else:

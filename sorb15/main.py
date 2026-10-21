@@ -138,12 +138,16 @@ def sync_spec():
     return changed
 
 
-def leg_pnl(trade, px, qty):
-    """Net rupee P&L of closing `qty` at `px`, after taker fees on both legs."""
+def leg_pnl(trade, px, qty, hours=0.0):
+    """Net rupee P&L of closing `qty` at `px`, after taker fees on both legs and
+    funding for the hours held — same formula as backtest.leg_pnl (funding is a
+    rate against the entry-based notional, not the exit price), kept in sync so
+    live paper P&L matches what the backtest validated."""
     d = trade["direction"]
     gross = d * (px - trade["entry"]) * qty * C.USDINR
     fees = (trade["entry"] * qty + px * qty) * C.USDINR * C.TAKER_FEE
-    return gross - fees
+    funding = C.FUNDING_RATE_8H * (hours / 8.0) * trade["entry"] * qty * C.USDINR
+    return gross - fees - funding
 
 
 # ── exchange helpers (live only; all no-ops under DRY_RUN) ───────────────────
@@ -195,8 +199,12 @@ def enter(sig, session, rc, sess, state):
     trigger = sess[sig["trigger_i"]]
     lag_s = (now_ms() - (trigger["t"] + STEP_MS)) / 1000
     entry_px = sess[-1]["close"]
-    buf = C.SL_LEVEL_BUFFER_SA2 if sig["sub_agent"] == "SA2" else C.SL_LEVEL_BUFFER
-    sl = level * (1 - d * buf)
+    if sig["sub_agent"] == "SA2":
+        sl = trigger["low"] if d == 1 else trigger["high"]            # the rejection candle's own extreme
+    elif sig["sub_agent"] in ("SA1", "SA4"):
+        sl = L if d == 1 else H                                       # the range candle's own extreme
+    else:
+        sl = level * (1 - d * C.SL_LEVEL_BUFFER)
 
     def avoid(why):
         notify.send(notify.signal_block(sig, session, H, L, round(entry_px, 2), round(sl, 2),
@@ -242,13 +250,17 @@ def enter(sig, session, rc, sess, state):
         return None
     entry_px = fill
 
+    entry_bar = (now_ms() // STEP_MS) * STEP_MS
     trade = {"sub_agent": sig["sub_agent"], "setup": sig["setup"], "session": session,
              "direction": d, "level": level, "entry": entry_px, "sl": sl, "qty": qty,
              "open_qty": qty, "risk_px": abs(entry_px - sl), "best": entry_px,
              "partial_done": False, "moved_be": False, "realised": 0.0, "seen": {},
              "missing_polls": 0, "position_id": pid,
-             "entry_bar": (now_ms() // STEP_MS) * STEP_MS, "opened_at": int(time.time()),
-             "client_id": cid, "range_high": H, "range_low": L}
+             "entry_bar": entry_bar, "opened_at": int(time.time()),
+             "client_id": cid, "range_high": H, "range_low": L,
+             # SA2 candle-pattern exit state (unused by SA1/SA3/SA4)
+             "phase": "await_r1", "seen_favorable": False, "rejection1": None,
+             "consec_breaks": 0, "pattern_last_t": entry_bar}
     notify.send(notify.signal_block(sig, session, H, L, round(entry_px, 2), round(sl, 2), "ENTER",
                                     sig.get("detail", ""),
                                     result=f"qty {qty}  risk Rs {C.RISK_PER_TRADE_INR:.0f}"))
@@ -301,8 +313,11 @@ def move_stop(trade, new_sl, why, session):
     log.info("stop moved (%s) %.2f -> %.2f", why, old, new_sl)
 
 
-def finish(trade, exit_px, pnl, reason, session, state):
-    state["day_pnl"] += pnl
+def finish(trade, exit_px, pnl, reason, session, state, day_delta=None):
+    # `pnl` is the trade's FULL realised total (it may include an earlier partial
+    # already added to day_pnl when it was booked) — day_pnl must only move by
+    # what's NEW at this step, or a partial gets counted twice.
+    state["day_pnl"] += pnl if day_delta is None else day_delta
     state["consec_losses"] = state["consec_losses"] + 1 if pnl <= 0 else 0
     if C.MAX_CONSEC_LOSSES and state["consec_losses"] >= C.MAX_CONSEC_LOSSES:
         state["halted"] = True
@@ -333,9 +348,11 @@ def end_trade(trade, exit_px, reason, session, state, place_order=False):
             ex.clear_position_orders(pid)
         except Exception:
             pass
-    pnl = trade["realised"] + leg_pnl(trade, exit_px, qty)
+    hours = (now_ms() - trade["entry_bar"]) / 3_600_000
+    final_leg = leg_pnl(trade, exit_px, qty, hours)
+    pnl = trade["realised"] + final_leg
     trade["open_qty"] = 0
-    finish(trade, exit_px, pnl, reason, session, state)
+    finish(trade, exit_px, pnl, reason, session, state, day_delta=final_leg)
     return None
 
 
@@ -375,7 +392,8 @@ def manage(trade, session, end_dt, state):
             if part > 0:
                 px = ptp * (1 - slip * d)
                 ex.market_order("sell" if d == 1 else "buy", part)
-                pnl = leg_pnl(trade, px, part)
+                hours = (since[-1]["t"] - trade["entry_bar"]) / 3_600_000
+                pnl = leg_pnl(trade, px, part, hours)
                 trade["open_qty"] = round(trade["open_qty"] - part, 8)
                 trade["realised"] += pnl
                 state["day_pnl"] += pnl
@@ -407,6 +425,111 @@ def manage(trade, session, end_dt, state):
     return trade
 
 
+# ── SA2 candle-pattern exit (live) ───────────────────────────────────────────
+# No R-based partial/breakeven/trail. The stop is fixed at the rejection candle's
+# own extreme set at entry (never trailed). Mirrors backtest.manage_sa2_pattern():
+#   - after at least one favourable-coloured candle, the first counter-coloured
+#     candle is "rejection #1" -> book 50% at the NEXT candle's open.
+#   - watching the remaining 50%: two consecutive candles each breaking the
+#     prior candle's low (LONG) / high (SHORT) -> close the rest there.
+#   - instead, a candle closes back past rejection #1's high (LONG) / low
+#     (SHORT) -> hold, wait for a second rejection candle, close the rest at
+#     the candle AFTER that one opens.
+# Never flattened at session end — can run across session and day boundaries.
+
+def _close_remaining(trade, px, reason, session, state, t):
+    qty = trade["open_qty"]
+    if qty > 0 and not C.DRY_RUN:
+        ex.market_order("sell" if trade["direction"] == 1 else "buy", qty)
+    hours = (t - trade["entry_bar"]) / 3_600_000
+    final_leg = leg_pnl(trade, px, qty, hours)
+    pnl = trade["realised"] + final_leg
+    trade["open_qty"] = 0
+    finish(trade, px, pnl, reason, session, state, day_delta=final_leg)
+
+
+def manage_sa2_live(trade, session, state):
+    d, slip = trade["direction"], C.SLIPPAGE
+    mins = int((now_ms() - trade["entry_bar"]) / 60000) + 30
+
+    # 1. stop-loss — fixed, never trails
+    since = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=True)
+             if c["t"] >= trade["entry_bar"]]
+    if not since:
+        return trade
+    if C.DRY_RUN:
+        if stop_was_hit(trade, since):
+            return end_trade(trade, trade["sl"] * (1 - slip * d), "stop hit", session, state)
+    else:
+        if ex.open_position() is None:
+            trade["missing_polls"] += 1
+            if trade["missing_polls"] >= 2:
+                return end_trade(trade, trade["sl"] * (1 - slip * d),
+                                 "stopped out on the exchange (approx fill)", session, state)
+            return trade
+        trade["missing_polls"] = 0
+
+    # 2. the candle-pattern state machine, over any newly CLOSED candles
+    closed = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=False)
+              if c["t"] > trade["pattern_last_t"]]
+    for c in closed:
+        trade["pattern_last_t"] = c["t"]
+        is_favorable = (c["close"] > c["open"]) if d == 1 else (c["close"] < c["open"])
+        is_counter = (c["close"] < c["open"]) if d == 1 else (c["close"] > c["open"])
+
+        if trade["phase"] == "await_r1":
+            if is_favorable:
+                trade["seen_favorable"] = True
+            elif trade["seen_favorable"] and is_counter:
+                trade["rejection1"] = {"high": c["high"], "low": c["low"]}
+                trade["phase"] = "book_partial"
+
+        elif trade["phase"] == "book_partial":
+            part = sizing.partial_qty(trade["qty"])
+            if part > 0:
+                px = c["open"] * (1 - slip * d)
+                if not C.DRY_RUN:
+                    ex.market_order("sell" if d == 1 else "buy", part)
+                hours = (c["t"] - trade["entry_bar"]) / 3_600_000
+                pnl = leg_pnl(trade, px, part, hours)
+                trade["open_qty"] = round(trade["open_qty"] - part, 8)
+                trade["realised"] += pnl
+                state["day_pnl"] += pnl
+                trade["partial_done"] = True
+                notify.send(f"<b>PARTIAL</b> {trade['sub_agent']} {session}\n"
+                            f"<pre>closed {part} at {px:,.2f} (rejection candle)\n"
+                            f"P&amp;L Rs {pnl:,.2f}\nremaining qty {trade['open_qty']}</pre>")
+            trade["phase"], trade["consec_breaks"] = "watch", 0
+            trade["prior_hl"] = {"high": c["high"], "low": c["low"]}
+
+        elif trade["phase"] == "watch":
+            prior = trade["prior_hl"]
+            broke = (c["low"] < prior["low"]) if d == 1 else (c["high"] > prior["high"])
+            trade["consec_breaks"] = trade["consec_breaks"] + 1 if broke else 0
+            trade["prior_hl"] = {"high": c["high"], "low": c["low"]}
+            if trade["consec_breaks"] >= 2:
+                _close_remaining(trade, c["close"] * (1 - slip * d),
+                                 "pattern reversal confirmed", session, state, c["t"])
+                return None
+            recovered = (c["close"] > trade["rejection1"]["high"]) if d == 1 \
+                        else (c["close"] < trade["rejection1"]["low"])
+            if recovered:
+                trade["phase"], trade["seen_favorable"] = "await_r2", False
+
+        elif trade["phase"] == "await_r2":
+            if is_favorable:
+                trade["seen_favorable"] = True
+            elif trade["seen_favorable"] and is_counter:
+                trade["phase"] = "exit_on_next_open"
+
+        elif trade["phase"] == "exit_on_next_open":
+            _close_remaining(trade, c["open"] * (1 - slip * d), "second rejection exit",
+                             session, state, c["t"])
+            return None
+
+    return trade
+
+
 # ── main loop ───────────────────────────────────────────────────────────────
 
 def main():
@@ -432,6 +555,15 @@ def main():
             # ---- outside a session ----
             if name is None:
                 if trade:
+                    if trade["sub_agent"] == "SA2":
+                        # SA2's exit is candle-pattern based, not session-bound — keep
+                        # managing it at normal poll speed even with no session open.
+                        state["trade"] = manage_sa2_live(trade, trade["session"], state)
+                        if state["trade"] is None:
+                            state["open_london"] = None
+                        notify.save(state)
+                        time.sleep(C.POLL_SECONDS)
+                        continue
                     # The session ended while we were offline. Flatten, never leave it open.
                     px = ex.candles(minutes_back=60, include_forming=True)[-1]["close"]
                     state["trade"] = end_trade(trade, px, "session ended while the bot was offline",
@@ -444,7 +576,10 @@ def main():
 
             # ---- manage an open trade ----
             if trade:
-                state["trade"] = manage(trade, name, e, state)
+                if trade["sub_agent"] == "SA2":
+                    state["trade"] = manage_sa2_live(trade, name, state)
+                else:
+                    state["trade"] = manage(trade, name, e, state)
                 if state["trade"] is None:
                     state["open_london"] = None
                 notify.save(state)

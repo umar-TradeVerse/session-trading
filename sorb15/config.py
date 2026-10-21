@@ -76,6 +76,10 @@ MAX_HOLD_CANDLES = _i("MAX_HOLD_CANDLES", 0)
 # Skip the session entirely if its range candle's own (high - low), in price points,
 # is wider than this. 0 = off (no filter, as before).
 MAX_RANGE_POINTS = _f("MAX_RANGE_POINTS", 0)
+# SA1 / SA4 only: stop at the range candle's opposite extreme (its low for a LONG,
+# its high for a SHORT) instead of the broken level +/- SL_LEVEL_BUFFER. SA2 is
+# unaffected (still level +/- SL_LEVEL_BUFFER_SA2). Off by default.
+SA1_SA4_RANGE_CANDLE_SL = _b("SA1_SA4_RANGE_CANDLE_SL", False)
 
 # ── detection thresholds ────────────────────────────────────────────────────
 CLEAR_CLOSE_STRENGTH = _f("CLEAR_CLOSE_STRENGTH", 0.50)
