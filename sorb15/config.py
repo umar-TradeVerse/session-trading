@@ -100,6 +100,11 @@ SA2_STRICT_REJECTION = _b("SA2_STRICT_REJECTION", False)
 # own range beyond the level — not just land on the right side of it by any margin.
 SA2_REQUIRE_PULLBACK = _b("SA2_REQUIRE_PULLBACK", False)
 SA2_MIN_PULLBACK_PCT = _f("SA2_MIN_PULLBACK_PCT", 0.30)
+# SA4: baseline gives up on the whole session the moment the FIRST candle that closes
+# beyond a line turns out to be messy (still touching it) — it never looks further. When
+# on, a messy first attempt is skipped instead, and SA4 keeps scanning for a later candle
+# that closes beyond the line cleanly, up to the deadline.
+SA4_SCAN_PAST_IMPURE_BREAKOUT = _b("SA4_SCAN_PAST_IMPURE_BREAKOUT", False)
 # Confirmation before entering SA1 / SA2 (SA4 already has its own):
 #   off          enter on the open right after the signal candle closes (baseline)
 #   next_candle  wait one candle; if it closes AGAINST the trade, cancel

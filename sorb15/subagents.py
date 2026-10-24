@@ -231,7 +231,9 @@ def SA4_breakout_momentum_check(sess, H, L, deadline_i):
         if d == 0:
             continue
         if not clear_of_level(c, d, H, L):
-            return None
+            if C.SA4_SCAN_PAST_IMPURE_BREAKOUT:
+                continue      # this attempt was messy; keep looking for a later clean one
+            return None       # baseline: one messy breakout disqualifies SA4 for the whole session
         base = {"sub_agent": "SA4", "direction": d, "breakout": True,
                 "level": H if d == 1 else L,
                 "setup": "Clean breakout, candle not touching the marked lines"}
