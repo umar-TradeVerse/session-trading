@@ -58,7 +58,7 @@ def signal_block(sig, session, H, L, entry=None, sl=None, action="", reason="", 
 
 _DEFAULT = {"trade": None, "open_london": None, "day": None,
             "day_pnl": 0.0, "consec_losses": 0, "halted": False,
-            "halt_through": None, "done_sessions": []}
+            "halt_through": None, "done_sessions": [], "last_veto": None}
 
 
 def load():

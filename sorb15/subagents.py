@@ -303,6 +303,38 @@ def _confirm(sig, sess):
     return sig
 
 
+# ── SA5 ─────────────────────────────────────────────────────────────────────
+
+def SA5_breakout_flip_detect(sess, H, L, deadline_i):
+    """Same entry trigger as SA4 (clean breakout + momentum window), except where
+    SA4 would veto on a confirmed reversal before entry, SA5 takes the FLIPPED
+    direction instead of standing down. This only covers the first leg's entry;
+    the engine's trade management watches for further reversals after entry and
+    flips again each time one is confirmed (uncapped), which is why SA5 needs
+    its own management path rather than the standard trail."""
+    for i in range(min(len(sess), deadline_i + 1)):
+        c = sess[i]
+        d = closes_beyond(c, H, L)
+        if d == 0:
+            continue
+        if not clear_of_level(c, d, H, L):
+            if C.SA4_SCAN_PAST_IMPURE_BREAKOUT:
+                continue
+            return None
+        base = {"sub_agent": "SA5", "direction": d, "breakout": True,
+                "level": H if d == 1 else L,
+                "setup": "Clean breakout, candle not touching the marked lines (flips on reversal)"}
+        res = _momentum_check(sess, d, i, base)
+        if res.get("state") == "veto":
+            flip_d = -d
+            return {**base, "direction": flip_d, "level": H if flip_d == 1 else L,
+                    "state": "ready", "rejection": True, "momentum_shift": True,
+                    "trigger_i": res["trigger_i"],
+                    "detail": res["detail"] + " — SA5 takes the flip instead of standing down"}
+        return res
+    return None
+
+
 # ── router ──────────────────────────────────────────────────────────────────
 
 def detect(sess, H, L, deadline_i, session_name, open_london):
@@ -311,11 +343,17 @@ def detect(sess, H, L, deadline_i, session_name, open_london):
     Order: SA3 (NY continuation) -> SA1 -> SA4 -> SA2.
     The first sub-agent with something to say takes the session; the rest stand
     down. That is the duplicate guard.
+
+    USE_SA5_INSTEAD_OF_SA4 (off by default) swaps SA4 for SA5 in this same
+    slot — SA5 shares SA4's exact entry trigger, so the two can never coexist
+    in the router; this flag decides which one occupies the slot.
     """
     if session_name == "New York" and open_london:
         sig = SA3_ny_continuation(sess, H, L, deadline_i, open_london)
         if sig:
             return sig
+    breakout_agent = SA5_breakout_flip_detect if C.USE_SA5_INSTEAD_OF_SA4 \
+        else SA4_breakout_momentum_check
     return (_confirm(SA1_second_candle_breakout(sess, H, L, deadline_i), sess)
-            or SA4_breakout_momentum_check(sess, H, L, deadline_i)
+            or breakout_agent(sess, H, L, deadline_i)
             or _confirm(SA2_tap_rejection(sess, H, L, deadline_i), sess))

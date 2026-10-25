@@ -56,7 +56,7 @@ MAX_NOTIONAL_INR = CAPITAL_INR * LEVERAGE
 # ── sessions (IST) ──────────────────────────────────────────────────────────
 TZ = "Asia/Kolkata"
 SESSIONS = {
-    "London":   {"open": dt.time(13, 0), "deadline": dt.time(14, 45), "end": dt.time(18, 45)},
+    "London":   {"open": dt.time(14, 0), "deadline": dt.time(15, 45), "end": dt.time(19, 0)},
     "New York": {"open": dt.time(19, 0), "deadline": dt.time(20, 45), "end": dt.time(1, 15)},
 }
 
@@ -105,6 +105,19 @@ SA2_MIN_PULLBACK_PCT = _f("SA2_MIN_PULLBACK_PCT", 0.30)
 # on, a messy first attempt is skipped instead, and SA4 keeps scanning for a later candle
 # that closes beyond the line cleanly, up to the deadline.
 SA4_SCAN_PAST_IMPURE_BREAKOUT = _b("SA4_SCAN_PAST_IMPURE_BREAKOUT", False)
+# SA5 (breakout + flip-on-reversal): baseline stops each leg at the exact signal candle's
+# own extreme (the range candle for leg 1, the reversal candle for every flip after). When
+# on, each leg's stop instead sits SL_LEVEL_BUFFER beyond that same level, same convention
+# as SA1/SA4/SA2 — tests whether SA5's edge survives a less noise-sensitive stop.
+SA5_USE_BUFFER_SL = _b("SA5_USE_BUFFER_SL", False)
+# Baseline: a veto ends the WHOLE session, even though only that one attempt was cancelled —
+# a stronger setup later in the same session (e.g. a clean SA4 breakout) never gets a look.
+# When on, a veto only kills that attempt; the scan keeps going for another sub-agent's setup.
+CONTINUE_AFTER_VETO = _b("CONTINUE_AFTER_VETO", False)
+# Swaps SA4 for SA5 in the router (same entry trigger, but SA5 flips on a confirmed
+# reversal instead of standing down, and keeps flipping after entry too). The two share
+# one entry trigger so they can never both be active — this picks which one is.
+USE_SA5_INSTEAD_OF_SA4 = _b("USE_SA5_INSTEAD_OF_SA4", False)
 # Confirmation before entering SA1 / SA2 (SA4 already has its own):
 #   off          enter on the open right after the signal candle closes (baseline)
 #   next_candle  wait one candle; if it closes AGAINST the trade, cancel

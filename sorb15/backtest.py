@@ -206,6 +206,8 @@ def _run(candles):
                 skip("Daily loss limit reached"); continue
 
             done = False
+            vetoed_at = None        # candle index of the most recently logged veto, so a
+                                     # persistent veto isn't re-logged on every later candle
             for k in range(len(sess)):
                 prefix = sess[:k + 1]                      # <- the only data any rule sees
                 di = sa.deadline_index(prefix, dl_ms)
@@ -216,6 +218,12 @@ def _run(candles):
                 if state == "pending":
                     continue
                 if state == "veto":
+                    if C.CONTINUE_AFTER_VETO:
+                        if vetoed_at != sig.get("trigger_i"):
+                            skip("Momentum reversed against the breakout — " + sig["detail"]
+                                 + " (still scanning the rest of the session)", sig=sig)
+                            vetoed_at = sig.get("trigger_i")
+                        continue      # this attempt is dead; keep scanning for another setup
                     skip("Momentum reversed against the breakout — " + sig["detail"], sig=sig)
                     done = True
                     break
@@ -635,6 +643,7 @@ def _run_sa2_custom_exit(candles):
                 skip("Daily loss limit reached"); continue
 
             done = False
+            vetoed_at = None
             for k in range(len(sess)):
                 prefix = sess[:k + 1]
                 di = sa.deadline_index(prefix, dl_ms)
@@ -645,6 +654,12 @@ def _run_sa2_custom_exit(candles):
                 if state == "pending":
                     continue
                 if state == "veto":
+                    if C.CONTINUE_AFTER_VETO:
+                        if vetoed_at != sig.get("trigger_i"):
+                            skip("Momentum reversed against the breakout — " + sig["detail"]
+                                 + " (still scanning the rest of the session)", sig=sig)
+                            vetoed_at = sig.get("trigger_i")
+                        continue
                     skip("Momentum reversed against the breakout — " + sig["detail"], sig=sig)
                     done = True
                     break
@@ -665,6 +680,13 @@ def _run_sa2_custom_exit(candles):
                 if sig["sub_agent"] == "SA2":
                     trigger_c = sess[k]
                     sl = trigger_c["low"] if d == 1 else trigger_c["high"]
+                elif sig["sub_agent"] == "SA5":
+                    if sig.get("momentum_shift"):
+                        reversal_c = sess[k - 1]        # the flip was confirmed BY this candle
+                        level0 = reversal_c["low"] if d == 1 else reversal_c["high"]
+                    else:
+                        level0 = L if d == 1 else H
+                    sl = level0 * (1 - d * C.SL_LEVEL_BUFFER) if C.SA5_USE_BUFFER_SL else level0
                 else:
                     if C.SA1_SA4_RANGE_CANDLE_SL and sig["sub_agent"] in ("SA1", "SA4"):
                         sl = L if d == 1 else H
@@ -684,6 +706,46 @@ def _run_sa2_custom_exit(candles):
 
                 entry_ms = sess[entry_i]["t"]
                 entry_global_i = by_t[entry_ms]
+
+                if sig["sub_agent"] == "SA5":
+                    skip(sig["detail"], action="ENTER", sig=sig)
+                    leg_entry_i, leg_d, leg_entry, leg_sl, leg_qty = entry_i, d, entry, sl, qty
+                    leg_num = 1
+                    while True:
+                        res, flip = _sa5_manage_leg(sess, leg_entry_i, leg_d, leg_entry,
+                                                     leg_sl, leg_qty, e_ms)
+                        equity += res["pnl_inr"]
+                        day_pnl[day] = day_pnl.get(day, 0) + res["pnl_inr"]
+                        consec = consec + 1 if res["pnl_inr"] <= 0 else 0
+                        if C.MAX_CONSEC_LOSSES and consec >= C.MAX_CONSEC_LOSSES:
+                            halt_through = day + dt.timedelta(days=C.HALT_DAYS)
+                        leg_risk_pct = abs(leg_entry - leg_sl) / leg_entry
+                        leg_cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / leg_risk_pct
+                        trades.append(dict(
+                            date=day, weekday=day.strftime("%a"), session=name,
+                            sub_agent="SA5", setup=f"{sig['setup']}, leg {leg_num}",
+                            side="LONG" if leg_d == 1 else "SHORT",
+                            range_high=H, range_low=L, range_pct=(H - L) / L,
+                            level=(L if leg_d == 1 else H),
+                            breakout=(leg_num == 1), rejection=(leg_num > 1),
+                            momentum_shift=(leg_num > 1),
+                            trigger_time=dt.datetime.fromtimestamp(
+                                sess[max(leg_entry_i - 1, 0)]["t"] / 1000, IST),
+                            entry_time=dt.datetime.fromtimestamp(sess[leg_entry_i]["t"] / 1000, IST),
+                            entry=leg_entry, sl=leg_sl, risk_pct=leg_risk_pct,
+                            cost_in_R=leg_cost_in_R,
+                            exit_time=dt.datetime.fromtimestamp(res["exit_ms"] / 1000, IST),
+                            equity_after=round(equity), reason=f"leg {leg_num}: {res['exit_reason']}",
+                            **{k2: v for k2, v in res.items() if k2 != "exit_ms"}))
+                        if flip is None or flip["entry_i"] >= len(sess):
+                            break
+                        leg_num += 1
+                        leg_d = -leg_d
+                        leg_entry_i, leg_entry, leg_sl, leg_qty = (
+                            flip["entry_i"], flip["entry"], flip["sl"], flip["qty"])
+                    done = True
+                    break
+
                 if sig["sub_agent"] == "SA2":
                     res = manage_sa2_pattern(candles, entry_global_i, d, entry, sl, qty)
                     busy_until_ms = res["exit_ms"]
@@ -767,6 +829,227 @@ def audit_causality(candles, trades, sample=300, seed=0, **overrides):
                 or abs(x["sl"] - t["sl"]) > 1e-6 or abs(x["entry"] - t["entry"]) > 1e-6):
             bad.append((t["date"], t["session"], t["sub_agent"]))
     return len(pick), bad
+
+
+# ── experimental: SA5 — breakout, ride, flip on confirmed reversal ──────────
+# A new sub-agent, built at the user's request, tested here as the ONLY agent
+# in the router so its standalone edge reads cleanly, separate from SA1-4.
+# Same entry trigger as SA4 (clean breakout + 2-candle momentum check), except:
+#   - where SA4 would veto on a confirmed reversal before entry, SA5 enters
+#     the FLIPPED direction immediately instead of standing down.
+#   - once in a trade, it keeps watching the WHOLE session (not just the
+#     initial 2 candles) for a confirmed reversal -- a doji/long-wick candle
+#     against the position, followed by a candle closing through it -- and
+#     flips to the opposite direction every time one appears. No cap on flips.
+# Each leg's stop = the signal candle's own extreme (the range candle for the
+# first leg, the reversal candle itself for every flip after that).
+# Session-bound: flattens at session end like SA1/SA4 -- no cross-session carry.
+
+def _sa5_manage_leg(sess, entry_i, d, entry, sl, qty, end_ms):
+    """One SA5 leg: fixed stop vs. a confirmed reversal, which ends this leg and
+    hands back what's needed to open the flipped leg on the next candle's open.
+    Returns (result_dict, flip_info_or_None)."""
+    slip = C.SLIPPAGE
+    notional = qty * entry * C.USDINR
+    entry_ms = sess[entry_i]["t"]
+    n = len(sess)
+
+    def result(exit_ms, px, reason, j):
+        hours = (exit_ms - entry_ms) / 3_600_000
+        g, v = leg_pnl(d, entry, px, notional, hours, 1.0)
+        return dict(exit_ms=exit_ms, exit=px, exit_reason=reason, legs=1,
+                    notional_inr=round(notional), risk_inr=notional * abs(entry - sl) / entry,
+                    mfe_R=0.0, candles_held=max(j - entry_i, 0), gross_inr=g * notional,
+                    partial_hit=False, qty_btc=qty, R=d * (px - entry) / entry, pnl_inr=v)
+
+    j = entry_i
+    while j < n:
+        c = sess[j]
+        adv = c["low"] if d == 1 else c["high"]
+        if (adv <= sl) if d == 1 else (adv >= sl):
+            gap = (c["open"] < sl) if d == 1 else (c["open"] > sl)
+            px = (c["open"] if gap else sl) * (1 - slip * d)
+            return result(c["t"] + STEP_MS, px, "stop_loss", j), None
+
+        if j > entry_i and sa.reversal_candle(c, d) and j + 1 < n:
+            nxt = sess[j + 1]
+            flipped = ((d == -1 and nxt["close"] > c["high"]) or
+                       (d == 1 and nxt["close"] < c["low"]))
+            if flipped:
+                px = nxt["open"] * (1 - slip * d)
+                res = result(nxt["t"], px, "reversal_flip", j)
+                new_d = -d
+                new_entry_i = j + 2
+                if new_entry_i >= n:
+                    return res, None
+                new_entry = sess[new_entry_i]["open"] * (1 + slip * new_d)
+                new_level = c["low"] if new_d == 1 else c["high"]
+                new_sl = new_level * (1 - new_d * C.SL_LEVEL_BUFFER) if C.SA5_USE_BUFFER_SL else new_level
+                if (new_d == 1 and new_entry <= new_sl) or (new_d == -1 and new_entry >= new_sl):
+                    return res, None
+                new_qty = sizing.qty_for(new_entry, new_sl)
+                if new_qty <= 0:
+                    return res, None
+                return res, {"entry_i": new_entry_i, "entry": new_entry, "sl": new_sl, "qty": new_qty}
+
+        if c["t"] + STEP_MS >= end_ms:
+            px = c["close"] * (1 - slip * d)
+            return result(c["t"] + STEP_MS, px, "session_end", j), None
+        j += 1
+
+    c = sess[-1]
+    return result(c["t"] + STEP_MS, c["close"] * (1 - slip * d), "ran_out_of_data", n - 1), None
+
+
+def run_sa5_breakout_flip(candles, **overrides):
+    with C.override(**overrides):
+        return _run_sa5_breakout_flip(candles)
+
+
+def _run_sa5_breakout_flip(candles):
+    if not candles:
+        return [], []
+    by_t = {c["t"]: i for i, c in enumerate(candles)}
+    t0 = candles[0]["t"]
+    t_end_data = candles[-1]["t"] + STEP_MS
+    days = sorted({dt.datetime.fromtimestamp(c["t"] / 1000, IST).date() for c in candles})
+
+    trades, signals = [], []
+    equity = C.CAPITAL_INR
+    day_pnl, consec, halt_through = {}, 0, None
+
+    for day in days:
+        if halt_through is not None and day > halt_through:
+            halt_through, consec = None, 0
+
+        for name, o, dl, e in session_windows(day):
+            o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
+            if o_ms < t0 or e_ms > t_end_data or o_ms not in by_t:
+                continue
+            i0 = by_t[o_ms]
+            rc = candles[i0]
+            sess, j = [], i0 + 1
+            while j < len(candles) and candles[j]["t"] < e_ms:
+                sess.append(candles[j])
+                j += 1
+            if len(sess) < 3:
+                continue
+            H, L = rc["high"], rc["low"]
+            di = sa.deadline_index(sess, dl_ms)
+            log = {"date": day, "session": name, "range_high": H, "range_low": L,
+                   "range_pct": (H - L) / L, "sub_agent": "-", "setup": "no setup",
+                   "direction": "-", "breakout": False, "rejection": False,
+                   "momentum_shift": False, "tp": "flip"}
+
+            def skip(reason):
+                log.update(action="AVOID", reason=reason)
+                signals.append(dict(log))
+
+            if halt_through is not None and day <= halt_through:
+                skip("Halted after a losing streak"); continue
+            if C.DAILY_LOSS_LIMIT_INR and day_pnl.get(day, 0) <= -C.DAILY_LOSS_LIMIT_INR:
+                skip("Daily loss limit reached"); continue
+
+            entry_i0, d0 = None, None
+            for i in range(min(len(sess), di + 1)):
+                c = sess[i]
+                dd = sa.closes_beyond(c, H, L)
+                if dd == 0:
+                    continue
+                if not sa.clear_of_level(c, dd, H, L):
+                    if C.SA4_SCAN_PAST_IMPURE_BREAKOUT:
+                        continue
+                    entry_i0 = None
+                    break
+                entry_i0, d0 = i, dd
+                break
+            if entry_i0 is None:
+                skip("No clean breakout this session")
+                continue
+
+            direction, trigger_i, sl0_from, sl0_candle = d0, None, "range", None
+            abort = False
+            for jj in range(entry_i0 + 1, entry_i0 + 1 + C.MOMENTUM_WINDOW):
+                if jj >= len(sess):
+                    abort = True
+                    break
+                cj = sess[jj]
+                if not sa.reversal_candle(cj, direction):
+                    continue
+                if jj + 1 >= len(sess):
+                    abort = True
+                    break
+                nxt = sess[jj + 1]
+                flipped = ((direction == -1 and nxt["close"] > cj["high"]) or
+                           (direction == 1 and nxt["close"] < cj["low"]))
+                if flipped:
+                    direction = -direction
+                    sl0_from, sl0_candle = "reversal", cj
+                trigger_i = jj + 1
+                break
+            if abort:
+                skip("Momentum window never resolved before data ran out")
+                continue
+            if trigger_i is None:
+                trigger_i = min(entry_i0 + C.MOMENTUM_WINDOW, len(sess) - 1)
+            if trigger_i > di:
+                skip("Signal completed after the entry deadline")
+                continue
+            entry_i = trigger_i + 1
+            if entry_i >= len(sess):
+                skip("No candle left to enter on")
+                continue
+
+            d = direction
+            entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
+            level0 = (L if d == 1 else H) if sl0_from == "range" else \
+                     (sl0_candle["low"] if d == 1 else sl0_candle["high"])
+            sl = level0 * (1 - d * C.SL_LEVEL_BUFFER) if C.SA5_USE_BUFFER_SL else level0
+            if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
+                skip("Entry is already beyond its own stop")
+                continue
+            qty = sizing.qty_for(entry, sl)
+            if qty <= 0:
+                skip("Size below the exchange minimum (qty / notional)")
+                continue
+
+            leg_entry_i, leg_d, leg_entry, leg_sl, leg_qty = entry_i, d, entry, sl, qty
+            leg_num = 1
+            while True:
+                res, flip = _sa5_manage_leg(sess, leg_entry_i, leg_d, leg_entry, leg_sl, leg_qty, e_ms)
+                equity += res["pnl_inr"]
+                day_pnl[day] = day_pnl.get(day, 0) + res["pnl_inr"]
+                consec = consec + 1 if res["pnl_inr"] <= 0 else 0
+                if C.MAX_CONSEC_LOSSES and consec >= C.MAX_CONSEC_LOSSES:
+                    halt_through = day + dt.timedelta(days=C.HALT_DAYS)
+                risk_pct = abs(leg_entry - leg_sl) / leg_entry
+                cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / risk_pct
+                if leg_num == 1:
+                    log.update(sub_agent="SA5", setup="Breakout + flip-on-reversal",
+                               direction="LONG" if leg_d == 1 else "SHORT",
+                               breakout=True, rejection=False, momentum_shift=False,
+                               action="ENTER", reason="clean breakout, momentum confirmed")
+                    signals.append(dict(log))
+                trades.append(dict(
+                    date=day, weekday=day.strftime("%a"), session=name,
+                    sub_agent="SA5", setup=f"Breakout + flip-on-reversal, leg {leg_num}",
+                    side="LONG" if leg_d == 1 else "SHORT",
+                    range_high=H, range_low=L, range_pct=(H - L) / L,
+                    level=(L if leg_d == 1 else H),
+                    breakout=(leg_num == 1), rejection=(leg_num > 1), momentum_shift=(leg_num > 1),
+                    trigger_time=dt.datetime.fromtimestamp(sess[max(leg_entry_i - 1, 0)]["t"] / 1000, IST),
+                    entry_time=dt.datetime.fromtimestamp(sess[leg_entry_i]["t"] / 1000, IST),
+                    entry=leg_entry, sl=leg_sl, risk_pct=risk_pct, cost_in_R=cost_in_R,
+                    exit_time=dt.datetime.fromtimestamp(res["exit_ms"] / 1000, IST),
+                    equity_after=round(equity), reason=f"leg {leg_num}: {res['exit_reason']}",
+                    **{k2: v for k2, v in res.items() if k2 != "exit_ms"}))
+                if flip is None or flip["entry_i"] >= len(sess):
+                    break
+                leg_num += 1
+                leg_d = -leg_d
+                leg_entry_i, leg_entry, leg_sl, leg_qty = (
+                    flip["entry_i"], flip["entry"], flip["sl"], flip["qty"])
+    return trades, signals
 
 
 if __name__ == "__main__":

@@ -119,7 +119,7 @@ check("10:00 -> none", A(dt.datetime(2026, 9, 28, 10, 0, tzinfo=M.IST))[0], None
 check("00:30 -> New York (past midnight)", A(dt.datetime(2026, 9, 29, 0, 30, tzinfo=M.IST))[0],
       "New York")
 nap = M.seconds_to_next_open(dt.datetime(2026, 9, 28, 10, 0, tzinfo=M.IST))
-check("sleeps until 13:00", 10700 < nap < 10900, True)
+check("sleeps until 14:00", 14300 < nap < 14500, True)
 
 print("Halt logic — a streak halts, and the halt LIFTS")
 st = {"day": "2026-09-28", "halted": True, "halt_through": "2026-09-29", "consec_losses": 4,
@@ -445,7 +445,7 @@ for name, ov in VARS.items():
           (len(tr_) > 0, max(per.values()) == 1, len(bad_)), (True, True, 0))
 check("the switches restore: back to the baseline afterwards", len(B.run(cs_)[0]), len(base_tr))
 check("BASELINE FINGERPRINT unchanged (seed 11, 270 days) — no optional rule is leaking into the default",
-      synth.signature(B.run(synth.candles())[0]), ("b0b0fd5f8380f66b", 242))
+      synth.signature(B.run(synth.candles())[0]), ("2f6ec4de24d1060c", 230))
 
 print("End-to-end: the two flagged sessions replayed through the whole engine")
 def day_candles(start, shape, n_total):
@@ -462,13 +462,14 @@ def day_candles(start, shape, n_total):
 IST_ = B.IST
 ms_ = lambda y, mo, d, h, mi: int(dt.datetime(y, mo, d, h, mi, tzinfo=IST_).timestamp() * 1000)
 
-# 16 Oct London. Range candle 13:00 sets 82,065.0-82,196.5; the 13:15 candle touches the line and closes above
-# it (SA1 LONG); the 13:30 candle reverses; price then falls through the stop.
-lon = day_candles(ms_(2026, 10, 16, 13, 0), [
-    (82100, 82196.5, 82065.0, 82150),        # 13:00 the range candle
-    (82170, 82260, 82140, 82258),            # 13:15 touching breakout
-    (82258, 82262, 82195, 82200),            # 13:30 the reversal
-    (82200, 82205, 82060, 82070),            # 13:45 down through the stop
+# Same pattern the real 16 Oct London ledger reproduced under the old 13:00 session open
+# (now 14:00): range candle sets 82,065.0-82,196.5; the next candle touches the line and
+# closes above it (SA1 LONG); the candle after that reverses; price then falls through the stop.
+lon = day_candles(ms_(2026, 10, 16, 14, 0), [
+    (82100, 82196.5, 82065.0, 82150),        # 14:00 the range candle
+    (82170, 82260, 82140, 82258),            # 14:15 touching breakout
+    (82258, 82262, 82195, 82200),            # 14:30 the reversal
+    (82200, 82205, 82060, 82070),            # 14:45 down through the stop
 ], 28)
 def outcome(candles, date, session, **ov):
     tr, sg = B.run(candles, **ov)

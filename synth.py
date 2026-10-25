@@ -2,7 +2,8 @@
 
     from synth import candles, signature
     trades, _ = backtest.run(candles())          # seed 11, 270 days
-    signature(trades)                            # -> ('b0b0fd5f8380f66b', 242) with all optional rules OFF
+    signature(trades)                            # -> ('2f6ec4de24d1060c', 230) with all optional rules OFF
+                                                  # (London session moved to 14:00-19:00 on 2026-10-26)
 
 That fingerprint is the proof that a code change did not alter baseline behaviour: if it moves
 with every optional switch off, something in the engine changed.

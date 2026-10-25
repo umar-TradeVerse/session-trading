@@ -203,6 +203,13 @@ def enter(sig, session, rc, sess, state):
         sl = trigger["low"] if d == 1 else trigger["high"]            # the rejection candle's own extreme
     elif sig["sub_agent"] in ("SA1", "SA4"):
         sl = L if d == 1 else H                                       # the range candle's own extreme
+    elif sig["sub_agent"] == "SA5":
+        if sig.get("momentum_shift"):
+            reversal_c = sess[sig["trigger_i"] - 1]     # the flip was confirmed BY the trigger candle
+            level0 = reversal_c["low"] if d == 1 else reversal_c["high"]
+        else:
+            level0 = L if d == 1 else H
+        sl = level0 * (1 - d * C.SL_LEVEL_BUFFER) if C.SA5_USE_BUFFER_SL else level0
     else:
         sl = level * (1 - d * C.SL_LEVEL_BUFFER)
 
@@ -258,9 +265,11 @@ def enter(sig, session, rc, sess, state):
              "missing_polls": 0, "position_id": pid,
              "entry_bar": entry_bar, "opened_at": int(time.time()),
              "client_id": cid, "range_high": H, "range_low": L,
-             # SA2 candle-pattern exit state (unused by SA1/SA3/SA4)
+             # SA2 candle-pattern exit state (unused by SA1/SA3/SA4/SA5)
              "phase": "await_r1", "seen_favorable": False, "rejection1": None,
-             "consec_breaks": 0, "pattern_last_t": entry_bar}
+             "consec_breaks": 0, "pattern_last_t": entry_bar,
+             # SA5 candle-pattern flip state (unused by everyone else)
+             "sa5_pending_reversal": None, "sa5_skip_reversal_check_once": False}
     notify.send(notify.signal_block(sig, session, H, L, round(entry_px, 2), round(sl, 2), "ENTER",
                                     sig.get("detail", ""),
                                     result=f"qty {qty}  risk Rs {C.RISK_PER_TRADE_INR:.0f}"))
@@ -530,6 +539,93 @@ def manage_sa2_live(trade, session, state):
     return trade
 
 
+# ── SA5 candle-pattern flip (live) ───────────────────────────────────────────
+# Mirrors backtest._sa5_manage_leg(): the stop is fixed (never trails); any closed
+# candle after entry that is a reversal_candle() against the position is held as a
+# pending reversal, and if the VERY NEXT closed candle confirms it (closes through
+# that reversal candle's own extreme), the leg ends and flips to the opposite side
+# immediately. Live can't fill at "the next candle's open" the way the backtest
+# does, so both the exit and the new entry use the best price available right now
+# (the confirming candle's close) instead of waiting for one more candle.
+
+def manage_sa5_live(trade, session, end_dt, state):
+    d, slip = trade["direction"], C.SLIPPAGE
+    mins = int((now_ms() - trade["entry_bar"]) / 60000) + 30
+
+    since = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=True)
+             if c["t"] >= trade["entry_bar"]]
+    if not since:
+        return trade
+    if now_ist() >= end_dt - dt.timedelta(minutes=1):
+        last_px = since[-1]["close"] * (1 - slip * d)
+        return end_trade(trade, last_px, "session end", session, state, place_order=not C.DRY_RUN)
+    if C.DRY_RUN:
+        if stop_was_hit(trade, since):
+            return end_trade(trade, trade["sl"] * (1 - slip * d), "stop hit", session, state)
+    else:
+        if ex.open_position() is None:
+            trade["missing_polls"] += 1
+            if trade["missing_polls"] >= 2:
+                return end_trade(trade, trade["sl"] * (1 - slip * d),
+                                 "stopped out on the exchange (approx fill)", session, state)
+            return trade
+        trade["missing_polls"] = 0
+
+    closed = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=False)
+              if c["t"] > trade["pattern_last_t"]]
+    for c in closed:
+        trade["pattern_last_t"] = c["t"]
+        skip_check = trade.pop("sa5_skip_reversal_check_once", False)
+        pending = trade.get("sa5_pending_reversal")
+        if pending:
+            flipped = ((d == -1 and c["close"] > pending["high"]) or
+                       (d == 1 and c["close"] < pending["low"]))
+            if flipped:
+                px = c["close"] * (1 - slip * d)
+                hours = (c["t"] - trade["entry_bar"]) / 3_600_000
+                leg_pnl_v = leg_pnl(trade, px, trade["open_qty"], hours)
+                total_leg_pnl = trade["realised"] + leg_pnl_v
+                state["day_pnl"] += leg_pnl_v
+                state["consec_losses"] = state["consec_losses"] + 1 if total_leg_pnl <= 0 else 0
+                if C.MAX_CONSEC_LOSSES and state["consec_losses"] >= C.MAX_CONSEC_LOSSES:
+                    state["halted"] = True
+                    state["halt_through"] = str(now_ist().date() + dt.timedelta(days=C.HALT_DAYS))
+                    notify.send(f"⚠️ <b>HALTED</b> — {state['consec_losses']} losses in a row. "
+                                f"No new trades through {state['halt_through']} (IST).")
+
+                new_d = -d
+                new_level = pending["low"] if new_d == 1 else pending["high"]
+                new_sl = new_level * (1 - new_d * C.SL_LEVEL_BUFFER) if C.SA5_USE_BUFFER_SL \
+                    else new_level
+                new_entry = px * (1 + slip * new_d)
+                bad_sl = (new_d == 1 and new_entry <= new_sl) or (new_d == -1 and new_entry >= new_sl)
+                new_qty = 0 if bad_sl else contracts(new_entry, new_sl)
+                if not C.DRY_RUN:
+                    ex.market_order("sell" if d == 1 else "buy", trade["open_qty"])
+                notify.send(f"<b>FLIP</b> {trade['sub_agent']} {session}\n"
+                            f"<pre>closed {'LONG' if d == 1 else 'SHORT'} at {px:,.2f}\n"
+                            f"leg P&amp;L Rs {total_leg_pnl:,.2f}  day P&amp;L Rs {state['day_pnl']:,.2f}"
+                            f"{'' if new_qty > 0 else chr(10) + 'no further leg — size/stop invalid'}"
+                            f"</pre>", silent=(new_qty > 0))
+                log.info("FLIP %s leg pnl=%.2f", trade["sub_agent"], total_leg_pnl)
+                if new_qty <= 0:
+                    return None
+                if not C.DRY_RUN:
+                    ex.market_order("buy" if new_d == 1 else "sell", new_qty)
+                trade.update(direction=new_d, entry=new_entry, sl=new_sl, qty=new_qty,
+                             open_qty=new_qty, risk_px=abs(new_entry - new_sl), best=new_entry,
+                             realised=0.0, seen={}, missing_polls=0,
+                             entry_bar=c["t"], sa5_pending_reversal=None,
+                             sa5_skip_reversal_check_once=True)
+                d = new_d
+                continue
+            trade["sa5_pending_reversal"] = None
+        if not skip_check and sa.reversal_candle(c, d):
+            trade["sa5_pending_reversal"] = {"high": c["high"], "low": c["low"]}
+
+    return trade
+
+
 # ── main loop ───────────────────────────────────────────────────────────────
 
 def main():
@@ -578,6 +674,8 @@ def main():
             if trade:
                 if trade["sub_agent"] == "SA2":
                     state["trade"] = manage_sa2_live(trade, name, state)
+                elif trade["sub_agent"] == "SA5":
+                    state["trade"] = manage_sa5_live(trade, name, e, state)
                 else:
                     state["trade"] = manage(trade, name, e, state)
                 if state["trade"] is None:
@@ -626,6 +724,17 @@ def main():
                 time.sleep(C.POLL_SECONDS)
                 continue
             if st == "veto":
+                if C.CONTINUE_AFTER_VETO:
+                    veto_key = [key, sig.get("trigger_i")]
+                    if state.get("last_veto") != veto_key:
+                        notify.send(notify.signal_block(
+                            sig, name, H, L, action="AVOID",
+                            reason="Momentum reversed against the breakout — " + sig["detail"]
+                                   + " (still watching for another setup)"), silent=True)
+                        state["last_veto"] = veto_key
+                        notify.save(state)
+                    time.sleep(C.POLL_SECONDS)
+                    continue
                 close_session(notify.signal_block(
                     sig, name, H, L, action="AVOID",
                     reason="Momentum reversed against the breakout — " + sig["detail"]),
