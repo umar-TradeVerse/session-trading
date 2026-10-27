@@ -1,0 +1,823 @@
+date,session,sub_agent,setup,direction,breakout,rejection,momentum_shift,tp,action,reason,entry,sl,pnl_inr,exit_reason
+2025-12-31,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,88637.32,87473.71,-679.87,stop_loss
+2026-01-01,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,87876.27,86475.02,410.84,day_end
+2026-01-01,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-02,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-02,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-02,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,89338.63,90696.04,-782.98,stop_loss
+2026-01-03,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,90142.22,88742.49,160.67,day_end
+2026-01-03,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-03,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-04,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-04,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-04,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-05,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,93172.63,90726.87,261.59,day_end
+2026-01-05,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-06,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-06,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,93569.61,91905.23,-951.27,stop_loss
+2026-01-06,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-07,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,92750.55,94902.5,669.9,day_end
+2026-01-07,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-07,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-08,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-08,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,89961.3,91705.25,-653.84,day_end
+2026-01-08,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-09,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,91470.59,89756.75,-975.75,stop_loss
+2026-01-09,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-09,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-01-10,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-10,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-10,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,90498.6,92023.76,-56.0,day_end
+2026-01-11,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-01-11,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-11,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,91092.91,89478.98,-139.48,day_end
+2026-01-12,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,91359.37,89635.0,-136.2,day_end
+2026-01-12,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-13,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 5, confirmed by the next",91139.07,92583.63,-833.65,stop_loss
+2026-01-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-13,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-14,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,95208.85,96739.35,-738.17,stop_loss
+2026-01-14,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-14,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-15,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,96680.66,98177.5,419.31,day_end
+2026-01-15,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-16,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-16,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-17,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-17,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-17,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-18,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,94931.01,96476.87,510.47,day_end
+2026-01-18,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-19,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-19,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-19,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-20,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-20,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-21,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,89018.2,87251.3,-1006.56,stop_loss
+2026-01-21,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-21,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-22,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,89985.29,88338.84,-325.35,day_end
+2026-01-22,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-22,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-23,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-23,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-23,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,88800.96,87982.17,564.6,day_end
+2026-01-24,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,89517.29,90809.82,99.39,day_end
+2026-01-24,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-24,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-25,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 1, confirmed by the next",89293.56,87891.55,-814.01,stop_loss
+2026-01-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-26,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-26,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,87709.25,89311.78,-384.31,day_end
+2026-01-26,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-27,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-27,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,87974.7,89479.56,-865.36,stop_loss
+2026-01-27,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-28,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,89336.26,87903.86,-117.43,day_end
+2026-01-28,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-29,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-29,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,87833.43,89376.94,1598.11,day_end
+2026-01-29,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,83716.55,85755.93,-334.62,day_end
+2026-01-30,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-30,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-01-31,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-01-31,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-01-31,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,81436.21,83685.73,1846.07,day_end
+2026-02-01,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-01,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-01,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-02-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76799.96,76515.69,84.4,stop_loss
+2026-02-02,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-02,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78264.65,76808.82,191.85,day_end
+2026-02-03,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78882.67,77571.41,-875.54,stop_loss
+2026-02-03,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78249.45,79931.25,1923.91,day_end
+2026-02-03,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-04,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76503.3,74607.15,-1240.78,stop_loss
+2026-02-04,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-05,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 5, confirmed by the next",72374.62,73828.26,2618.21,all_targets_hit
+2026-02-05,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-06,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64700.84,62083.17,3825.64,day_end
+2026-02-06,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-06,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-07,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-07,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-07,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-08,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,69330.33,70151.62,-649.93,stop_loss
+2026-02-08,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-08,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 6, confirmed by the next",71085.78,72217.66,-761.77,stop_loss
+2026-02-09,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-09,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-09,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,69218.65,70043.22,-648.93,stop_loss
+2026-02-10,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,70314.33,70983.62,1015.06,day_end
+2026-02-10,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-10,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-11,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-02-11,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-11,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Entry is already beyond its own stop,,,,
+2026-02-12,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67685.43,66338.17,-1022.97,stop_loss
+2026-02-12,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-13,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66206.66,67130.07,-720.65,stop_loss
+2026-02-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-13,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-02-14,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,69036.8,67829.66,453.36,day_end
+2026-02-14,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-14,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-15,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-15,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-16,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-16,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,68974.79,67704.47,-964.48,stop_loss
+2026-02-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-17,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-17,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-17,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 3, confirmed by the next",66833.43,68943.77,-522.47,day_end
+2026-02-18,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67007.4,68480.93,333.42,day_end
+2026-02-18,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-19,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-19,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66825.06,65927.53,-698.72,stop_loss
+2026-02-19,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-20,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67315.46,66170.82,388.52,day_end
+2026-02-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-20,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-21,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67804.94,68915.86,-169.4,day_end
+2026-02-21,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-21,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-22,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67981.5,68914.24,179.62,day_end
+2026-02-22,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-22,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-23,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,65431.31,68573.2,490.67,day_end
+2026-02-23,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-23,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-24,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-24,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-24,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-25,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,65934.18,63091.22,1343.64,day_end
+2026-02-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-26,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-02-26,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,68566.71,67086.87,-1111.38,stop_loss
+2026-02-26,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-27,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67020.69,68252.25,755.96,day_end
+2026-02-27,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-27,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-02-28,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-02-28,London,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 6, confirmed by the next",63923.78,62781.44,1869.28,day_end
+2026-02-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-01,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-03-01,London,SA1,Second-candle clear breakout,SHORT,True,False,False,staged 2R/3R/4R,ENTER,second candle closed below the low,66521.69,68106.8,470.12,day_end
+2026-03-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66539.41,65204.44,1660.57,day_end
+2026-03-02,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-02,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-03,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-03,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,66601.08,68283.52,-1252.89,stop_loss
+2026-03-03,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-04,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-04,London,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,71007.9,68840.66,1071.55,day_end
+2026-03-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-05,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-05,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,72546.61,71096.81,-958.06,stop_loss
+2026-03-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-06,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-06,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,70496.7,71895.9,1622.41,day_end
+2026-03-06,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-07,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,68216.24,67215.91,-781.02,stop_loss
+2026-03-07,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-07,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-08,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-08,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67676.53,66551.82,-864.53,stop_loss
+2026-03-08,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-09,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-03-09,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-03-09,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-10,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,69087.01,67448.76,492.77,day_end
+2026-03-10,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-10,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-11,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-11,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-11,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-12,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-03-12,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-12,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,69693.76,70949.92,-626.62,day_end
+2026-03-13,Tokyo,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,71463.29,70022.66,-423.23,day_end
+2026-03-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-13,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-14,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,70736.45,71769.53,-390.95,day_end
+2026-03-14,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-14,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-15,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-03-15,London,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,71689.23,70472.42,602.02,day_end
+2026-03-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-16,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,72273.94,73757.51,-976.75,stop_loss
+2026-03-16,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-16,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-03-17,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-03-17,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-03-17,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 3, confirmed by the next",74355.07,73054.69,-365.48,day_end
+2026-03-18,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,73855.13,74869.44,1430.87,day_end
+2026-03-18,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-19,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-03-19,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-03-19,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 6, confirmed by the next",68848.63,70247.44,-1053.82,stop_loss
+2026-03-20,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,70554.41,69045.94,-139.72,day_end
+2026-03-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-20,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-21,Tokyo,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,70629.42,69500.91,-877.38,stop_loss
+2026-03-21,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-21,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-22,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-22,London,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 10, confirmed by the next",68351.33,69550.84,293.04,day_end
+2026-03-22,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-23,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-23,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-03-23,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,71424.08,70317.18,-742.84,stop_loss
+2026-03-24,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,70519.89,71805.16,-85.3,day_end
+2026-03-24,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-24,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-25,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,70741.25,69662.65,308.95,day_end
+2026-03-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-26,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-26,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-03-26,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 5, confirmed by the next",68985.1,70196.28,66.76,day_end
+2026-03-27,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-27,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-03-27,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-03-28,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-03-28,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,66216.05,67376.51,-156.1,day_end
+2026-03-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-29,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-03-29,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-03-29,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-03-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66384.67,65063.09,189.64,day_end
+2026-03-30,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-30,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-31,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,67756.55,65790.51,262.24,day_end
+2026-03-31,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-03-31,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-01,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 18, confirmed by the next",68380.07,67217.88,-284.2,day_end
+2026-04-01,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67552.41,67176.61,-330.14,stop_loss
+2026-04-02,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66386.72,67459.34,-411.92,day_end
+2026-04-02,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-03,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-03,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-04-03,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66913.28,65651.63,-58.39,day_end
+2026-04-04,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-04,London,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 8, confirmed by the next",67148.23,66012.04,13.79,day_end
+2026-04-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-05,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67046.89,68213.79,-899.19,stop_loss
+2026-04-05,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-06,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-06,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,69713.34,68288.77,-1078.4,stop_loss
+2026-04-06,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-07,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,68585.78,69797.79,-931.68,stop_loss
+2026-04-07,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-07,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-08,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-08,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-08,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,70873.82,72705.46,-189.99,day_end
+2026-04-09,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,70620.67,72016.28,-1060.17,stop_loss
+2026-04-09,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-09,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-10,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-10,London,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 2, confirmed by the next",71788.45,70654.05,626.53,day_end
+2026-04-10,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-11,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-11,London,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 2, confirmed by the next",72807.06,71637.08,57.34,day_end
+2026-04-11,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-12,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-12,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,71528.09,72718.15,434.85,day_end
+2026-04-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-13,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-04-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-13,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,71958.09,70120.38,1428.52,day_end
+2026-04-14,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-14,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-14,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,75340.67,74069.64,-849.16,stop_loss
+2026-04-15,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-15,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-16,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-16,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,74573.51,73575.95,-679.92,stop_loss
+2026-04-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-17,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-17,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,75733.04,74251.37,726.59,day_end
+2026-04-17,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-18,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-18,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-04-18,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-19,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,75484.9,76774.6,986.64,day_end
+2026-04-19,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-19,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-20,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,74651.93,73087.0,624.87,day_end
+2026-04-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-20,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-21,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,76041.91,74747.81,74.16,day_end
+2026-04-21,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-21,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-22,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-04-22,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78015.6,76825.17,2.06,day_end
+2026-04-22,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-23,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 11, confirmed by the next",77634.37,79006.58,-436.95,day_end
+2026-04-23,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-23,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-24,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78130.82,77135.25,-532.88,day_end
+2026-04-24,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-24,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-25,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 5, confirmed by the next",77505.5,76297.8,-29.9,day_end
+2026-04-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-26,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 18, confirmed by the next",78105.12,76443.58,235.58,day_end
+2026-04-26,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-26,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-27,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 2, confirmed by the next",79107.42,77660.06,-961.23,stop_loss
+2026-04-27,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,77922.58,76461.41,-971.99,stop_loss
+2026-04-27,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-28,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-04-28,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76458.21,77929.16,25.7,day_end
+2026-04-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-29,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76197.44,75204.65,-685.89,stop_loss
+2026-04-29,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-29,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,76318.56,74692.55,-86.06,day_end
+2026-04-30,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-04-30,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-01,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-01,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,77119.27,78485.48,-909.24,stop_loss
+2026-05-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-02,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-02,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,78412.58,77152.98,76.22,day_end
+2026-05-03,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78180.36,79689.68,-294.51,day_end
+2026-05-03,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-03,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-04,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 4, confirmed by the next",78765.75,77360.23,572.74,day_end
+2026-05-04,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-05,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,80235.04,78787.59,304.11,day_end
+2026-05-05,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-06,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-06,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-06,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,81814.13,82953.11,159.46,day_end
+2026-05-07,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-05-07,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,80839.33,82413.23,458.55,day_end
+2026-05-07,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-08,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,79690.16,81151.79,-367.92,day_end
+2026-05-08,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-08,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-09,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,80360.97,78967.84,86.23,day_end
+2026-05-09,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-09,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-10,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-10,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-10,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-11,Tokyo,SA1,Second-candle clear breakout,SHORT,True,False,False,staged 2R/3R/4R,ENTER,second candle closed below the low,81619.77,83062.32,-113.89,day_end
+2026-05-11,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-11,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-12,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,81013.79,82798.02,258.0,day_end
+2026-05-12,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-13,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,80938.88,79292.5,-1091.5,stop_loss
+2026-05-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-13,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-14,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,79528.1,78312.72,1097.35,day_end
+2026-05-14,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-14,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-15,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-05-15,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-16,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-16,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,77865.42,79532.86,-221.4,day_end
+2026-05-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-17,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,77934.31,79275.86,230.87,day_end
+2026-05-17,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-17,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-18,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-18,London,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 5, confirmed by the next",76769.64,78002.75,-192.35,day_end
+2026-05-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-19,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 4, confirmed by the next",76809.24,78067.51,-72.55,day_end
+2026-05-19,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-19,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-20,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-20,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-21,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78109.42,76486.24,-402.17,day_end
+2026-05-21,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-21,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-22,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-22,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-22,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76719.35,78241.78,672.81,day_end
+2026-05-23,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,75422.81,76524.0,-753.61,stop_loss
+2026-05-23,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-23,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-24,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-24,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,77007.2,75671.64,-59.39,day_end
+2026-05-24,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-25,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 14, confirmed by the next",76978.4,78185.75,-263.74,day_end
+2026-05-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-26,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,76791.04,78332.73,467.02,day_end
+2026-05-26,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-26,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-27,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-27,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,75876.12,77055.86,825.64,day_end
+2026-05-27,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-28,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-28,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,73528.7,72174.89,-31.68,day_end
+2026-05-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-29,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-29,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-05-29,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,73649.97,73958.99,-253.15,stop_loss
+2026-05-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-30,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-05-30,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,73984.89,72640.79,-146.91,day_end
+2026-05-31,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,74126.52,72796.43,-367.36,day_end
+2026-05-31,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-05-31,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-01,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 3, confirmed by the next",73547.69,74724.3,1307.45,day_end
+2026-06-01,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-06-02,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,69446.71,70868.72,1883.04,day_end
+2026-06-02,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-03,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67000.0,65884.68,-851.3,stop_loss
+2026-06-03,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,67027.59,67938.21,1562.34,day_end
+2026-06-03,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-04,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63081.18,65055.61,-694.72,day_end
+2026-06-04,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-05,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 2, confirmed by the next",63320.93,64575.31,1879.83,day_end
+2026-06-05,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-06,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-06,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,60582.38,62181.84,-286.07,day_end
+2026-06-06,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-07,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-06-07,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,62525.8,61697.35,-726.05,stop_loss
+2026-06-07,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,61818.16,60951.8,1188.72,day_end
+2026-06-08,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63043.41,62366.56,-71.47,day_end
+2026-06-08,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-08,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-09,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,62614.17,63906.53,645.75,day_end
+2026-06-09,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-09,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-10,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-10,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,61290.94,62124.9,-729.74,stop_loss
+2026-06-10,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-11,Tokyo,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,61872.87,60747.12,1284.08,day_end
+2026-06-11,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-11,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-12,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-06-12,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63742.25,62559.71,-207.07,day_end
+2026-06-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-13,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 3, confirmed by the next",63642.03,62626.89,472.03,day_end
+2026-06-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-13,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-14,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-06-14,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64571.88,65373.41,-633.66,stop_loss
+2026-06-14,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-15,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,65660.97,66567.25,-708.3,stop_loss
+2026-06-15,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-16,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,AVOID,No candle left to enter on,,,,
+2026-06-16,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66683.13,65625.62,-811.76,stop_loss
+2026-06-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-17,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-17,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-17,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-18,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-18,London,SA1,Second-candle clear breakout,SHORT,True,False,False,staged 2R/3R/4R,ENTER,second candle closed below the low,64357.13,65452.58,938.17,day_end
+2026-06-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-19,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-19,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,62340.43,63488.25,-985.88,stop_loss
+2026-06-19,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-20,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 8, confirmed by the next",63359.63,64386.52,-714.3,day_end
+2026-06-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-20,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-21,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-21,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-06-21,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-22,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,63877.47,62615.86,4.64,day_end
+2026-06-22,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-22,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-23,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 1, confirmed by the next",64132.22,63045.81,-829.95,stop_loss
+2026-06-23,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-23,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,62475.29,61494.83,101.62,day_end
+2026-06-24,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-06-24,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-06-24,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,60859.73,62268.73,-223.32,day_end
+2026-06-25,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,60733.35,61915.1,-1006.27,stop_loss
+2026-06-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-25,New York,SA1,Second-candle clear breakout,SHORT,True,False,False,staged 2R/3R/4R,ENTER,second candle closed below the low,58236.75,60951.36,-1285.35,day_end
+2026-06-26,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-06-26,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-06-26,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-06-27,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,59933.41,60936.13,-131.84,day_end
+2026-06-27,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-27,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-28,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-06-28,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-29,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 9, confirmed by the next",59743.75,58778.2,303.27,day_end
+2026-06-29,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-29,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-06-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-06-30,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-06-30,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,58470.39,57851.02,37.93,day_end
+2026-07-01,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,58125.67,59450.17,-1119.94,stop_loss
+2026-07-01,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,59883.22,60765.21,-765.46,stop_loss
+2026-07-02,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,61224.74,59571.91,175.01,day_end
+2026-07-02,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-03,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,61601.18,62288.11,-619.88,stop_loss
+2026-07-03,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-03,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-04,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-04,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,62453.51,63451.51,-600.61,day_end
+2026-07-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-05,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-05,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,62587.68,63831.32,-1061.31,stop_loss
+2026-07-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-06,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 2, confirmed by the next",63800.76,62744.4,-810.0,stop_loss
+2026-07-06,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-06,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,62028.4,60718.95,1726.81,day_end
+2026-07-07,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 3, confirmed by the next",63912.41,64949.75,331.69,day_end
+2026-07-07,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-07,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-08,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63620.32,62534.69,-826.64,stop_loss
+2026-07-08,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-08,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-09,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-09,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,62764.84,63891.31,-419.63,day_end
+2026-07-09,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-10,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-07-10,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-10,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 2, confirmed by the next",64065.78,65090.12,-112.18,day_end
+2026-07-11,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-11,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-11,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-07-12,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-12,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63963.6,64918.69,80.39,day_end
+2026-07-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-13,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-13,London,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,63187.53,62153.11,-792.12,stop_loss
+2026-07-13,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-14,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-14,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-14,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-15,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64704.66,65860.3,-87.46,day_end
+2026-07-15,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-16,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64561.69,65678.21,460.12,day_end
+2026-07-16,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-17,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-07-17,London,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,62869.97,61830.52,745.56,day_end
+2026-07-17,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-18,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-18,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63948.31,64916.35,-674.29,day_end
+2026-07-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-19,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64737.05,65753.32,-45.89,day_end
+2026-07-19,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-19,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-20,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-20,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,64380.12,65438.06,-807.91,stop_loss
+2026-07-21,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-07-21,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-21,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,66828.46,65531.26,-285.64,day_end
+2026-07-22,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-07-22,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-22,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-23,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-23,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,65621.02,64652.64,-749.83,stop_loss
+2026-07-23,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-24,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 7, confirmed by the next",65137.62,64107.74,-794.63,stop_loss
+2026-07-24,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-24,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-25,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64011.4,65065.86,-304.77,day_end
+2026-07-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-26,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-26,London,SA1,Second-candle clear breakout,LONG,True,False,False,staged 2R/3R/4R,ENTER,second candle closed above the high,64462.89,63450.35,571.07,day_end
+2026-07-26,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-27,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64980.3,66130.29,811.01,day_end
+2026-07-27,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-27,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-28,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63152.37,64413.12,-602.55,day_end
+2026-07-28,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-29,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-29,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64647.63,63436.46,-920.84,stop_loss
+2026-07-29,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,63664.96,64915.24,-948.24,stop_loss
+2026-07-30,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-07-30,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-07-31,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-07-31,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,63676.36,64734.37,505.34,day_end
+2026-07-31,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-01,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-01,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,63086.01,62133.9,-310.27,day_end
+2026-08-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-02,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-02,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-03,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63140.27,64310.3,-325.03,day_end
+2026-08-03,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-03,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-04,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63434.61,64391.9,-746.44,stop_loss
+2026-08-04,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-05,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-05,London,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 14, confirmed by the next",64454.79,63293.24,57.21,day_end
+2026-08-05,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-06,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 4, confirmed by the next",64528.39,65538.55,85.64,day_end
+2026-08-06,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-06,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-07,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 23, confirmed by the next",64406.18,63421.49,264.96,day_end
+2026-08-07,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-07,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-08,Tokyo,SA1,Second-candle clear breakout,SHORT,True,False,False,staged 2R/3R/4R,ENTER,second candle closed below the low,64837.43,65841.22,-140.38,day_end
+2026-08-08,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-08,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-09,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64873.97,63962.94,-79.93,day_end
+2026-08-09,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-09,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-10,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-10,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,65004.3,66137.6,679.03,day_end
+2026-08-10,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-11,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64052.31,62996.46,-412.84,day_end
+2026-08-11,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-11,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-12,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,63770.85,62633.88,-297.11,day_end
+2026-08-12,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-13,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 4, confirmed by the next",63377.32,64388.55,-129.74,day_end
+2026-08-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-13,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-14,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-14,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-14,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-15,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-15,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,62979.2,63936.68,-136.74,day_end
+2026-08-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-16,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-16,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,62942.91,63983.06,-24.2,day_end
+2026-08-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-17,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-17,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped UP,,,,
+2026-08-17,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-18,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64284.14,65352.4,-363.64,day_end
+2026-08-18,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-19,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,64442.41,65518.25,-827.66,stop_loss
+2026-08-19,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-19,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-20,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-20,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,71795.56,70611.89,672.36,day_end
+2026-08-20,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-21,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,73973.79,72376.82,2338.21,day_end
+2026-08-21,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-21,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-22,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-22,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-22,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 3, confirmed by the next",77003.2,78261.27,-120.74,day_end
+2026-08-23,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,77439.18,76000.53,-954.1,stop_loss
+2026-08-23,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-23,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-24,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-24,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,77561.81,75960.93,782.66,day_end
+2026-08-24,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-25,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 1, confirmed by the next",79719.04,77850.16,-1231.04,stop_loss
+2026-08-25,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-26,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-26,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78274.54,80046.55,-515.42,day_end
+2026-08-26,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-27,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78661.16,79955.91,-868.68,stop_loss
+2026-08-27,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-27,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,80339.26,78140.15,-154.15,day_end
+2026-08-28,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,80726.84,79035.41,-1115.77,stop_loss
+2026-08-28,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-28,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,79254.05,80165.21,920.44,day_end
+2026-08-29,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,77782.84,78916.25,-336.75,day_end
+2026-08-29,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-29,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-08-30,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-30,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-08-31,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,77637.82,76619.51,482.09,day_end
+2026-08-31,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-08-31,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-01,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 3, confirmed by the next",78366.02,79697.5,515.08,day_end
+2026-09-01,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-01,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-02,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,77296.94,78476.25,-80.99,day_end
+2026-09-02,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-02,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-03,Tokyo,SA1,Second-candle clear breakout,SHORT,True,False,False,staged 2R/3R/4R,ENTER,second candle closed below the low,76984.1,78289.79,-877.02,stop_loss
+2026-09-03,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-03,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,80524.5,77715.51,361.05,day_end
+2026-09-04,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,80735.35,82264.73,607.29,day_end
+2026-09-04,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-04,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-05,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-09-05,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-09-05,New York,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 8, confirmed by the next",79753.15,78523.02,-44.96,day_end
+2026-09-06,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-09-06,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,79867.97,78585.47,190.4,day_end
+2026-09-06,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-07,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,79867.82,81387.57,406.34,day_end
+2026-09-07,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-07,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-08,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,79379.77,77899.12,-986.71,stop_loss
+2026-09-08,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-08,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-09,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-09-09,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78944.81,80687.22,344.08,day_end
+2026-09-09,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-10,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,78115.67,79400.51,893.67,day_end
+2026-09-10,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-10,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-11,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76880.27,75670.36,672.25,day_end
+2026-09-11,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-11,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-12,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-09-12,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,77335.36,76151.73,-130.94,day_end
+2026-09-12,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-13,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,77206.56,78383.27,168.55,day_end
+2026-09-13,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-13,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-14,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,76705.76,77945.3,-833.05,stop_loss
+2026-09-14,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-09-14,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-09-15,Tokyo,SA1,Second-candle clear breakout,SHORT,True,False,False,staged 2R/3R/4R,ENTER,second candle closed below the low,77970.6,79257.29,1435.21,day_end
+2026-09-15,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-15,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-16,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,AVOID,No candle left to enter on,,,,
+2026-09-16,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,75903.68,74406.9,94.15,day_end
+2026-09-16,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-17,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,AVOID,Trigger candle closed after the entry deadline,,,,
+2026-09-17,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-09-17,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76484.79,75410.42,-131.08,day_end
+2026-09-18,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,76673.73,75294.58,2122.98,day_end
+2026-09-18,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-18,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-19,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,81269.95,79729.25,-94.7,day_end
+2026-09-19,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-19,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-20,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 3, confirmed by the next",81067.58,82392.73,-129.82,day_end
+2026-09-20,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-20,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-21,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-09-21,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,True,staged 2R/3R/4R,AVOID,Momentum reversed against the breakout — doji/reversal then a close past it — momentum flipped DOWN,,,,
+2026-09-21,New York,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,85825.86,83912.15,329.93,day_end
+2026-09-22,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,85630.97,87559.89,-353.47,day_end
+2026-09-22,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-22,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-23,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,86703.04,85038.01,-949.43,stop_loss
+2026-09-23,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-23,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-24,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-09-24,London,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,83214.95,84812.79,-906.79,stop_loss
+2026-09-24,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-25,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-09-25,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,84607.72,83140.8,-838.4,stop_loss
+2026-09-25,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-26,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,83883.32,85266.29,-348.18,day_end
+2026-09-26,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-26,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-27,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",LONG,True,True,True,staged 2R/3R/4R,ENTER,"flipped LONG after an opposite breakout at candle 6, confirmed by the next",84475.39,83145.03,-95.97,day_end
+2026-09-27,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-27,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-28,Tokyo,SA1,"Second-candle breakout invalidated by a later opposite breakout (liquidity sweep), confirmed by the next candle",SHORT,True,True,True,staged 2R/3R/4R,ENTER,"flipped SHORT after an opposite breakout at candle 1, confirmed by the next",84074.78,85593.73,250.26,day_end
+2026-09-28,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-28,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-29,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,82903.42,84665.11,-453.25,day_end
+2026-09-29,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-29,New York,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-30,Tokyo,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,True,False,staged 2R/3R/4R,ENTER,reversal candle formed but the next candle did not confirm — momentum held,83376.52,84722.35,-777.55,stop_loss
+2026-09-30,London,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,"A position from an earlier session is still open — continuing it, not opening a new one",,,,
+2026-09-30,New York,SA4,"Clean breakout, candle not touching the marked lines",SHORT,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,83893.92,85223.26,101.58,day_end
+2026-10-01,Tokyo,-,no setup,-,False,False,False,staged 2R/3R/4R,AVOID,No sub-agent condition met this session,,,,
+2026-10-01,London,SA4,"Clean breakout, candle not touching the marked lines",LONG,True,False,False,staged 2R/3R/4R,ENTER,no reversal candle in the momentum window,83861.67,82276.36,409.52,day_end

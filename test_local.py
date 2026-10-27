@@ -100,30 +100,34 @@ s = sa.detect([K(85150, 85600, 85140, 85560)], H_, L_, DI, "London", None)
 check("SA1 wins on a clear second-candle break", s and s["sub_agent"], "SA1")
 
 print("Sizing, costs and entry guard")
-q = M.contracts(85000, 84800)
+from sorb15 import sizing as _sz
+q = _sz.qty_for_fixed_notional(85000, 2500)          # one slot: capital/2 at the default 5,000 capital
 check("qty positive", q > 0, True)
 check("qty is a whole number of exchange steps (0.0047 would be rejected)",
       abs(q / C.QTY_STEP - round(q / C.QTY_STEP)) < 1e-9, True)
-risk = (200 / 85000) * (q * 85000 * C.USDINR)
-check("a stop-out never risks more than the target", risk <= C.RISK_PER_TRADE_INR + 1e-6, True)
-check("and not far below it", risk > 0.7 * C.RISK_PER_TRADE_INR, True)
+notional_inr = q * 85000 * C.USDINR
+check("exposure matches margin x leverage, floored to the step",
+      abs(notional_inr - 2500 * C.LEVERAGE) < 85000 * C.USDINR * C.QTY_STEP, True)
+check("too small a margin for the minimum size -> 0, trade skipped",
+      _sz.qty_for_fixed_notional(85000, 0.01), 0.0)
 tr = {"direction": 1, "entry": 85000.0}
 check("round-trip fee is charged",
       round(M.leg_pnl(tr, 85000.0, 0.01), 2) < 0, True)
 
-print("Session clock (IST)")
+print("Session clock (IST) — Tokyo, London, New York")
 A = M.active_session
+check("06:00 -> Tokyo", A(dt.datetime(2026, 9, 28, 6, 0, tzinfo=M.IST))[0], "Tokyo")
 check("14:00 -> London", A(dt.datetime(2026, 9, 28, 14, 0, tzinfo=M.IST))[0], "London")
 check("20:00 -> New York", A(dt.datetime(2026, 9, 28, 20, 0, tzinfo=M.IST))[0], "New York")
-check("10:00 -> none", A(dt.datetime(2026, 9, 28, 10, 0, tzinfo=M.IST))[0], None)
+check("02:00 -> none (after NY, before Tokyo)", A(dt.datetime(2026, 9, 28, 2, 0, tzinfo=M.IST))[0], None)
 check("00:30 -> New York (past midnight)", A(dt.datetime(2026, 9, 29, 0, 30, tzinfo=M.IST))[0],
       "New York")
-nap = M.seconds_to_next_open(dt.datetime(2026, 9, 28, 10, 0, tzinfo=M.IST))
-check("sleeps until 14:00", 14300 < nap < 14500, True)
+nap = M.seconds_to_next_open(dt.datetime(2026, 9, 28, 2, 0, tzinfo=M.IST))
+check("sleeps until 05:30 Tokyo", 12500 < nap < 12700, True)
 
 print("Halt logic — a streak halts, and the halt LIFTS")
 st = {"day": "2026-09-28", "halted": True, "halt_through": "2026-09-29", "consec_losses": 4,
-      "day_pnl": 0, "done_sessions": [], "open_london": None, "trade": None}
+      "day_pnl": 0, "done_sessions": [], "trade": None}
 check("still halted on the last halted day",
       notify.roll_day(dict(st), "2026-09-29")["halted"], True)
 r = notify.roll_day(dict(st), "2026-09-30")
@@ -133,25 +137,35 @@ check("streak counter restarts", r["consec_losses"], 0)
 print("Paper trading — the management loop, driven by crafted candles")
 STEP = 15 * 60 * 1000
 T0 = int(dt.datetime(2026, 9, 28, 14, 0, tzinfo=M.IST).timestamp() * 1000)
+DAY_END_MS = M.ms(M.day_end_for(dt.datetime(2026, 9, 28, 14, 0, tzinfo=M.IST)))
 
 
-def mk_trade(d=1, entry=100000.0, sl=99500.0):
+def mk_trade(d=1, entry=100000.0, sl=98500.0, qty=0.01):
+    risk_px = abs(entry - sl)
+    tp_levels = [entry + d * r * risk_px for r in B.SA134_TP_R]
+    from sorb15 import sizing as _sz
+    leg_qtys, remaining = [], qty
+    for frac in B.SA134_TP_FRACS[:-1]:
+        q = _sz.floor_step(qty * frac, C.QTY_STEP)
+        leg_qtys.append(q)
+        remaining = round(remaining - q, 8)
+    leg_qtys.append(round(remaining, 8))
     return {"sub_agent": "SA1", "setup": "x", "session": "London", "direction": d,
-            "level": entry, "entry": entry, "sl": sl, "qty": 0.01, "open_qty": 0.01,
-            "risk_px": abs(entry - sl), "best": entry, "partial_done": False,
-            "moved_be": False, "realised": 0.0, "seen": {}, "missing_polls": 0,
-            "position_id": None, "entry_bar": T0, "opened_at": 0, "client_id": "t"}
+            "level": entry, "entry": entry, "sl": sl, "qty": qty, "open_qty": qty,
+            "risk_px": risk_px, "realised": 0.0, "seen": {}, "missing_polls": 0,
+            "position_id": None, "entry_bar": T0, "opened_at": 0, "client_id": "t",
+            "range_high": entry, "range_low": sl, "tp_levels": tp_levels,
+            "leg_qtys": leg_qtys, "tp_hit": [False, False, False], "day_end_ms": DAY_END_MS}
 
 
 def run_manage(trade, candle_lists, now_dt, sent):
     notify.send = lambda text, silent=False: sent.append(text)
     st = {"day_pnl": 0.0, "consec_losses": 0, "halted": False}
-    end = dt.datetime(2026, 9, 28, 18, 45, tzinfo=M.IST)
     out = trade
     for cs in candle_lists:
         ex.candles = lambda *a, _cs=cs, **k: _cs
         M.now_ist = lambda: now_dt
-        out = M.manage(out, "London", end, st) if out else None
+        out = M.manage(out, st) if out else None
     return out, st
 
 
@@ -164,28 +178,30 @@ t, st = run_manage(mk_trade(), [cs], NOW, sent)
 check("quiet candle: trade stays open", t is not None, True)
 
 sent = []
-cs1 = [K(100000, 100300, 99950, 100250, T0)]                     # +0.6R: partial + trail arm
+cs1 = [K(100000, 103100, 99950, 103050, T0)]                     # through +2R: target 1 fires
 t, st = run_manage(mk_trade(), [cs1], NOW, sent)
-check("partial fires at +0.5R", t["partial_done"], True)
-check("stop is trailed above entry-risk", t["sl"] > 99500.0, True)
-check("half the position remains", round(t["open_qty"], 4), 0.005)
+check("target 1 (2R) books the first leg", t["tp_hit"][0], True)
+check("the stop itself never moves off entry's 1.5%-buffered level", t["sl"], 98500.0)
+check("the booked leg's size remains open", round(t["open_qty"], 4),
+      round(0.01 - mk_trade()["leg_qtys"][0], 4))
 
 sent = []
-cs2 = [K(100000, 100300, 99950, 100250, T0)]
-cs3 = [K(100000, 100300, 99300, 99350, T0)]                      # then falls through the trail
-t, st = run_manage(mk_trade(), [cs2, cs3], NOW, sent)
-check("a fresh low through the trailed stop closes the paper trade", t, None)
+cs_all = [K(100000, 106100, 99950, 106050, T0)]                  # through +4R: every leg fires at once
+t, st = run_manage(mk_trade(), [cs_all], NOW, sent)
+check("all three targets hit -> trade closes", t, None)
+check("closed as all_targets_hit", any("all_targets_hit" in m for m in sent), True)
+
+sent = []
+low_first = [K(100000, 100300, 98300, 100250, T0)]               # a fresh low through the fixed stop
+t, st = run_manage(mk_trade(), [low_first], NOW, sent)
+check("a low through the fixed stop closes it (no trail to hide behind)", t, None)
 check("a CLOSED message was sent", any("CLOSED" in m for m in sent), True)
 
 sent = []
-low_first = [K(100000, 100300, 99300, 100250, T0)]               # low printed, stop was 99500
-t, st = run_manage(mk_trade(), [low_first], NOW, sent)
-check("a low through the ORIGINAL stop closes it", t, None)
-
-sent = []
-late = dt.datetime(2026, 9, 28, 18, 44, 30, tzinfo=M.IST)
-t, st = run_manage(mk_trade(), [[K(100000, 100100, 99900, 100050, T0)]], late, sent)
-check("session end flattens a paper trade", t, None)
+at_day_end = dt.datetime(2026, 9, 29, 5, 29, 30, tzinfo=M.IST)   # inside the last minute before day_end
+t, st = run_manage(mk_trade(), [[K(100000, 100100, 99900, 100050, T0)]], at_day_end, sent)
+check("day end (next Tokyo open) flattens a paper trade that hit neither", t, None)
+check("closed as day_end", any("day_end" in m for m in sent), True)
 notify.send, ex.candles, M.now_ist = real_send, real_candles, real_now
 
 
@@ -334,9 +350,8 @@ def live_enter(market=None, position=None, stop=None):
     now = M.now_ms()
     sess = [K(100000, 100100, 99950, 100020, now - STEP - 5000)]     # trigger closed 5s ago
     rc = {"high": 100000.0, "low": 99000.0}
-    st = {"day_pnl": 0.0}
     with C.override(DRY_RUN=False):
-        return M.enter(make_sig(), "London", rc, sess, st)
+        return M.enter(make_sig(), "London", rc, sess)
 
 
 pos_ok = lambda: {"id": "P1", "entry": 100030.0, "qty": 0.006,
@@ -368,7 +383,7 @@ stale = M.now_ms()
 sess = [K(100000, 100100, 99950, 100020, stale - STEP - 300000)]       # signal is 5 minutes old
 log_msgs.clear(); notify.send = lambda text, silent=False: log_msgs.append(text)
 with C.override(DRY_RUN=False):
-    t = M.enter(make_sig(), "London", {"high": 100000.0, "low": 99000.0}, sess, {"day_pnl": 0.0})
+    t = M.enter(make_sig(), "London", {"high": 100000.0, "low": 99000.0}, sess)
 check("a stale signal is skipped, never chased",
       (t, any("Missed the entry window" in m for m in log_msgs)), (None, True))
 for k, v in real.items():

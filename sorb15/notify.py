@@ -1,4 +1,5 @@
 """Telegram notifications and crash-safe state."""
+import datetime as dt
 import json
 import logging
 import os
@@ -42,7 +43,7 @@ def signal_block(sig, session, H, L, entry=None, sl=None, action="", reason="", 
         f"MOMENTUM SHIFT : {'YES' if sig.get('momentum_shift') else 'NO'}",
         f"ENTRY          : {entry if entry is not None else '-'}",
         f"SL             : {sl if sl is not None else '-'}",
-        f"TP             : trail/partial",
+        f"TP             : staged 50%/25%/25% at 2R/3R/4R",
         f"ACTION         : {action}",
         f"REASON         : {reason or sig.get('detail','')}",
     ]
@@ -56,9 +57,9 @@ def signal_block(sig, session, H, L, entry=None, sl=None, action="", reason="", 
 
 # ── state ───────────────────────────────────────────────────────────────────
 
-_DEFAULT = {"trade": None, "open_london": None, "day": None,
+_DEFAULT = {"trade": None, "day": None,
             "day_pnl": 0.0, "consec_losses": 0, "halted": False,
-            "halt_through": None, "done_sessions": [], "last_veto": None}
+            "halt_through": None, "done_sessions": []}
 
 
 def load():
@@ -82,9 +83,19 @@ def save(state):
 
 def roll_day(state, today):
     """Reset the daily counters when the IST date changes. A loss-streak halt
-    lifts once `today` is past halt_through; the streak counter restarts then."""
+    lifts once `today` is past halt_through; the streak counter restarts then.
+
+    done_sessions is PRUNED by age, never wiped outright: a New York session
+    (19:00-01:15 IST) is keyed by the date it OPENED on, which is still
+    "yesterday" once this fires at midnight — clearing the whole list here
+    would let that already-decided session be re-evaluated from scratch with
+    extra candles now in view, producing a signal the live bot never actually
+    acted on in real time."""
     if state.get("day") != today:
-        state.update(day=today, day_pnl=0.0, done_sessions=[], open_london=None)
+        cutoff = str(dt.date.fromisoformat(today) - dt.timedelta(days=2))
+        state["done_sessions"] = [k for k in state.get("done_sessions", [])
+                                   if k.split("|", 1)[0] >= cutoff]
+        state.update(day=today, day_pnl=0.0)
     ht = state.get("halt_through")
     if state.get("halted") and ht and today > ht:
         state.update(halted=False, halt_through=None, consec_losses=0)

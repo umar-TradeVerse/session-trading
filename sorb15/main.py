@@ -1,25 +1,39 @@
-"""SORB-15 — four sub-agents, live on CoinDCX futures.
+"""SORB-15 — SA1 + SA4 + Tokyo continuation, live on CoinDCX futures.
 
-Runs 24x7 on Railway and sleeps outside the London / New York windows.
+Sessions (IST): Tokyo 05:30-07:15-14:00, then London and New York from
+config. The first candle of a session sets its range (high/low). One
+position at a time: once a trade opens, every later session that day is
+skipped until it resolves (SA3's old "continuation" idea, generalised —
+there is no separate continuation detector any more, it falls out of simply
+not looking for a new entry while one is open).
 
 Each poll:
-  1. If a trade is open, manage it: stop, partial, breakeven, trail, session end.
-  2. Otherwise, inside a session, ask the detectors for a signal and enter.
+  1. If a trade is open, manage it: fixed stop (never moves), staged
+     partial exits at 2R/3R/4R, or day-end (next Tokyo open) if neither
+     stop nor every leg has been reached.
+  2. Otherwise, inside a session, ask sa134_entry_signal for a signal and
+     enter on it.
   3. Outside a session, sleep until the next one opens.
 
 DRY_RUN=true runs the whole thing as a PAPER account: the same signals, the
-same entries, stops, partials and trailing, with P&L computed from real
-candles — but no order is ever sent to the exchange.
+same entry, stop and staged exits, with P&L computed from real candles —
+but no order is ever sent to the exchange.
 
 Detection uses CLOSED candles only (exactly what the backtest sees). Trade
-management also reads the still-forming candle, so the trail follows price
-inside a candle the way the backtest assumes.
+management also reads the still-forming candle, so a target can be hit
+intrabar the way the backtest assumes.
+
+Entry logic, session windows and the SL/TP constants all live in
+sorb15/backtest.py (sa134_entry_signal, TOKYO_SESSION, SA134_SL_BUFFER_PCT,
+SA134_TP_R, SA134_TP_FRACS) — the single source shared with the backtest.
+Never fork that logic here.
 """
 import datetime as dt
 import logging
 import time
 from zoneinfo import ZoneInfo
 
+from . import backtest as BT
 from . import coindcx as ex
 from . import config as C
 from . import notify
@@ -31,6 +45,10 @@ logging.basicConfig(level=getattr(logging, C.LOG_LEVEL, logging.INFO),
 log = logging.getLogger("sorb15")
 IST = ZoneInfo(C.TZ)
 STEP_MS = C.TIMEFRAME_MIN * 60 * 1000
+
+# Tokyo (from the shared backtest module) plus London / New York (from config) —
+# one dict, so window()/active_session() see all three the same way.
+ALL_SESSIONS = {"Tokyo": BT.TOKYO_SESSION, **C.SESSIONS}
 
 
 # ── time ────────────────────────────────────────────────────────────────────
@@ -57,7 +75,7 @@ def at(day, t, ref=None):
 def window(name, now=None):
     """(open, deadline, end) of the session instance containing `now`, or the next."""
     now = now or now_ist()
-    s = C.SESSIONS[name]
+    s = ALL_SESSIONS[name]
     for day in (now.date() - dt.timedelta(days=1), now.date(), now.date() + dt.timedelta(days=1)):
         o = at(day, s["open"])
         e = at(day, s["end"], o)
@@ -72,7 +90,7 @@ def window(name, now=None):
 
 def active_session(now=None):
     now = now or now_ist()
-    for name in C.SESSIONS:
+    for name in ALL_SESSIONS:
         o, d, e = window(name, now)
         if o <= now < e:
             return name, o, d, e
@@ -81,8 +99,18 @@ def active_session(now=None):
 
 def seconds_to_next_open(now=None):
     now = now or now_ist()
-    opens = [o for o, _, _ in (window(n, now) for n in C.SESSIONS) if o > now]
+    opens = [o for o, _, _ in (window(n, now) for n in ALL_SESSIONS) if o > now]
     return max(5, int((min(opens) - now).total_seconds())) if opens else 60
+
+
+def day_end_for(ref_dt):
+    """The next Tokyo open after `ref_dt`'s trading day — the same boundary
+    the backtest flattens an unresolved trade at. The "trading day" containing
+    `ref_dt` runs from one Tokyo open to the next, so a New York trade opened
+    after midnight still belongs to the Tokyo session's day that started it."""
+    tokyo_open_today = at(ref_dt.date(), BT.TOKYO_SESSION["open"])
+    trading_day = ref_dt.date() if ref_dt >= tokyo_open_today else ref_dt.date() - dt.timedelta(days=1)
+    return at(trading_day + dt.timedelta(days=1), BT.TOKYO_SESSION["open"])
 
 
 # ── candles ─────────────────────────────────────────────────────────────────
@@ -99,12 +127,6 @@ def split_session(cs, open_dt, end_dt):
 
 
 # ── sizing and P&L ──────────────────────────────────────────────────────────
-
-def contracts(entry, sl):
-    """BTC quantity so a stop-out loses at most RISK_PER_TRADE_INR, floored to the
-    exchange's step. 0.0 means the exchange would refuse the order."""
-    return sizing.qty_for(entry, sl)
-
 
 def sync_spec():
     """Read the real contract spec from the exchange and use it. The exchange is
@@ -189,29 +211,17 @@ def place_stop(position_id, price):
 
 # ── entry ───────────────────────────────────────────────────────────────────
 
-def enter(sig, session, rc, sess, state):
-    d, level = sig["direction"], sig["level"]
+def enter(sig, session, rc, sess):
+    d, level0 = sig["direction"], sig["level"]
     H, L = rc["high"], rc["low"]
 
-    # The backtest enters at the open of the candle after the trigger. Live can
-    # only match that if it acts right after the close; if the bot was late
+    # The backtest enters at the open of the candle after the trigger. Live
+    # can only match that if it acts right after the close; if the bot was late
     # (restart, outage) the price has moved and the trade is not the one we tested.
     trigger = sess[sig["trigger_i"]]
     lag_s = (now_ms() - (trigger["t"] + STEP_MS)) / 1000
     entry_px = sess[-1]["close"]
-    if sig["sub_agent"] == "SA2":
-        sl = trigger["low"] if d == 1 else trigger["high"]            # the rejection candle's own extreme
-    elif sig["sub_agent"] in ("SA1", "SA4"):
-        sl = L if d == 1 else H                                       # the range candle's own extreme
-    elif sig["sub_agent"] == "SA5":
-        if sig.get("momentum_shift"):
-            reversal_c = sess[sig["trigger_i"] - 1]     # the flip was confirmed BY the trigger candle
-            level0 = reversal_c["low"] if d == 1 else reversal_c["high"]
-        else:
-            level0 = L if d == 1 else H
-        sl = level0 * (1 - d * C.SL_LEVEL_BUFFER) if C.SA5_USE_BUFFER_SL else level0
-    else:
-        sl = level * (1 - d * C.SL_LEVEL_BUFFER)
+    sl = level0 * (1 - d * BT.SA134_SL_BUFFER_PCT)
 
     def avoid(why):
         notify.send(notify.signal_block(sig, session, H, L, round(entry_px, 2), round(sl, 2),
@@ -223,7 +233,9 @@ def enter(sig, session, rc, sess, state):
                      f"limit {C.MAX_ENTRY_LAG_SECONDS}s")
     if (d == 1 and entry_px <= sl) or (d == -1 and entry_px >= sl):
         return avoid("Entry is already beyond its own stop")
-    qty = contracts(entry_px, sl)
+
+    fixed_margin = C.CAPITAL_INR / 2            # one of up to 2 portfolio slots
+    qty = sizing.qty_for_fixed_notional(entry_px, fixed_margin)
     if qty <= 0:
         return avoid(f"Size is below the exchange minimum (min qty {C.MIN_QTY}, "
                      f"min notional {C.MIN_NOTIONAL_USDT:g} USDT, step {C.QTY_STEP})")
@@ -257,22 +269,33 @@ def enter(sig, session, rc, sess, state):
         return None
     entry_px = fill
 
+    risk_px = abs(entry_px - sl)
+    tp_levels = [entry_px + d * r * risk_px for r in BT.SA134_TP_R]
+    leg_qtys, remaining = [], qty
+    for frac in BT.SA134_TP_FRACS[:-1]:
+        q = sizing.floor_step(qty * frac, C.QTY_STEP)
+        if q < C.MIN_QTY - 1e-12:
+            q = 0.0
+        leg_qtys.append(q)
+        remaining = round(remaining - q, 8)
+    leg_qtys.append(round(remaining, 8))
+
+    notional_inr = qty * entry_px * C.USDINR
+    risk_inr = notional_inr * risk_px / entry_px
+
     entry_bar = (now_ms() // STEP_MS) * STEP_MS
     trade = {"sub_agent": sig["sub_agent"], "setup": sig["setup"], "session": session,
-             "direction": d, "level": level, "entry": entry_px, "sl": sl, "qty": qty,
-             "open_qty": qty, "risk_px": abs(entry_px - sl), "best": entry_px,
-             "partial_done": False, "moved_be": False, "realised": 0.0, "seen": {},
+             "direction": d, "level": level0, "entry": entry_px, "sl": sl, "qty": qty,
+             "open_qty": qty, "risk_px": risk_px, "realised": 0.0, "seen": {},
              "missing_polls": 0, "position_id": pid,
              "entry_bar": entry_bar, "opened_at": int(time.time()),
              "client_id": cid, "range_high": H, "range_low": L,
-             # SA2 candle-pattern exit state (unused by SA1/SA3/SA4/SA5)
-             "phase": "await_r1", "seen_favorable": False, "rejection1": None,
-             "consec_breaks": 0, "pattern_last_t": entry_bar,
-             # SA5 candle-pattern flip state (unused by everyone else)
-             "sa5_pending_reversal": None, "sa5_skip_reversal_check_once": False}
+             "tp_levels": tp_levels, "leg_qtys": leg_qtys, "tp_hit": [False, False, False],
+             "day_end_ms": ms(day_end_for(now_ist()))}
     notify.send(notify.signal_block(sig, session, H, L, round(entry_px, 2), round(sl, 2), "ENTER",
                                     sig.get("detail", ""),
-                                    result=f"qty {qty}  risk Rs {C.RISK_PER_TRADE_INR:.0f}"))
+                                    result=f"qty {qty}  margin Rs {fixed_margin:.0f}  "
+                                           f"risk Rs {risk_inr:.0f}"))
     log.info("ENTER %s %s qty=%s entry=%.2f sl=%.2f", sig["sub_agent"], d, qty, entry_px, sl)
     return trade
 
@@ -300,32 +323,10 @@ def stop_was_hit(trade, since):
     return hit
 
 
-def move_stop(trade, new_sl, why, session):
-    """Move the position's stop. If the new stop cannot be placed, put the old one
-    back; if that also fails, close the position rather than leave it naked."""
-    old, pid = trade["sl"], trade.get("position_id")
-    try:
-        place_stop(pid, new_sl)
-    except Exception as err:
-        log.warning("stop move failed: %s", err)
-        try:
-            place_stop(pid, old)
-            notify.send(f"⚠️ Could not move the stop ({err}). Old stop restored at {old:,.2f}.",
-                        silent=True)
-        except Exception as err2:
-            flatten(pid, f"STOP LOST ({err2}) — closed", session, trade["sub_agent"])
-        return
-    trade["sl"] = new_sl
-    if abs(new_sl - old) > 1e-9:
-        notify.send(f"<b>STOP MOVED</b> {trade['sub_agent']} {session}\n"
-                    f"<pre>{why}: {old:,.2f} -> {new_sl:,.2f}</pre>", silent=True)
-    log.info("stop moved (%s) %.2f -> %.2f", why, old, new_sl)
-
-
 def finish(trade, exit_px, pnl, reason, session, state, day_delta=None):
-    # `pnl` is the trade's FULL realised total (it may include an earlier partial
+    # `pnl` is the trade's FULL realised total (it may include an earlier leg
     # already added to day_pnl when it was booked) — day_pnl must only move by
-    # what's NEW at this step, or a partial gets counted twice.
+    # what's NEW at this step, or a leg gets counted twice.
     state["day_pnl"] += pnl if day_delta is None else day_delta
     state["consec_losses"] = state["consec_losses"] + 1 if pnl <= 0 else 0
     if C.MAX_CONSEC_LOSSES and state["consec_losses"] >= C.MAX_CONSEC_LOSSES:
@@ -344,299 +345,110 @@ def finish(trade, exit_px, pnl, reason, session, state, day_delta=None):
     log.info("CLOSED %s %s pnl=%.2f", trade["sub_agent"], reason, pnl)
 
 
-def end_trade(trade, exit_px, reason, session, state, place_order=False):
+def end_trade(trade, exit_px, reason, state, place_order=False):
+    """Close whatever quantity is still open (0 once every leg has already been
+    booked) and report the trade's full realised P&L."""
     qty = trade["open_qty"]
-    if place_order and qty > 0:
-        pid = trade.get("position_id")
-        try:
-            ex.exit_position(pid)
-        except Exception as err:
-            notify.send(f"🚨 <b>CLOSE FAILED</b> {trade['sub_agent']} {session}\n"
-                        f"<pre>{err}\nCLOSE IT MANUALLY NOW</pre>")
-        try:
-            ex.clear_position_orders(pid)
-        except Exception:
-            pass
-    hours = (now_ms() - trade["entry_bar"]) / 3_600_000
-    final_leg = leg_pnl(trade, exit_px, qty, hours)
+    final_leg = 0.0
+    if qty > 1e-9:
+        if place_order:
+            pid = trade.get("position_id")
+            try:
+                ex.exit_position(pid)
+            except Exception as err:
+                notify.send(f"🚨 <b>CLOSE FAILED</b> {trade['sub_agent']} {trade['session']}\n"
+                            f"<pre>{err}\nCLOSE IT MANUALLY NOW</pre>")
+            try:
+                ex.clear_position_orders(pid)
+            except Exception:
+                pass
+        hours = (now_ms() - trade["entry_bar"]) / 3_600_000
+        final_leg = leg_pnl(trade, exit_px, qty, hours)
+        trade["open_qty"] = 0
     pnl = trade["realised"] + final_leg
-    trade["open_qty"] = 0
-    finish(trade, exit_px, pnl, reason, session, state, day_delta=final_leg)
+    finish(trade, exit_px, pnl, reason, trade["session"], state, day_delta=final_leg)
     return None
 
 
-def manage(trade, session, end_dt, state):
-    """Stop, partial, breakeven, trail and session end for the open trade.
-    Returns the updated trade, or None once it is closed."""
+def manage(trade, state):
+    """Fixed stop (never moves), staged 2R/3R/4R partials, day-end. Returns the
+    updated trade, or None once it is closed."""
     d, slip = trade["direction"], C.SLIPPAGE
     mins = int((now_ms() - trade["entry_bar"]) / 60000) + 30
     cs = ex.candles(minutes_back=max(mins, 60), include_forming=True)
     since = [c for c in cs if c["t"] >= trade["entry_bar"]]
     if not since:
         return trade
-    hi, lo = max(c["high"] for c in since), min(c["low"] for c in since)
-    fav = hi if d == 1 else lo
-    last_px = since[-1]["close"]
 
-    # 1. Was the stop hit?
+    # 1. Was the stop hit? The stop never moves, so the entry candle's extreme
+    # from the first poll is as valid as any later one.
     if C.DRY_RUN:
         if stop_was_hit(trade, since):
-            return end_trade(trade, trade["sl"] * (1 - slip * d), "stop hit", session, state)
+            return end_trade(trade, trade["sl"] * (1 - slip * d), "stop_loss", state)
     else:
         if ex.open_position() is None:
             trade["missing_polls"] += 1      # two misses in a row, so one API blip can't fool us
             if trade["missing_polls"] >= 2:
                 return end_trade(trade, trade["sl"] * (1 - slip * d),
-                                 "stopped out on the exchange (approx fill)", session, state)
+                                 "stopped out on the exchange (approx fill)", state)
             return trade
         trade["missing_polls"] = 0
 
-    # 2. Partial take-profit
-    risk = trade["risk_px"]
-    if C.PARTIAL_TP_R and not trade["partial_done"]:
-        ptp = trade["entry"] + d * C.PARTIAL_TP_R * risk
-        if (hi >= ptp) if d == 1 else (lo <= ptp):
-            part = sizing.partial_qty(trade["qty"])
-            trade["partial_done"] = True
-            if part > 0:
-                px = ptp * (1 - slip * d)
-                ex.market_order("sell" if d == 1 else "buy", part)
-                hours = (since[-1]["t"] - trade["entry_bar"]) / 3_600_000
-                pnl = leg_pnl(trade, px, part, hours)
-                trade["open_qty"] = round(trade["open_qty"] - part, 8)
-                trade["realised"] += pnl
-                state["day_pnl"] += pnl
-                notify.send(f"<b>PARTIAL</b> {trade['sub_agent']} {session}\n"
-                            f"<pre>closed {part} at {px:,.2f} (+{C.PARTIAL_TP_R}R)\n"
-                            f"P&amp;L Rs {pnl:,.2f}\nremaining qty {trade['open_qty']}</pre>")
-            else:
-                notify.send(f"<b>PARTIAL SKIPPED</b> {trade['sub_agent']} {session}\n"
-                            f"<pre>{trade['qty']} cannot be split into two valid orders (step {C.QTY_STEP}, min {C.MIN_QTY})</pre>",
-                            silent=True)
+    # 2. Staged take-profit legs — 50% at 2R, 25% at 3R, 25% at 4R
+    hi, lo = max(c["high"] for c in since), min(c["low"] for c in since)
+    fav = hi if d == 1 else lo
+    last_px = since[-1]["close"]
+    for k in range(3):
+        if trade["tp_hit"][k] or trade["leg_qtys"][k] <= 0:
+            continue
+        reached = (fav >= trade["tp_levels"][k]) if d == 1 else (fav <= trade["tp_levels"][k])
+        if reached:
+            trade["tp_hit"][k] = True
+            q = trade["leg_qtys"][k]
+            px = trade["tp_levels"][k] * (1 - slip * d)
+            if not C.DRY_RUN:
+                ex.market_order("sell" if d == 1 else "buy", q)
+            hours = (since[-1]["t"] - trade["entry_bar"]) / 3_600_000
+            pnl = leg_pnl(trade, px, q, hours)
+            trade["open_qty"] = round(trade["open_qty"] - q, 8)
+            trade["realised"] += pnl
+            state["day_pnl"] += pnl
+            notify.send(f"<b>TARGET {k + 1} HIT</b> {trade['sub_agent']} {trade['session']}\n"
+                        f"<pre>closed {q} at {px:,.2f} (+{BT.SA134_TP_R[k]}R)\n"
+                        f"P&amp;L Rs {pnl:,.2f}\nremaining qty {trade['open_qty']}</pre>")
+    if trade["open_qty"] <= 1e-9:
+        return end_trade(trade, last_px, "all_targets_hit", state)
 
-    # 3. Breakeven and trail, from the best price reached since entry
-    trade["best"] = max(trade["best"], fav) if d == 1 else min(trade["best"], fav)
-    r_now = d * (trade["best"] - trade["entry"]) / risk
-    if C.BREAKEVEN_AT_R and not trade["moved_be"] and r_now >= C.BREAKEVEN_AT_R:
-        be = trade["entry"] * (1 + d * C.BREAKEVEN_PLUS_PCT)
-        if (d == 1 and be > trade["sl"]) or (d == -1 and be < trade["sl"]):
-            move_stop(trade, be, "breakeven", session)
-            trade["moved_be"] = True
-    if C.TRAIL_AFTER_R and r_now >= C.TRAIL_AFTER_R:
-        tr = trade["best"] - d * C.TRAIL_STEP_R * risk
-        if (d == 1 and tr > trade["sl"]) or (d == -1 and tr < trade["sl"]):
-            move_stop(trade, tr, "trail", session)
-
-    # 4. Session end
-    if now_ist() >= end_dt - dt.timedelta(minutes=1):
-        return end_trade(trade, last_px * (1 - slip * d), "session end", session, state,
+    # 3. Day end — the next Tokyo open. The stop never trails; nothing else closes it.
+    if now_ms() >= trade["day_end_ms"] - 60_000:
+        return end_trade(trade, last_px * (1 - slip * d), "day_end", state,
                          place_order=not C.DRY_RUN)
-    return trade
-
-
-# ── SA2 candle-pattern exit (live) ───────────────────────────────────────────
-# No R-based partial/breakeven/trail. The stop is fixed at the rejection candle's
-# own extreme set at entry (never trailed). Mirrors backtest.manage_sa2_pattern():
-#   - after at least one favourable-coloured candle, the first counter-coloured
-#     candle is "rejection #1" -> book 50% at the NEXT candle's open.
-#   - watching the remaining 50%: two consecutive candles each breaking the
-#     prior candle's low (LONG) / high (SHORT) -> close the rest there.
-#   - instead, a candle closes back past rejection #1's high (LONG) / low
-#     (SHORT) -> hold, wait for a second rejection candle, close the rest at
-#     the candle AFTER that one opens.
-# Never flattened at session end — can run across session and day boundaries.
-
-def _close_remaining(trade, px, reason, session, state, t):
-    qty = trade["open_qty"]
-    if qty > 0 and not C.DRY_RUN:
-        ex.market_order("sell" if trade["direction"] == 1 else "buy", qty)
-    hours = (t - trade["entry_bar"]) / 3_600_000
-    final_leg = leg_pnl(trade, px, qty, hours)
-    pnl = trade["realised"] + final_leg
-    trade["open_qty"] = 0
-    finish(trade, px, pnl, reason, session, state, day_delta=final_leg)
-
-
-def manage_sa2_live(trade, session, state):
-    d, slip = trade["direction"], C.SLIPPAGE
-    mins = int((now_ms() - trade["entry_bar"]) / 60000) + 30
-
-    # 1. stop-loss — fixed, never trails
-    since = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=True)
-             if c["t"] >= trade["entry_bar"]]
-    if not since:
-        return trade
-    if C.DRY_RUN:
-        if stop_was_hit(trade, since):
-            return end_trade(trade, trade["sl"] * (1 - slip * d), "stop hit", session, state)
-    else:
-        if ex.open_position() is None:
-            trade["missing_polls"] += 1
-            if trade["missing_polls"] >= 2:
-                return end_trade(trade, trade["sl"] * (1 - slip * d),
-                                 "stopped out on the exchange (approx fill)", session, state)
-            return trade
-        trade["missing_polls"] = 0
-
-    # 2. the candle-pattern state machine, over any newly CLOSED candles
-    closed = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=False)
-              if c["t"] > trade["pattern_last_t"]]
-    for c in closed:
-        trade["pattern_last_t"] = c["t"]
-        is_favorable = (c["close"] > c["open"]) if d == 1 else (c["close"] < c["open"])
-        is_counter = (c["close"] < c["open"]) if d == 1 else (c["close"] > c["open"])
-
-        if trade["phase"] == "await_r1":
-            if is_favorable:
-                trade["seen_favorable"] = True
-            elif trade["seen_favorable"] and is_counter:
-                trade["rejection1"] = {"high": c["high"], "low": c["low"]}
-                trade["phase"] = "book_partial"
-
-        elif trade["phase"] == "book_partial":
-            part = sizing.partial_qty(trade["qty"])
-            if part > 0:
-                px = c["open"] * (1 - slip * d)
-                if not C.DRY_RUN:
-                    ex.market_order("sell" if d == 1 else "buy", part)
-                hours = (c["t"] - trade["entry_bar"]) / 3_600_000
-                pnl = leg_pnl(trade, px, part, hours)
-                trade["open_qty"] = round(trade["open_qty"] - part, 8)
-                trade["realised"] += pnl
-                state["day_pnl"] += pnl
-                trade["partial_done"] = True
-                notify.send(f"<b>PARTIAL</b> {trade['sub_agent']} {session}\n"
-                            f"<pre>closed {part} at {px:,.2f} (rejection candle)\n"
-                            f"P&amp;L Rs {pnl:,.2f}\nremaining qty {trade['open_qty']}</pre>")
-            trade["phase"], trade["consec_breaks"] = "watch", 0
-            trade["prior_hl"] = {"high": c["high"], "low": c["low"]}
-
-        elif trade["phase"] == "watch":
-            prior = trade["prior_hl"]
-            broke = (c["low"] < prior["low"]) if d == 1 else (c["high"] > prior["high"])
-            trade["consec_breaks"] = trade["consec_breaks"] + 1 if broke else 0
-            trade["prior_hl"] = {"high": c["high"], "low": c["low"]}
-            if trade["consec_breaks"] >= 2:
-                _close_remaining(trade, c["close"] * (1 - slip * d),
-                                 "pattern reversal confirmed", session, state, c["t"])
-                return None
-            recovered = (c["close"] > trade["rejection1"]["high"]) if d == 1 \
-                        else (c["close"] < trade["rejection1"]["low"])
-            if recovered:
-                trade["phase"], trade["seen_favorable"] = "await_r2", False
-
-        elif trade["phase"] == "await_r2":
-            if is_favorable:
-                trade["seen_favorable"] = True
-            elif trade["seen_favorable"] and is_counter:
-                trade["phase"] = "exit_on_next_open"
-
-        elif trade["phase"] == "exit_on_next_open":
-            _close_remaining(trade, c["open"] * (1 - slip * d), "second rejection exit",
-                             session, state, c["t"])
-            return None
-
-    return trade
-
-
-# ── SA5 candle-pattern flip (live) ───────────────────────────────────────────
-# Mirrors backtest._sa5_manage_leg(): the stop is fixed (never trails); any closed
-# candle after entry that is a reversal_candle() against the position is held as a
-# pending reversal, and if the VERY NEXT closed candle confirms it (closes through
-# that reversal candle's own extreme), the leg ends and flips to the opposite side
-# immediately. Live can't fill at "the next candle's open" the way the backtest
-# does, so both the exit and the new entry use the best price available right now
-# (the confirming candle's close) instead of waiting for one more candle.
-
-def manage_sa5_live(trade, session, end_dt, state):
-    d, slip = trade["direction"], C.SLIPPAGE
-    mins = int((now_ms() - trade["entry_bar"]) / 60000) + 30
-
-    since = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=True)
-             if c["t"] >= trade["entry_bar"]]
-    if not since:
-        return trade
-    if now_ist() >= end_dt - dt.timedelta(minutes=1):
-        last_px = since[-1]["close"] * (1 - slip * d)
-        return end_trade(trade, last_px, "session end", session, state, place_order=not C.DRY_RUN)
-    if C.DRY_RUN:
-        if stop_was_hit(trade, since):
-            return end_trade(trade, trade["sl"] * (1 - slip * d), "stop hit", session, state)
-    else:
-        if ex.open_position() is None:
-            trade["missing_polls"] += 1
-            if trade["missing_polls"] >= 2:
-                return end_trade(trade, trade["sl"] * (1 - slip * d),
-                                 "stopped out on the exchange (approx fill)", session, state)
-            return trade
-        trade["missing_polls"] = 0
-
-    closed = [c for c in ex.candles(minutes_back=max(mins, 60), include_forming=False)
-              if c["t"] > trade["pattern_last_t"]]
-    for c in closed:
-        trade["pattern_last_t"] = c["t"]
-        skip_check = trade.pop("sa5_skip_reversal_check_once", False)
-        pending = trade.get("sa5_pending_reversal")
-        if pending:
-            flipped = ((d == -1 and c["close"] > pending["high"]) or
-                       (d == 1 and c["close"] < pending["low"]))
-            if flipped:
-                px = c["close"] * (1 - slip * d)
-                hours = (c["t"] - trade["entry_bar"]) / 3_600_000
-                leg_pnl_v = leg_pnl(trade, px, trade["open_qty"], hours)
-                total_leg_pnl = trade["realised"] + leg_pnl_v
-                state["day_pnl"] += leg_pnl_v
-                state["consec_losses"] = state["consec_losses"] + 1 if total_leg_pnl <= 0 else 0
-                if C.MAX_CONSEC_LOSSES and state["consec_losses"] >= C.MAX_CONSEC_LOSSES:
-                    state["halted"] = True
-                    state["halt_through"] = str(now_ist().date() + dt.timedelta(days=C.HALT_DAYS))
-                    notify.send(f"⚠️ <b>HALTED</b> — {state['consec_losses']} losses in a row. "
-                                f"No new trades through {state['halt_through']} (IST).")
-
-                new_d = -d
-                new_level = pending["low"] if new_d == 1 else pending["high"]
-                new_sl = new_level * (1 - new_d * C.SL_LEVEL_BUFFER) if C.SA5_USE_BUFFER_SL \
-                    else new_level
-                new_entry = px * (1 + slip * new_d)
-                bad_sl = (new_d == 1 and new_entry <= new_sl) or (new_d == -1 and new_entry >= new_sl)
-                new_qty = 0 if bad_sl else contracts(new_entry, new_sl)
-                if not C.DRY_RUN:
-                    ex.market_order("sell" if d == 1 else "buy", trade["open_qty"])
-                notify.send(f"<b>FLIP</b> {trade['sub_agent']} {session}\n"
-                            f"<pre>closed {'LONG' if d == 1 else 'SHORT'} at {px:,.2f}\n"
-                            f"leg P&amp;L Rs {total_leg_pnl:,.2f}  day P&amp;L Rs {state['day_pnl']:,.2f}"
-                            f"{'' if new_qty > 0 else chr(10) + 'no further leg — size/stop invalid'}"
-                            f"</pre>", silent=(new_qty > 0))
-                log.info("FLIP %s leg pnl=%.2f", trade["sub_agent"], total_leg_pnl)
-                if new_qty <= 0:
-                    return None
-                if not C.DRY_RUN:
-                    ex.market_order("buy" if new_d == 1 else "sell", new_qty)
-                trade.update(direction=new_d, entry=new_entry, sl=new_sl, qty=new_qty,
-                             open_qty=new_qty, risk_px=abs(new_entry - new_sl), best=new_entry,
-                             realised=0.0, seen={}, missing_polls=0,
-                             entry_bar=c["t"], sa5_pending_reversal=None,
-                             sa5_skip_reversal_check_once=True)
-                d = new_d
-                continue
-            trade["sa5_pending_reversal"] = None
-        if not skip_check and sa.reversal_candle(c, d):
-            trade["sa5_pending_reversal"] = {"high": c["high"], "low": c["low"]}
-
     return trade
 
 
 # ── main loop ───────────────────────────────────────────────────────────────
 
 def main():
+    """Entry point. Wraps the loop in the exact parameters the backtest validated
+    this engine with (tightened clean-breakout, Rs 10,000 capital) so the live bot
+    can never silently drift from them because of a Railway variable that is
+    missing, stale, or still set for the old engine."""
+    with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=10000):
+        _main_loop()
+
+
+def _main_loop():
     missing = C.validate()
     sync_spec()
     mode = "DRY RUN — paper account, no orders" if C.DRY_RUN else "LIVE TRADING"
     notify.send(f"🟢 <b>SORB-15 started</b>\n<pre>mode      : {mode}\n"
                 f"pair      : {C.PAIR}\nleverage  : {C.LEVERAGE}x\n"
-                f"capital   : Rs {C.CAPITAL_INR:,.0f}\nrisk/trade: Rs {C.RISK_PER_TRADE_INR:,.0f}\n"
-                f"sessions  : London 13:00-18:45, NY 19:00-01:15 IST\n"
-                f"agents    : SA1 SA2 SA3 SA4</pre>")
+                f"capital   : Rs {C.CAPITAL_INR:,.0f}  (margin/slot Rs {C.CAPITAL_INR / 2:,.0f})\n"
+                f"sessions  : Tokyo 05:30-07:15-14:00, London, New York (IST)\n"
+                f"agents    : SA1, SA4 (clean breakout {1 - C.CLEAR_TOUCH_TOLERANCE:.0%} outside)\n"
+                f"stop      : broken level +/- {BT.SA134_SL_BUFFER_PCT:.1%}, never moves\n"
+                f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R, else close at the next Tokyo open\n"
+                f"one position at a time — a later session waits for it to resolve</pre>")
     if missing:
         log.warning("missing env vars (ok in dry run): %s", missing)
     state = notify.load()
@@ -648,43 +460,22 @@ def main():
             name, o, dl, e = active_session(now)
             trade = state.get("trade")
 
+            # ---- manage an open trade (any session, or none at all) ----
+            if trade:
+                state["trade"] = manage(trade, state)
+                notify.save(state)
+                time.sleep(C.POLL_SECONDS)
+                continue
+
             # ---- outside a session ----
             if name is None:
-                if trade:
-                    if trade["sub_agent"] == "SA2":
-                        # SA2's exit is candle-pattern based, not session-bound — keep
-                        # managing it at normal poll speed even with no session open.
-                        state["trade"] = manage_sa2_live(trade, trade["session"], state)
-                        if state["trade"] is None:
-                            state["open_london"] = None
-                        notify.save(state)
-                        time.sleep(C.POLL_SECONDS)
-                        continue
-                    # The session ended while we were offline. Flatten, never leave it open.
-                    px = ex.candles(minutes_back=60, include_forming=True)[-1]["close"]
-                    state["trade"] = end_trade(trade, px, "session ended while the bot was offline",
-                                               trade["session"], state, place_order=not C.DRY_RUN)
                 notify.save(state)
                 nap = min(seconds_to_next_open(now), 900)
                 log.info("no session active — sleeping %ss", nap)
                 time.sleep(nap)
                 continue
 
-            # ---- manage an open trade ----
-            if trade:
-                if trade["sub_agent"] == "SA2":
-                    state["trade"] = manage_sa2_live(trade, name, state)
-                elif trade["sub_agent"] == "SA5":
-                    state["trade"] = manage_sa5_live(trade, name, e, state)
-                else:
-                    state["trade"] = manage(trade, name, e, state)
-                if state["trade"] is None:
-                    state["open_london"] = None
-                notify.save(state)
-                time.sleep(C.POLL_SECONDS)
-                continue
-
-            key = f"{now.date()}|{name}"
+            key = f"{o.date()}|{name}"
             if key in state["done_sessions"] or state["halted"] or (
                     C.DAILY_LOSS_LIMIT_INR and state["day_pnl"] <= -C.DAILY_LOSS_LIMIT_INR):
                 time.sleep(C.POLL_SECONDS)
@@ -696,7 +487,7 @@ def main():
                 continue
             H, L = rc["high"], rc["low"]
             di = sa.deadline_index(sess, ms(dl))
-            sig = sa.detect(sess, H, L, di, name, state.get("open_london"))
+            sig = BT.sa134_entry_signal(sess, H, L, di)
 
             def close_session(msg, silent=True):
                 state["done_sessions"].append(key)
@@ -711,36 +502,19 @@ def main():
                 continue
 
             st = sig.get("state")
-            if st == "continue":                      # SA3
-                close_session(notify.signal_block(
-                    sig, name, H, L, action="CONTINUE" if sig["continue_trade"] else "HOLD",
-                    reason=sig["detail"]), silent=False)
-                state["open_london"] = None
-                continue
-            if st == "pending":                       # SA4 waiting on candles
+            if st == "pending":                       # SA4 awaiting momentum confirmation
                 if now >= dl + dt.timedelta(minutes=C.TIMEFRAME_MIN):
                     close_session(f"<b>{name}</b> — {sig['sub_agent']} was still awaiting confirmation "
                                   f"at the deadline. No trade.")
                 time.sleep(C.POLL_SECONDS)
                 continue
             if st == "veto":
-                if C.CONTINUE_AFTER_VETO:
-                    veto_key = [key, sig.get("trigger_i")]
-                    if state.get("last_veto") != veto_key:
-                        notify.send(notify.signal_block(
-                            sig, name, H, L, action="AVOID",
-                            reason="Momentum reversed against the breakout — " + sig["detail"]
-                                   + " (still watching for another setup)"), silent=True)
-                        state["last_veto"] = veto_key
-                        notify.save(state)
-                    time.sleep(C.POLL_SECONDS)
-                    continue
                 close_session(notify.signal_block(
                     sig, name, H, L, action="AVOID",
                     reason="Momentum reversed against the breakout — " + sig["detail"]),
                     silent=False)
                 continue
-            if sig["trigger_i"] > di:
+            if sig["trigger_i"] > di and not sig.get("exempt_deadline"):
                 close_session(notify.signal_block(
                     sig, name, H, L, action="AVOID",
                     reason="Signal completed after the entry deadline"))
@@ -750,11 +524,8 @@ def main():
             # crash or exception mid-entry can never trigger a second entry.
             state["done_sessions"].append(key)
             notify.save(state)
-            trade = enter(sig, name, rc, sess, state)
+            trade = enter(sig, name, rc, sess)
             state["trade"] = trade
-            if trade and name == "London" and sig["sub_agent"] == "SA2":
-                state["open_london"] = {"sub_agent": "SA2", "direction": sig["direction"],
-                                        "level": sig["level"]}
             notify.save(state)
             time.sleep(C.POLL_SECONDS)
 

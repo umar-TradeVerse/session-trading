@@ -1052,6 +1052,301 @@ def _run_sa5_breakout_flip(candles):
     return trades, signals
 
 
+# ── experimental: SA1/SA4 only, Tokyo+London+NY, generalized continuation ───
+# Built at the user's request as a different design, not a tweak of the SA1-5
+# engines above. Rules:
+#   - Only SA1 and SA4 ever open a trade (SA2/SA5 are out entirely). SA1 first,
+#     then SA4, same as the existing router's priority.
+#   - A THIRD session, Tokyo (05:30-07:15-14:00 IST), runs before London.
+#   - "SA3" becomes generalized continuation: at most one position open at a
+#     time, full stop. A session only looks for a fresh SA1/SA4 entry when
+#     nothing is already open; if Tokyo opens one, London and New York don't
+#     open independent trades, they just let it keep running.
+#   - Stop = the range candle's own extreme (same convention as the live SA1/
+#     SA4), and it is NEVER moved -- no breakeven, no trailing.
+#   - Take-profit is staged, not a single R multiple: 50% at 2R, 25% at 3R,
+#     25% at 4R. Whichever hits, whenever it hits (not bound to the session
+#     that opened the trade) -- it can run across all three sessions in a day.
+#   - If nothing has resolved by the end of the day (just before the next
+#     Tokyo open), whatever's left is flattened there.
+#   - Position size is a fixed notional (CAPITAL_INR / 2, one of up to 2
+#     portfolio-wide slots in the eventual multi-symbol design), not solved
+#     for a target risk the way qty_for() does for SA1-5.
+
+TOKYO_SESSION = {"open": dt.time(5, 30), "deadline": dt.time(7, 15), "end": dt.time(14, 0)}
+# SL = the broken level +/- this, universally (replaces the raw range-candle extreme --
+# a tight range candle's raw extreme gets hit on pure noise, so every stop gets this buffer,
+# not just narrow ones). Run this engine with CLEAR_TOUCH_TOLERANCE=0.10 (an override, not a
+# default) for the tightened 90%-outside clean-breakout requirement on both SA1 and SA4.
+SA134_SL_BUFFER_PCT = 0.015
+# Staged take-profit: 50% booked at 2R, 25% at 3R, 25% at 4R. Shared with the
+# live engine (sorb15/main.py) so both size and exit the same legs the same way.
+SA134_TP_R = (2, 3, 4)
+SA134_TP_FRACS = (0.50, 0.25, 0.25)
+
+
+def sa134_session_windows(day):
+    o = _at(day, TOKYO_SESSION["open"])
+    yield "Tokyo", o, _at(day, TOKYO_SESSION["deadline"], o), _at(day, TOKYO_SESSION["end"], o)
+    for name, o, dl, e in session_windows(day):
+        yield name, o, dl, e
+
+
+def _sa134_result(d, entry, notional, qty, legs, exit_ms, reason):
+    gross = inr = 0.0
+    for px, frac, hh in legs:
+        g, v = leg_pnl(d, entry, px, notional, hh, frac)
+        gross += g
+        inr += v
+    inr = max(inr, -C.CAPITAL_INR)
+    return dict(exit_ms=exit_ms, exit=legs[-1][0], exit_reason=reason, legs=len(legs),
+                notional_inr=round(notional), risk_inr=notional * abs(entry - legs[0][0]) / entry,
+                mfe_R=0.0, candles_held=0, gross_inr=gross * notional, partial_hit=len(legs) > 1,
+                qty_btc=qty, R=(d * (legs[-1][0] - entry) / entry), pnl_inr=inr)
+
+
+def _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms):
+    slip = C.SLIPPAGE
+    notional = qty * entry * C.USDINR
+    entry_ms = candles[entry_i]["t"]
+    risk_px = abs(entry - sl)
+    tp_levels = [entry + d * r * risk_px for r in SA134_TP_R]
+    fracs = SA134_TP_FRACS
+    leg_qtys, remaining = [], qty
+    for frac in fracs[:-1]:
+        q = sizing.floor_step(qty * frac, C.QTY_STEP)
+        if q < C.MIN_QTY - 1e-12:
+            q = 0.0
+        leg_qtys.append(q)
+        remaining = round(remaining - q, 8)
+    leg_qtys.append(round(remaining, 8))
+
+    legs = []
+    open_qty = qty
+    hit = [False, False, False]
+    n = len(candles)
+
+    def hours(t):
+        return (t - entry_ms) / 3_600_000
+
+    j = entry_i
+    while j < n:
+        c = candles[j]
+        adv = c["low"] if d == 1 else c["high"]
+        if (adv <= sl) if d == 1 else (adv >= sl):
+            gap = (c["open"] < sl) if d == 1 else (c["open"] > sl)
+            px = (c["open"] if gap else sl) * (1 - slip * d)
+            legs.append((px, open_qty / qty, hours(c["t"])))
+            return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "stop_loss")
+
+        fav = c["high"] if d == 1 else c["low"]
+        for k in range(3):
+            if hit[k] or leg_qtys[k] <= 0:
+                continue
+            reached = (fav >= tp_levels[k]) if d == 1 else (fav <= tp_levels[k])
+            if reached:
+                hit[k] = True
+                px = tp_levels[k] * (1 - slip * d)
+                legs.append((px, leg_qtys[k] / qty, hours(c["t"])))
+                open_qty = round(open_qty - leg_qtys[k], 8)
+        if open_qty <= 1e-9:
+            return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "all_targets_hit")
+        if c["t"] + STEP_MS >= day_end_ms:
+            px = c["close"] * (1 - slip * d)
+            legs.append((px, open_qty / qty, hours(c["t"])))
+            return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "day_end")
+        j += 1
+
+    c = candles[-1]
+    px = c["close"] * (1 - slip * d)
+    legs.append((px, open_qty / qty, hours(c["t"])))
+    return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "ran_out_of_data")
+
+
+def sa134_entry_signal(prefix, H, L, deadline_i):
+    """Called with a GROWING prefix (prefix = sess[:k+1]) and re-evaluated fresh
+    at each new candle k -- same causal convention the shared router uses -- so
+    the flip-scan below can never see a candle that, in real time, closes after
+    SA4 would already have committed to a trade.
+
+    SA1 first, then SA4 -- both require a CLEAN breakout (clear_of_level, so
+    tightened via CLEAR_TOUCH_TOLERANCE override when this engine is run).
+
+    SA1: the first candle after the range candle.
+      - If it closes CLEAN beyond a line, that's the signal immediately (same
+        as the standard SA1) -- there's no time for anything to override it.
+      - If it closes beyond a line but is NOT clean, SA1 does not fire yet --
+        instead it watches for a later candle that closes the OPPOSITE way,
+        confirmed by the candle right after it (a liquidity-sweep reversal the
+        first candle didn't catch). The flip candle itself is not required to
+        be clean -- a marginal, barely-beyond close is exactly the character
+        of the candle that starts a real reversal here. This flip is exempt
+        from the formal entry deadline: catching a sweep inherently needs more
+        time than a fresh breakout does.
+      - If neither happens, SA1 has nothing to say for this prefix.
+
+    SA4: scans to the deadline for the first clean breakout (skipping past an
+    impure one rather than giving up), then its usual 2-candle momentum window.
+    """
+    if len(prefix) >= 1:
+        d0 = sa.closes_beyond(prefix[0], H, L)
+        if d0 != 0:
+            if sa.clear_of_level(prefix[0], d0, H, L):
+                return {"sub_agent": "SA1", "direction": d0, "trigger_i": 0,
+                        "setup": "Second-candle clear breakout", "breakout": True,
+                        "rejection": False, "momentum_shift": False,
+                        "level": H if d0 == 1 else L, "state": "ready",
+                        "detail": f"second candle closed "
+                                  f"{'above the high' if d0 == 1 else 'below the low'}"}
+            for m in range(1, len(prefix) - 1):
+                dm = sa.closes_beyond(prefix[m], H, L)
+                if dm == -d0 and sa.closes_beyond(prefix[m + 1], H, L) == dm:
+                    return {"sub_agent": "SA1", "direction": dm, "trigger_i": m + 1,
+                            "setup": "Second-candle breakout invalidated by a later opposite "
+                                     "breakout (liquidity sweep), confirmed by the next candle",
+                            "breakout": True, "rejection": True, "momentum_shift": True,
+                            "level": H if dm == 1 else L, "state": "ready",
+                            "exempt_deadline": True,
+                            "detail": f"flipped {'LONG' if dm == 1 else 'SHORT'} after an "
+                                      f"opposite breakout at candle {m}, confirmed by the next"}
+
+    for i in range(min(len(prefix), deadline_i + 1)):
+        c = prefix[i]
+        d = sa.closes_beyond(c, H, L)
+        if d == 0 or not sa.clear_of_level(c, d, H, L):
+            continue
+        base = {"sub_agent": "SA4", "direction": d, "breakout": True, "level": H if d == 1 else L,
+                "setup": "Clean breakout, candle not touching the marked lines"}
+        return sa._momentum_check(prefix, d, i, base)
+    return None
+
+
+def run_sa134_continuation(candles, **overrides):
+    with C.override(**overrides):
+        return _run_sa134_continuation(candles)
+
+
+def _run_sa134_continuation(candles):
+    if not candles:
+        return [], []
+    by_t = {c["t"]: i for i, c in enumerate(candles)}
+    t0 = candles[0]["t"]
+    t_end_data = candles[-1]["t"] + STEP_MS
+    days = sorted({dt.datetime.fromtimestamp(c["t"] / 1000, IST).date() for c in candles})
+    fixed_margin = C.CAPITAL_INR / 2   # one of up to 2 portfolio slots; exposure = this * LEVERAGE
+
+    trades, signals = [], []
+    equity = C.CAPITAL_INR
+    busy_until_ms = None   # an open position blocks every session until it resolves
+
+    for day in days:
+        day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
+        if day_end_ms > t_end_data:
+            day_end_ms = t_end_data
+
+        for name, o, dl, e in sa134_session_windows(day):
+            o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
+            if o_ms < t0 or e_ms > t_end_data or o_ms not in by_t:
+                continue
+
+            log = {"date": day, "session": name, "sub_agent": "-", "setup": "no setup",
+                   "direction": "-", "breakout": False, "rejection": False,
+                   "momentum_shift": False, "tp": "staged 2R/3R/4R"}
+
+            def skip(reason, action="AVOID", sig=None):
+                if sig:
+                    log.update(sub_agent=sig["sub_agent"], setup=sig["setup"],
+                               direction="LONG" if sig["direction"] == 1 else "SHORT",
+                               breakout=sig["breakout"], rejection=sig["rejection"],
+                               momentum_shift=sig["momentum_shift"])
+                log.update(action=action, reason=reason)
+                signals.append(log)
+
+            if busy_until_ms is not None and o_ms < busy_until_ms:
+                skip("A position from an earlier session is still open — continuing it, "
+                     "not opening a new one")
+                continue
+
+            i0 = by_t[o_ms]
+            rc = candles[i0]
+            sess, j = [], i0 + 1
+            while j < len(candles) and candles[j]["t"] < e_ms:
+                sess.append(candles[j])
+                j += 1
+            if len(sess) < 3:
+                continue
+            H, L = rc["high"], rc["low"]
+            di = sa.deadline_index(sess, dl_ms)
+
+            done = False
+            for k in range(len(sess)):
+                prefix = sess[:k + 1]
+                kdi = sa.deadline_index(prefix, dl_ms)
+                sig = sa134_entry_signal(prefix, H, L, kdi)
+                if sig is None:
+                    continue
+                if sig.get("state") == "pending":
+                    continue
+                if sig.get("state") == "veto":
+                    skip("Momentum reversed against the breakout — " + sig["detail"], sig=sig)
+                    done = True
+                    break
+                assert sig["trigger_i"] == k, "a signal must fire on its trigger candle"
+                if k > di and not sig.get("exempt_deadline"):
+                    skip("Trigger candle closed after the entry deadline", sig=sig)
+                    done = True
+                    break
+                entry_i = k + 1
+                if entry_i >= len(sess):
+                    skip("No candle left to enter on", sig=sig)
+                    done = True
+                    break
+                d = sig["direction"]
+                entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
+                level0 = H if d == 1 else L
+                sl = level0 * (1 - d * SA134_SL_BUFFER_PCT)
+                if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
+                    skip("Entry is already beyond its own stop", sig=sig)
+                    done = True
+                    break
+                qty = sizing.qty_for_fixed_notional(entry, fixed_margin)
+                if qty <= 0:
+                    skip("Size below the exchange minimum (qty / notional)", sig=sig)
+                    done = True
+                    break
+
+                entry_ms = sess[entry_i]["t"]
+                entry_global_i = by_t[entry_ms]
+                res = _sa134_manage(candles, entry_global_i, d, entry, sl, qty, day_end_ms)
+
+                equity += res["pnl_inr"]
+                risk_pct = abs(entry - sl) / entry
+                cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / risk_pct
+                skip(sig["detail"], action="ENTER", sig=sig)
+                log.update(entry=round(entry, 2), sl=round(sl, 2),
+                           pnl_inr=round(res["pnl_inr"], 2), exit_reason=res["exit_reason"])
+                trades.append(dict(
+                    date=day, weekday=day.strftime("%a"), session=name,
+                    sub_agent=sig["sub_agent"], setup=sig["setup"],
+                    side="LONG" if d == 1 else "SHORT",
+                    range_high=H, range_low=L, range_pct=(H - L) / L, level=sig["level"],
+                    breakout=sig["breakout"], rejection=sig["rejection"],
+                    momentum_shift=sig["momentum_shift"],
+                    trigger_time=dt.datetime.fromtimestamp(sess[k]["t"] / 1000, IST),
+                    entry_time=dt.datetime.fromtimestamp(entry_ms / 1000, IST),
+                    entry=entry, sl=sl, risk_pct=risk_pct, cost_in_R=cost_in_R,
+                    exit_time=dt.datetime.fromtimestamp(res["exit_ms"] / 1000, IST),
+                    equity_after=round(equity), reason=sig["detail"],
+                    **{k2: v for k2, v in res.items() if k2 != "exit_ms"}))
+                busy_until_ms = res["exit_ms"]
+                done = True
+                break
+
+            if not done:
+                skip("No sub-agent condition met this session")
+    return trades, signals
+
+
 if __name__ == "__main__":
     # python -m sorb15.backtest --start 2026-01-01
     import argparse

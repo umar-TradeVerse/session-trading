@@ -39,6 +39,17 @@ def qty_for(entry, sl):
     return q
 
 
+def qty_for_fixed_notional(entry, margin_inr):
+    """BTC quantity for a fixed MARGIN allocation (not solved for a target risk) --
+    exposure is margin_inr * LEVERAGE, same convention qty_for() uses for capital.
+    0.0 if the exchange would refuse the order (below minimum size or notional)."""
+    notional_inr = margin_inr * C.LEVERAGE
+    q = floor_step((notional_inr / C.USDINR) / entry, C.QTY_STEP)
+    if q < C.MIN_QTY - 1e-12 or q * entry < C.MIN_NOTIONAL_USDT:
+        return 0.0
+    return q
+
+
 def partial_qty(qty):
     """Quantity to close at the partial target, quantised to the step.
     0.0 means the partial cannot be taken: either piece would be below the minimum."""

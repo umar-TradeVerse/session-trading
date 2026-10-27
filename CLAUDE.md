@@ -3,6 +3,41 @@
 Owner: Umar. These are **his rules** for a session high/low ("liquidity") breakout strategy. Status as of **18 Oct 2026**.
 His original ask was simple: *backtest the rules I gave on real data.* Do not drag him into credentials or deployment unless he asks.
 
+## CURRENT LIVE ENGINE (as of 27 Oct 2026) — supersedes everything below until noted otherwise
+The live bot (`sorb15/main.py`, deployed to Railway) no longer runs the SA1–SA5 engine described in
+the rest of this file. It now runs **SA1 + SA4 + Tokyo continuation**, Umar's explicit redesign:
+- Sessions (IST): **Tokyo 05:30–07:15–14:00**, then London and New York (`config.py`). One position
+  at a time — a later session is skipped entirely while an earlier one is still open (this replaces
+  the old SA3 detector; there is no separate continuation check any more).
+- Only SA1 and SA4 fire, both requiring a CLEAN breakout (closes beyond the line with ≤10% of the
+  candle back inside the range — tightened from the old 15%). SA1 also catches a liquidity-sweep
+  reversal: an impure first breakout followed by a confirmed opposite close flips the trade.
+- Stop = the broken level ± **1.5%**, set once at entry and **never moved** (no breakeven, no trail —
+  Umar's explicit call: "the sl should remain as it not to be shifted").
+- Targets: **50% at 2R, 25% at 3R, 25% at 4R**; whatever is still open at the next Tokyo open (the
+  "day end") closes there, whichever comes first besides the stop.
+- Sizing is **fixed margin**, not risk-targeted: margin/slot = capital ÷ 2 (one of up to 2 planned
+  slots; only 1 is used today, BTC-only), exposure = margin × 10x leverage. `sizing.qty_for_fixed_notional()`.
+- Capital **Rs 10,000** and the tightened 10%-touch-tolerance are hardcoded via `C.override(...)` at
+  the top of `main()` in `main.py` — deliberately NOT left to a Railway variable, so a stale or
+  missing env var on Railway can never silently drift the live bot from what was backtested.
+- Shared source of truth for both backtest and live: `sorb15/backtest.py` —
+  `sa134_entry_signal`, `TOKYO_SESSION`, `SA134_SL_BUFFER_PCT`, `SA134_TP_R`, `SA134_TP_FRACS`.
+  Live-only order management is `sorb15/main.py`'s `enter()` / `manage()`.
+- **Backtest result (BTC, Jan–Oct 2026, this config): 260 trades, net −₹13,134, PF 0.85, max
+  drawdown −₹20,516 on ₹10,000 capital — net LOSING, deployed anyway at Umar's explicit instruction
+  for live paper-data validation**, same as the earlier SA4/SA5 decisions below. Known issues, not
+  yet fixed: (a) SA4 can still preempt a later SA1 liquidity-sweep flip within the same session
+  (the 14 Sept case) — unresolved; (b) fixed-margin sizing against a variable-width stop means
+  per-trade risk is uncontrolled and max drawdown has repeatedly exceeded a large fraction of
+  starting capital — the single biggest real-money risk if this is ever switched off DRY_RUN.
+  SA1 alone, isolated, is the one profitable piece so far (58 trades, net +₹2,824, PF 1.18).
+- `DRY_RUN=true` stays true. Nothing here has traded with real money.
+- The multi-symbol (10-asset, cap-of-2-slots) design is still only a plan — not implemented.
+  BTC-only validation was the explicitly agreed first step.
+- Everything from "Where things stand" down to "Open decisions" below is the **OLD SA1–SA5 engine**:
+  historical record of the original backtest, kept for reference, no longer what's running live.
+
 ## Where things stand (read this first)
 - The backtest is done, on real CoinDCX candles (31 Dec 2025 → 17 Oct 2026, 27,882 candles, no gaps).
 - **The rules, as specified, lose money after costs.** 301 trades, net **−₹4,805** on ₹5,000 (ends at ₹195), PF 0.53, t(net) −4.17.
