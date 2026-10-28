@@ -1083,6 +1083,14 @@ SA134_SL_BUFFER_PCT = 0.015
 # live engine (sorb15/main.py) so both size and exit the same legs the same way.
 SA134_TP_R = (2, 3, 4)
 SA134_TP_FRACS = (0.50, 0.25, 0.25)
+# The symbol registry and slot cap for run_sa134_portfolio / the live multi-symbol
+# bot -- ONE shared list so backtest and live can never silently drift apart on
+# which markets are traded. Oil and NatGas only started trading on CoinDCX from
+# 1 Apr 2026 -- fetch their history from that date, not from the other symbols'
+# earlier start.
+SA134_SYMBOLS = {"BTC": "B-BTC_USDT", "Gold": "B-XAU_USDT", "Silver": "B-XAG_USDT",
+                 "Oil": "B-CL_USDT", "NatGas": "B-NATGAS_USDT"}
+SA134_MAX_SLOTS = 2
 
 
 def sa134_session_windows(day):
@@ -1217,7 +1225,15 @@ def sa134_entry_signal(prefix, H, L, deadline_i):
             continue
         base = {"sub_agent": "SA4", "direction": d, "breakout": True, "level": H if d == 1 else L,
                 "setup": "Clean breakout, candle not touching the marked lines"}
-        return sa._momentum_check(prefix, d, i, base)
+        sig = sa._momentum_check(prefix, d, i, base)
+        if sig.get("state") == "veto" and C.SA4_FLIP_ON_REVERSAL:
+            new_d = -d
+            return {"sub_agent": "SA4", "direction": new_d, "trigger_i": sig["trigger_i"],
+                    "setup": "Clean breakout reversed by a confirmed momentum flip",
+                    "breakout": True, "rejection": True, "momentum_shift": True,
+                    "level": H if new_d == 1 else L, "state": "ready", "exempt_deadline": True,
+                    "detail": sig["detail"] + f" -- flipped {'LONG' if new_d == 1 else 'SHORT'}"}
+        return sig
     return None
 
 
@@ -1344,6 +1360,172 @@ def _run_sa134_continuation(candles):
 
             if not done:
                 skip("No sub-agent condition met this session")
+    return trades, signals
+
+
+def _sa134_session_candidate(sess, H, L, dl_ms):
+    """The single-symbol entry-detection loop from _run_sa134_continuation, isolated
+    so run_sa134_portfolio can run it once per free symbol and THEN allocate slots
+    across symbols -- instead of each symbol deciding in isolation whether it alone
+    has a free slot. Returns (entry_i, sig, avoid) where avoid is None only when
+    entry_i is not None (there is something to enter on, pending a free slot)."""
+    di = sa.deadline_index(sess, dl_ms)
+    for k in range(len(sess)):
+        prefix = sess[:k + 1]
+        kdi = sa.deadline_index(prefix, dl_ms)
+        sig = sa134_entry_signal(prefix, H, L, kdi)
+        if sig is None:
+            continue
+        if sig.get("state") == "pending":
+            continue
+        if sig.get("state") == "veto":
+            return None, sig, "Momentum reversed against the breakout — " + sig["detail"]
+        assert sig["trigger_i"] == k, "a signal must fire on its trigger candle"
+        if k > di and not sig.get("exempt_deadline"):
+            return None, sig, "Trigger candle closed after the entry deadline"
+        entry_i = k + 1
+        if entry_i >= len(sess):
+            return None, sig, "No candle left to enter on"
+        return entry_i, sig, None
+    return None, None, "No sub-agent condition met this session"
+
+
+def run_sa134_portfolio(candles_by_symbol, max_slots=2, **overrides):
+    """Every symbol runs the identical SA1+SA4+Tokyo engine independently, sharing
+    ONE pool of `max_slots` concurrent positions system-wide (fixed margin per slot
+    = capital / max_slots). When more than one symbol has a qualifying entry in the
+    same session and free slots run out, slots go to whichever signal's trigger
+    candle closes EARLIEST -- a live poller scanning symbols can only ever act on
+    what has already completed, so it cannot "wait and compare" a slower symbol's
+    breakout against a faster one. An exact tie (same trigger candle, different
+    symbols) is broken by close_strength, the cleaner/stronger breakout."""
+    with C.override(**overrides):
+        return _run_sa134_portfolio(candles_by_symbol, max_slots)
+
+
+def _run_sa134_portfolio(candles_by_symbol, max_slots):
+    syms = [s for s in candles_by_symbol if candles_by_symbol[s]]
+    if not syms:
+        return [], []
+    by_t = {s: {c["t"]: i for i, c in enumerate(candles_by_symbol[s])} for s in syms}
+    t0 = {s: candles_by_symbol[s][0]["t"] for s in syms}
+    t_end = {s: candles_by_symbol[s][-1]["t"] + STEP_MS for s in syms}
+    days = sorted({dt.datetime.fromtimestamp(c["t"] / 1000, IST).date()
+                   for s in syms for c in candles_by_symbol[s]})
+    fixed_margin = C.CAPITAL_INR / max_slots
+
+    trades, signals = [], []
+    equity = C.CAPITAL_INR
+    busy_until = {}   # symbol -> ms its open trade resolves at
+
+    for day in days:
+        day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
+
+        for name, o, dl, e in sa134_session_windows(day):
+            o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
+            open_now = sum(1 for s in syms if busy_until.get(s) is not None and o_ms < busy_until[s])
+            free_slots = max_slots - open_now
+
+            candidates = []
+            for sym in syms:
+                log = {"date": day, "session": name, "symbol": sym, "sub_agent": "-",
+                       "setup": "no setup", "direction": "-", "breakout": False,
+                       "rejection": False, "momentum_shift": False, "tp": "staged 2R/3R/4R"}
+
+                if busy_until.get(sym) is not None and o_ms < busy_until[sym]:
+                    log.update(action="AVOID", reason="A position from an earlier session "
+                                                       "is still open — continuing it, not "
+                                                       "opening a new one")
+                    signals.append(log)
+                    continue
+                if o_ms < t0[sym] or e_ms > t_end[sym] or o_ms not in by_t[sym]:
+                    continue   # no data for this symbol at this session instance
+
+                candles = candles_by_symbol[sym]
+                i0 = by_t[sym][o_ms]
+                rc = candles[i0]
+                sess, j = [], i0 + 1
+                while j < len(candles) and candles[j]["t"] < e_ms:
+                    sess.append(candles[j])
+                    j += 1
+                if len(sess) < 3:
+                    continue
+                H, L = rc["high"], rc["low"]
+                entry_i, sig, avoid = _sa134_session_candidate(sess, H, L, dl_ms)
+
+                if entry_i is None:
+                    if sig is not None:
+                        log.update(sub_agent=sig["sub_agent"], setup=sig["setup"],
+                                   direction="LONG" if sig["direction"] == 1 else "SHORT",
+                                   breakout=sig["breakout"], rejection=sig["rejection"],
+                                   momentum_shift=sig["momentum_shift"])
+                    log.update(action="AVOID", reason=avoid)
+                    signals.append(log)
+                    continue
+
+                d = sig["direction"]
+                entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
+                sl = sig["level"] * (1 - d * SA134_SL_BUFFER_PCT)
+                base = dict(sub_agent=sig["sub_agent"], setup=sig["setup"],
+                            direction="LONG" if d == 1 else "SHORT", breakout=sig["breakout"],
+                            rejection=sig["rejection"], momentum_shift=sig["momentum_shift"])
+                if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
+                    log.update(**base, action="AVOID", reason="Entry is already beyond its own stop")
+                    signals.append(log)
+                    continue
+                qty = sizing.qty_for_fixed_notional(entry, fixed_margin)
+                if qty <= 0:
+                    log.update(**base, action="AVOID",
+                               reason="Size below the exchange minimum (qty / notional)")
+                    signals.append(log)
+                    continue
+
+                trigger_c = sess[sig["trigger_i"]]
+                strength = sa.close_strength(trigger_c, d, H, L)
+                candidates.append(dict(sym=sym, trigger_ms=trigger_c["t"], strength=strength,
+                                        sig=sig, rc=rc, H=H, L=L, sess=sess, entry_i=entry_i,
+                                        entry=entry, sl=sl, qty=qty, d=d, log=log, base=base))
+
+            # Allocate the session's free slots in the order a live poller would see
+            # these signals complete (earliest trigger candle first); an exact tie
+            # goes to the stronger breakout (close_strength).
+            candidates.sort(key=lambda c: (c["trigger_ms"], -c["strength"]))
+            for c in candidates:
+                sym, sig, rc, H, L, sess = c["sym"], c["sig"], c["rc"], c["H"], c["L"], c["sess"]
+                d, entry, sl, qty, log, base = c["d"], c["entry"], c["sl"], c["qty"], c["log"], c["base"]
+                if free_slots <= 0:
+                    log.update(**base, action="AVOID",
+                               reason="No free slot this session — claimed by a faster or "
+                                      "stronger breakout on another symbol")
+                    signals.append(log)
+                    continue
+                free_slots -= 1
+
+                entry_ms = sess[c["entry_i"]]["t"]
+                entry_global_i = by_t[sym][entry_ms]
+                res = _sa134_manage(candles_by_symbol[sym], entry_global_i, d, entry, sl, qty, day_end_ms)
+
+                equity += res["pnl_inr"]
+                risk_pct = abs(entry - sl) / entry
+                cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / risk_pct
+                log.update(**base, action="ENTER", reason=sig["detail"],
+                           entry=round(entry, 2), sl=round(sl, 2),
+                           pnl_inr=round(res["pnl_inr"], 2), exit_reason=res["exit_reason"])
+                signals.append(log)
+                trades.append(dict(
+                    symbol=sym, date=day, weekday=day.strftime("%a"), session=name,
+                    sub_agent=sig["sub_agent"], setup=sig["setup"],
+                    side="LONG" if d == 1 else "SHORT",
+                    range_high=H, range_low=L, range_pct=(H - L) / L, level=sig["level"],
+                    breakout=sig["breakout"], rejection=sig["rejection"],
+                    momentum_shift=sig["momentum_shift"],
+                    trigger_time=dt.datetime.fromtimestamp(c["trigger_ms"] / 1000, IST),
+                    entry_time=dt.datetime.fromtimestamp(entry_ms / 1000, IST),
+                    entry=entry, sl=sl, risk_pct=risk_pct, cost_in_R=cost_in_R,
+                    exit_time=dt.datetime.fromtimestamp(res["exit_ms"] / 1000, IST),
+                    equity_after=round(equity), reason=sig["detail"],
+                    **{k2: v for k2, v in res.items() if k2 != "exit_ms"}))
+                busy_until[sym] = res["exit_ms"]
     return trades, signals
 
 

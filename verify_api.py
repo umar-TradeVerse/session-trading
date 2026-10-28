@@ -62,7 +62,7 @@ try:
         print("         Everything below uses the exchange's values.")
     _send, notify.send = notify.send, (lambda *a, **k: None)     # no Telegram from a check
     try:
-        M.sync_spec()
+        M.sync_specs()
     finally:
         notify.send = _send
     print("   PASS  contract spec read. Orders will use quantity steps of "

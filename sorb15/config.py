@@ -105,6 +105,11 @@ SA2_MIN_PULLBACK_PCT = _f("SA2_MIN_PULLBACK_PCT", 0.30)
 # on, a messy first attempt is skipped instead, and SA4 keeps scanning for a later candle
 # that closes beyond the line cleanly, up to the deadline.
 SA4_SCAN_PAST_IMPURE_BREAKOUT = _b("SA4_SCAN_PAST_IMPURE_BREAKOUT", False)
+# SA1+SA4+Tokyo engine (backtest.sa134_entry_signal) only: baseline VETOes a SA4 breakout
+# the moment momentum reverses against it (session ends, no trade). When on, that same
+# confirmed reversal instead FLIPS the trade to the opposite side, mirroring the flip SA1
+# already has -- a test of whether the SA4 veto is leaving a real opposite move on the table.
+SA4_FLIP_ON_REVERSAL = _b("SA4_FLIP_ON_REVERSAL", False)
 # SA5 (breakout + flip-on-reversal): baseline stops each leg at the exact signal candle's
 # own extreme (the range candle for leg 1, the reversal candle for every flip after). When
 # on, each leg's stop instead sits SL_LEVEL_BUFFER beyond that same level, same convention

@@ -29,12 +29,12 @@ def _clean(rows):
     return out
 
 
-def fetch_coindcx(start_ms, end_ms):
+def fetch_coindcx(start_ms, end_ms, pair=None):
     url = C.PUBLIC_URL + "/market_data/candlesticks"
     rows, t = [], start_ms
     while t < end_ms:
         t2 = min(t + 3 * 86_400_000, end_ms)
-        r = requests.get(url, params={"pair": C.PAIR, "from": t // 1000, "to": t2 // 1000,
+        r = requests.get(url, params={"pair": pair or C.PAIR, "from": t // 1000, "to": t2 // 1000,
                                       "resolution": "15", "pcode": "f"},
                          headers=UA, timeout=25)
         r.raise_for_status()
@@ -96,15 +96,22 @@ def fetch_binance_futures(start_ms, end_ms):
     return _clean(rows)
 
 
-def fetch_history(start="2026-01-01", end=None, source="auto"):
-    """Returns (candles, source_name). `start`/`end` are IST dates (YYYY-MM-DD)."""
+def fetch_history(start="2026-01-01", end=None, source="auto", pair=None):
+    """Returns (candles, source_name). `start`/`end` are IST dates (YYYY-MM-DD).
+
+    `pair` fetches any CoinDCX futures market (e.g. "B-XAU_USDT" for gold), not just
+    BTC. The Binance fallback only ever serves BTCUSDT, so it is skipped entirely
+    for any non-default pair -- silently substituting BTC candles for gold/oil/etc
+    would be a correctness bug, not a convenience."""
     s = dt.datetime.fromisoformat(start).replace(tzinfo=IST) - dt.timedelta(hours=6)
     e = (dt.datetime.fromisoformat(end).replace(tzinfo=IST) + dt.timedelta(days=1)) if end \
         else dt.datetime.now(IST)
     start_ms, end_ms = int(s.timestamp() * 1000), int(e.timestamp() * 1000)
     expected = (end_ms - start_ms) / STEP_MS
-    order = ["coindcx", "binance_futures"] if source == "auto" else [source]
-    fetchers = {"coindcx": fetch_coindcx, "binance_futures": fetch_binance_futures}
+    is_btc = pair is None or pair == C.PAIR
+    order = (["coindcx", "binance_futures"] if is_btc else ["coindcx"]) if source == "auto" else [source]
+    fetchers = {"coindcx": lambda a, b: fetch_coindcx(a, b, pair=pair),
+                "binance_futures": fetch_binance_futures}
     now_ms = int(time.time() * 1000)
     for name in order:
         try:

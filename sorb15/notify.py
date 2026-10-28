@@ -57,7 +57,7 @@ def signal_block(sig, session, H, L, entry=None, sl=None, action="", reason="", 
 
 # ── state ───────────────────────────────────────────────────────────────────
 
-_DEFAULT = {"trade": None, "day": None,
+_DEFAULT = {"trades": {}, "day": None,
             "day_pnl": 0.0, "consec_losses": 0, "halted": False,
             "halt_through": None, "done_sessions": []}
 

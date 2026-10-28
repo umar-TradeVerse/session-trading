@@ -150,7 +150,8 @@ def mk_trade(d=1, entry=100000.0, sl=98500.0, qty=0.01):
         leg_qtys.append(q)
         remaining = round(remaining - q, 8)
     leg_qtys.append(round(remaining, 8))
-    return {"sub_agent": "SA1", "setup": "x", "session": "London", "direction": d,
+    return {"symbol": "BTC", "pair": "B-BTC_USDT", "sub_agent": "SA1", "setup": "x",
+            "session": "London", "direction": d,
             "level": entry, "entry": entry, "sl": sl, "qty": qty, "open_qty": qty,
             "risk_px": risk_px, "realised": 0.0, "seen": {}, "missing_polls": 0,
             "position_id": None, "entry_bar": T0, "opened_at": 0, "client_id": "t",
@@ -308,24 +309,28 @@ with C.override(MIN_NOTIONAL_USDT=1000.0):
 check("capped by max notional, then floored", sizing.qty_for(100000, 99990),
       sizing.floor_step((C.MAX_NOTIONAL_INR / C.USDINR) / 100000, C.QTY_STEP))
 
-print("Spec sync — the bot reads the exchange, not a hand-typed value")
-saved = {k: getattr(C, k) for k in ("QTY_STEP", "PRICE_STEP", "MIN_QTY", "MIN_NOTIONAL_USDT")}
+print("Spec sync — each symbol reads its OWN exchange spec, not a hand-typed value")
 real_inst, real_send2 = ex.instrument, notify.send
 msgs = []
 notify.send = lambda text, silent=False: msgs.append(text)
 ex.instrument = lambda *a, **k: {"quantity_increment": 0.01, "price_increment": 0.5,
                                  "min_trade_size": 0.01, "min_quantity": 0.01, "min_notional": 100.0}
-ch = M.sync_spec()
+spec = M.spec_for("B-XAU_USDT")
 check("step, tick, min size and min notional taken from the exchange",
-      (C.QTY_STEP, C.PRICE_STEP, C.MIN_QTY, C.MIN_NOTIONAL_USDT), (0.01, 0.5, 0.01, 100.0))
-check("and you are told what changed", any("Contract spec" in m for m in msgs), True)
-for k, v in saved.items():
-    setattr(C, k, v)
+      (spec["QTY_STEP"], spec["PRICE_STEP"], spec["MIN_QTY"], spec["MIN_NOTIONAL_USDT"]),
+      (0.01, 0.5, 0.01, 100.0))
+check("global config is untouched -- each symbol's spec is its own, not shared",
+      C.QTY_STEP, 0.001)
+specs = M.sync_specs()
+check("one spec per symbol", sorted(specs), sorted(M.SYMBOLS))
+check("and you are told what was read", any("Contract specs" in m for m in msgs), True)
 def no_spec(*a, **k):
     raise RuntimeError("network down")
 ex.instrument = no_spec
-check("if the spec cannot be read, configured values are kept",
-      (M.sync_spec(), C.QTY_STEP), ({}, saved["QTY_STEP"]))
+check("if a symbol's spec cannot be read, BTC's configured values are kept for it",
+      M.spec_for("B-XAU_USDT"),
+      {"QTY_STEP": C.QTY_STEP, "PRICE_STEP": C.PRICE_STEP,
+       "MIN_QTY": C.MIN_QTY, "MIN_NOTIONAL_USDT": C.MIN_NOTIONAL_USDT})
 ex.instrument, notify.send = real_inst, real_send2
 
 print("Entry under failure — live path with a fake exchange")
@@ -340,29 +345,33 @@ def make_sig():
             "breakout": True, "rejection": False, "momentum_shift": False, "detail": "t"}
 
 
+SPEC = {"QTY_STEP": C.QTY_STEP, "PRICE_STEP": C.PRICE_STEP,
+        "MIN_QTY": C.MIN_QTY, "MIN_NOTIONAL_USDT": C.MIN_NOTIONAL_USDT}
+
+
 def live_enter(market=None, position=None, stop=None):
     log_msgs.clear(); closed.clear()
     notify.send = lambda text, silent=False: log_msgs.append(text)
     ex.market_order = market or (lambda *a, **k: {"ok": 1})
-    ex.open_position = position or (lambda: None)
+    ex.open_position = position or (lambda *a, **k: None)
     ex.set_stop = stop or (lambda pid, px: {"ok": 1})
     ex.exit_position = lambda pid: closed.append(pid) or {"ok": 1}
     now = M.now_ms()
     sess = [K(100000, 100100, 99950, 100020, now - STEP - 5000)]     # trigger closed 5s ago
     rc = {"high": 100000.0, "low": 99000.0}
     with C.override(DRY_RUN=False):
-        return M.enter(make_sig(), "London", rc, sess)
+        return M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc, sess)
 
 
-pos_ok = lambda: {"id": "P1", "entry": 100030.0, "qty": 0.006,
-                  "raw": {"stop_loss_trigger": 99850.0}}
+pos_ok = lambda *a, **k: {"id": "P1", "entry": 100030.0, "qty": 0.006,
+                         "raw": {"stop_loss_trigger": 99850.0}}
 t = live_enter(position=pos_ok)
 check("healthy entry: trade opened", t is not None, True)
 check("uses the REAL fill price, not the candle close", t and t["entry"], 100030.0)
 check("keeps the exchange position id", t and t["position_id"], "P1")
 
-t = live_enter(position=lambda: {"id": "P1", "entry": 100030.0, "qty": 0.006,
-                                 "raw": {"stop_loss_trigger": 0}})
+t = live_enter(position=lambda *a, **k: {"id": "P1", "entry": 100030.0, "qty": 0.006,
+                                        "raw": {"stop_loss_trigger": 0}})
 check("stop the exchange does not show -> position closed, no trade", (t, closed), (None, ["P1"]))
 check("and you are told", any("STOP NOT CONFIRMED" in m for m in log_msgs), True)
 
@@ -376,14 +385,15 @@ def lost_reply(*a, **k):
 t = live_enter(market=lost_reply, position=pos_ok)
 check("order errored but the position exists -> it is protected, not abandoned",
       (t is not None, any("Protecting it" in m for m in log_msgs)), (True, True))
-t = live_enter(market=lost_reply, position=lambda: None)
+t = live_enter(market=lost_reply, position=lambda *a, **k: None)
 check("order errored and nothing exists -> clean AVOID", (t, closed), (None, []))
 
 stale = M.now_ms()
 sess = [K(100000, 100100, 99950, 100020, stale - STEP - 300000)]       # signal is 5 minutes old
 log_msgs.clear(); notify.send = lambda text, silent=False: log_msgs.append(text)
 with C.override(DRY_RUN=False):
-    t = M.enter(make_sig(), "London", {"high": 100000.0, "low": 99000.0}, sess)
+    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London",
+               {"high": 100000.0, "low": 99000.0}, sess)
 check("a stale signal is skipped, never chased",
       (t, any("Missed the entry window" in m for m in log_msgs)), (None, True))
 for k, v in real.items():
