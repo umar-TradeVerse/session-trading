@@ -152,6 +152,10 @@ MAX_ENTRY_LAG_SECONDS = _i("MAX_ENTRY_LAG_SECONDS", 90)
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)
 STATE_FILE = os.getenv("STATE_FILE", "/tmp/sorb15_state.json")
+# Touched once per main-loop iteration. An external watchdog (systemd timer, cron)
+# can restart the service if this goes stale -- catching a genuine hang, which
+# Restart=always alone cannot (it only fires once the process actually exits).
+HEARTBEAT_FILE = os.getenv("HEARTBEAT_FILE", "/tmp/sorb15_heartbeat")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 import contextlib as _ctx

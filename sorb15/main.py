@@ -485,6 +485,11 @@ def _main_loop():
 
     while True:
         try:
+            try:
+                with open(C.HEARTBEAT_FILE, "w") as f:
+                    f.write(str(time.time()))
+            except OSError:
+                pass      # a watchdog missing one beat is harmless; never block on this
             now = now_ist()
             state = notify.roll_day(state, str(now.date()))
             name, o, dl, e = active_session(now)
