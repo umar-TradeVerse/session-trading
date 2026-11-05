@@ -435,7 +435,8 @@ rc_ob = {"high": 100000.0, "low": 99000.0}
 
 log_msgs.clear()
 ex.orderbook = lambda pair=None: ob_with_wall("asks", 100020 * 1.0005, 50.0)   # right at entry
-with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True,
+                ORDERBOOK_WALL_MULT=5.0, ORDERBOOK_GATE_PCT=0.003):
     t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
 check("a wall right against the entry gates the trade",
       (t, any("Order-book wall against the trade" in m for m in log_msgs)), (None, True))
@@ -451,13 +452,13 @@ wall_px = base_sl * (1 - 0.003)      # a bit further out than the baseline stop,
 # has something to stand out against (a real book is thin this far from price)
 near_sl_bids = [(base_sl * (1 - 0.001 * i), 1.0) for i in range(1, 8)] + [(wall_px, 50.0)]
 ex.orderbook = lambda pair=None: {"bids": near_sl_bids, "asks": list(flat)}
-with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True, ORDERBOOK_WALL_MULT=5.0):
     t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
 check("a protective-side wall WIDENS the stop, trade still opens",
       (t is not None, t and t["sl"] < base_sl), (True, True))
 
 ex.orderbook = lambda pair=None: {"bids": list(flat), "asks": list(flat)}   # no wall anywhere
-with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True, ORDERBOOK_WALL_MULT=5.0):
     t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
 check("no wall found -> baseline stop unchanged", t and round(t["sl"], 6), round(base_sl, 6))
 
@@ -467,7 +468,7 @@ def boom_ob(pair=None):
 
 
 ex.orderbook = boom_ob
-with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True, ORDERBOOK_WALL_MULT=5.0):
     t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
 check("order-book fetch failing never blocks the trade (fails open)",
       (t is not None, t and round(t["sl"], 6)), (True, round(base_sl, 6)))

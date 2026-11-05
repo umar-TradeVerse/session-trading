@@ -208,11 +208,16 @@ SA134_ENFORCE_COMPANION_PAIRS = _b("SA134_ENFORCE_COMPANION_PAIRS", False)
 # despite that gap.
 ORDERBOOK_FILTER = _b("ORDERBOOK_FILTER", False)
 # A resting level counts as a "wall" once its size is at least this many times
-# the average size across the levels being compared.
-ORDERBOOK_WALL_MULT = _f("ORDERBOOK_WALL_MULT", 5.0)
+# the average size across the levels being compared. Raised from 5.0 after the
+# first live BTC case (a 2.19 BTC wall, 5.3x average) blocked a trade whose wall
+# got blown straight through in the same candle -- loosened so only a more
+# unusual size still counts, while leaving the gate itself on to keep watching.
+ORDERBOOK_WALL_MULT = _f("ORDERBOOK_WALL_MULT", 8.0)
 # Entry gate: skip the trade if a wall sits on the side AGAINST the breakout
-# direction, within this fraction of the entry price.
-ORDERBOOK_GATE_PCT = _f("ORDERBOOK_GATE_PCT", 0.003)
+# direction, within this fraction of the entry price. Tightened from 0.3% after
+# that same case (the wall sat ~0.07% away) -- only a wall truly adjacent to
+# entry still blocks it now.
+ORDERBOOK_GATE_PCT = _f("ORDERBOOK_GATE_PCT", 0.0015)
 # Stop placement: search up to this far beyond the existing fixed-buffer stop
 # (SA134_SL_BUFFER_PCT) for a protective-side wall, and if found, move the stop
 # just past it. Only ever pushes the stop FURTHER from entry, never tighter --
