@@ -53,8 +53,16 @@ try:
     print("create response:", resp)
     if not oid:
         sys.exit("FAIL  no order id came back. Do NOT proceed; check the CoinDCX app.")
-    time.sleep(2)
-    listed = [o for o in ex.open_orders() if str(o.get("id")) == str(oid)]
+    # A fresh order can sit in CoinDCX's own 'initial' status for a moment before
+    # open_orders() (which filters on status=open) picks it up -- discovered live:
+    # a single check at 2s missed it even though the order was real and cancelled
+    # fine afterwards. Poll briefly instead of judging off one snapshot.
+    listed = []
+    for _ in range(5):
+        time.sleep(1.5)
+        listed = [o for o in ex.open_orders() if str(o.get("id")) == str(oid)]
+        if listed:
+            break
     print(f"{'PASS' if listed else 'FAIL'}  exchange {'lists' if listed else 'does not list'} order {oid}")
     ex.cancel(oid)
     time.sleep(2)
