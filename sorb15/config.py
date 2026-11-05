@@ -230,6 +230,12 @@ STATE_FILE = os.getenv("STATE_FILE", "/tmp/sorb15_state.json")
 # Restart=always alone cannot (it only fires once the process actually exits).
 HEARTBEAT_FILE = os.getenv("HEARTBEAT_FILE", "/tmp/sorb15_heartbeat")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+# Restricts main.py's symbol set to a subset of backtest.SA134_SYMBOLS, comma-separated
+# (e.g. "BTC,Oil,NatGas"). Empty (default) = all of them. This is what lets the SAME
+# codebase run as two independent systemd services with one DRY_RUN truth each -- a
+# real-money service for one subset, a paper-only service for the rest -- since DRY_RUN
+# itself is a single process-wide flag with no per-symbol override.
+ACTIVE_SYMBOLS = os.getenv("ACTIVE_SYMBOLS", "")
 
 import contextlib as _ctx
 

@@ -477,6 +477,23 @@ for k, v in real.items():
     setattr(ex, k, v)
 notify.send, M.time.sleep = real_send, real_sleep
 
+print("ACTIVE_SYMBOLS — splitting the 5-symbol roster across two services")
+with C.override(ACTIVE_SYMBOLS=""):
+    check("empty (default): every symbol", set(M.active_symbols()), set(B.SA134_SYMBOLS))
+with C.override(ACTIVE_SYMBOLS="BTC,Oil,NatGas"):
+    check("a real-money subset", M.active_symbols(),
+          {"BTC": "B-BTC_USDT", "Oil": "B-CL_USDT", "NatGas": "B-NATGAS_USDT"})
+with C.override(ACTIVE_SYMBOLS="Gold, Silver"):
+    check("the paper-only remainder (spaces tolerated)", M.active_symbols(),
+          {"Gold": "B-XAU_USDT", "Silver": "B-XAG_USDT"})
+with C.override(ACTIVE_SYMBOLS="BTC,Dogecoin"):
+    try:
+        M.active_symbols()
+        check("an unknown symbol name raises rather than silently trading nothing", False, True)
+    except ValueError as e:
+        check("an unknown symbol name raises rather than silently trading nothing",
+              "Dogecoin" in str(e), True)
+
 print("Companion-pairs slot policy — Gold/Silver solo-only, BTC/Oil/NatGas pairwise")
 check("first position ever (nothing open) is always allowed",
       B.compatible_with_open(set(), "Gold"), True)

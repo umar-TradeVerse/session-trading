@@ -55,7 +55,22 @@ log = logging.getLogger("sorb15")
 IST = ZoneInfo(C.TZ)
 STEP_MS = C.TIMEFRAME_MIN * 60 * 1000
 
-SYMBOLS = BT.SA134_SYMBOLS          # {"BTC": "B-BTC_USDT", "Gold": "B-XAU_USDT", ...}
+def active_symbols():
+    """BT.SA134_SYMBOLS, filtered to C.ACTIVE_SYMBOLS if that's set (comma-separated
+    names) -- lets one real-money service and one paper-only service, each its own
+    process/env file, split the 5-symbol roster between them with one DRY_RUN truth
+    apiece. Empty/unset ACTIVE_SYMBOLS -> every symbol (today's single-service default)."""
+    if not C.ACTIVE_SYMBOLS:
+        return dict(BT.SA134_SYMBOLS)
+    wanted = [s.strip() for s in C.ACTIVE_SYMBOLS.split(",") if s.strip()]
+    unknown = [s for s in wanted if s not in BT.SA134_SYMBOLS]
+    if unknown:
+        raise ValueError(f"ACTIVE_SYMBOLS has unknown symbol(s): {unknown} -- "
+                         f"valid names are {list(BT.SA134_SYMBOLS)}")
+    return {s: BT.SA134_SYMBOLS[s] for s in wanted}
+
+
+SYMBOLS = active_symbols()          # {"BTC": "B-BTC_USDT", "Gold": "B-XAU_USDT", ...}
 MAX_SLOTS = BT.SA134_MAX_SLOTS      # 2
 
 # Tokyo (from the shared backtest module) plus London / New York (from config) —
