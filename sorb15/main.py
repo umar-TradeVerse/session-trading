@@ -73,9 +73,15 @@ def active_symbols():
 SYMBOLS = active_symbols()          # {"BTC": "B-BTC_USDT", "Gold": "B-XAU_USDT", ...}
 MAX_SLOTS = BT.SA134_MAX_SLOTS      # 2
 
-# Tokyo (from the shared backtest module) plus London / New York (from config) —
-# one dict, so window()/active_session() see all three the same way.
-ALL_SESSIONS = {"Tokyo": BT.TOKYO_SESSION, **C.SESSIONS}
+def all_sessions():
+    """Tokyo (from the shared backtest module) plus London / New York (from config)
+    -- one dict, so window()/active_session() see all three the same way. Read
+    fresh on every call, NOT bound once at import: main() overrides C.SESSIONS
+    for the live/paper services (the DST-adapted London/New York times), and
+    that override only exists for the life of that `with` block -- a
+    module-level binding taken at import time would freeze in the stale
+    pre-override values and silently ignore it."""
+    return {"Tokyo": BT.TOKYO_SESSION, **C.SESSIONS}
 
 
 # ── time ────────────────────────────────────────────────────────────────────
@@ -102,7 +108,7 @@ def at(day, t, ref=None):
 def window(name, now=None):
     """(open, deadline, end) of the session instance containing `now`, or the next."""
     now = now or now_ist()
-    s = ALL_SESSIONS[name]
+    s = all_sessions()[name]
     for day in (now.date() - dt.timedelta(days=1), now.date(), now.date() + dt.timedelta(days=1)):
         o = at(day, s["open"])
         e = at(day, s["end"], o)
@@ -117,7 +123,7 @@ def window(name, now=None):
 
 def active_session(now=None):
     now = now or now_ist()
-    for name in ALL_SESSIONS:
+    for name in all_sessions():
         o, d, e = window(name, now)
         if o <= now < e:
             return name, o, d, e
@@ -126,7 +132,7 @@ def active_session(now=None):
 
 def seconds_to_next_open(now=None):
     now = now or now_ist()
-    opens = [o for o, _, _ in (window(n, now) for n in ALL_SESSIONS) if o > now]
+    opens = [o for o, _, _ in (window(n, now) for n in all_sessions()) if o > now]
     return max(5, int((min(opens) - now).total_seconds())) if opens else 60
 
 
@@ -550,10 +556,25 @@ def main():
 
     ORDERBOOK_FILTER and SA134_ENFORCE_COMPANION_PAIRS are Umar's explicit
     instruction to go live with -- hardcoded here for the same reason: a
-    missing env var on the droplet must never silently turn either back off."""
+    missing env var on the droplet must never silently turn either back off.
+
+    SESSIONS is shifted +1h on London and New York to track their REAL current
+    (standard-time) opens -- NYSE 9:30am ET and LSE 8:00am UK time, both now on
+    winter/standard time (US fell back 1 Nov, UK 25 Oct). Backtested worse than
+    the old fixed blocks (full period net -15,648 to -26,485 vs -2,294 baseline,
+    depending on variant) -- Umar's explicit call to deploy anyway and watch it
+    live rather than trust the backtest here. Tokyo is untouched: Japan has no
+    DST, so its real open never moves. config.SESSIONS itself stays the old
+    values (so the baseline fingerprint/regression tests keep meaning what they
+    always have) -- this override is what actually reaches the live/paper bots."""
     capital = 10042.53 if not C.DRY_RUN else 10000
+    shifted_sessions = {
+        "London":   {"open": dt.time(15, 0), "deadline": dt.time(16, 45), "end": dt.time(20, 0)},
+        "New York": {"open": dt.time(20, 0), "deadline": dt.time(21, 45), "end": dt.time(2, 15)},
+    }
     with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
-                    ORDERBOOK_FILTER=True, SA134_ENFORCE_COMPANION_PAIRS=True):
+                    ORDERBOOK_FILTER=True, SA134_ENFORCE_COMPANION_PAIRS=True,
+                    SESSIONS=shifted_sessions):
         _main_loop()
 
 

@@ -478,6 +478,18 @@ for k, v in real.items():
     setattr(ex, k, v)
 notify.send, M.time.sleep = real_send, real_sleep
 
+print("all_sessions() — must read C.SESSIONS live, not freeze it at import")
+default_london_open = M.all_sessions()["London"]["open"]
+shifted = {"London": {"open": dt.time(15, 0), "deadline": dt.time(16, 45), "end": dt.time(20, 0)},
+           "New York": {"open": dt.time(20, 0), "deadline": dt.time(21, 45), "end": dt.time(2, 15)}}
+with C.override(SESSIONS=shifted):
+    check("an override on C.SESSIONS is picked up inside the with-block",
+          M.all_sessions()["London"]["open"], dt.time(15, 0))
+check("and the override doesn't leak out afterwards",
+      M.all_sessions()["London"]["open"], default_london_open)
+check("Tokyo always comes from backtest.TOKYO_SESSION, unaffected by C.SESSIONS",
+      M.all_sessions()["Tokyo"], B.TOKYO_SESSION)
+
 print("ACTIVE_SYMBOLS — splitting the 5-symbol roster across two services")
 with C.override(ACTIVE_SYMBOLS=""):
     check("empty (default): every symbol", set(M.active_symbols()), set(B.SA134_SYMBOLS))
