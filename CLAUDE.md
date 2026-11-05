@@ -1,14 +1,108 @@
-# SORB-15 — session opening-range breakout bot (BTC 15m, CoinDCX futures)
+# SORB-15 — session opening-range breakout bot (multi-symbol, CoinDCX futures)
 
-Owner: Umar. These are **his rules** for a session high/low ("liquidity") breakout strategy. Status as of **18 Oct 2026**.
-His original ask was simple: *backtest the rules I gave on real data.* Do not drag him into credentials or deployment unless he asks.
+Owner: Umar. These are **his rules** for a session high/low ("liquidity") breakout strategy. Status as of **5 Nov 2026**.
+His original ask was simple: *backtest the rules I gave on real data.* That line used to also say "don't drag him into
+credentials or deployment unless he asks" — he has since asked, repeatedly and explicitly: DigitalOcean droplet setup,
+new API keys pasted in chat, going live with real money on 3 symbols. Credentials and deployment are now squarely in
+scope; the caution that still applies is the one below (real financial risk needs explicit confirmation, not silence).
 
-## CURRENT LIVE ENGINE (as of 27 Oct 2026) — supersedes everything below until noted otherwise
-The live bot (`sorb15/main.py`, deployed to Railway) no longer runs the SA1–SA5 engine described in
-the rest of this file. It now runs **SA1 + SA4 + Tokyo continuation**, Umar's explicit redesign:
-- Sessions (IST): **Tokyo 05:30–07:15–14:00**, then London and New York (`config.py`). One position
-  at a time — a later session is skipped entirely while an earlier one is still open (this replaces
-  the old SA3 detector; there is no separate continuation check any more).
+## LIVE DEPLOYMENT (as of 5 Nov 2026) — supersedes the engine section below until noted otherwise
+Two independent systemd services on a DigitalOcean droplet (`tradeverse-bots`, 206.189.138.66, IP whitelisted on
+CoinDCX), both running the identical `sorb15/main.py` / `sorb15/backtest.py` engine described in the next section —
+split only by which symbols each is allowed to touch and by `DRY_RUN`:
+- **`sorb15-live.service`** — **REAL MONEY**. `DRY_RUN=false`. Symbols: **BTC, Oil, NatGas** only
+  (`ACTIVE_SYMBOLS=BTC,Oil,NatGas` in `.env.live`). Capital **₹10,042.53** — the actual usable futures-wallet balance
+  Umar confirmed, not a round number (tied to `DRY_RUN` itself in `main()`, so it can never drift via a stale env var).
+  State/heartbeat: `/tmp/sorb15_live_state.json`, `/tmp/sorb15_live_heartbeat`. Own watchdog:
+  `sorb15-live-watchdog.timer` → `sorb15-live-watchdog.service` → `/usr/local/bin/sorb15-live-watchdog.sh` (same
+  20-minute-stale-heartbeat restart logic as the paper watchdog, independent of it).
+- **`sorb15.service`** — paper only, unchanged `DRY_RUN=true`. Symbols: **Gold, Silver** only
+  (`ACTIVE_SYMBOLS=Gold,Silver` in `.env`). Capital ₹10,000 (the round number it's always backtested against).
+- `main.active_symbols()` reads `C.ACTIVE_SYMBOLS` (comma-separated) to split `BT.SA134_SYMBOLS` between the two
+  processes — empty/unset means every symbol (the pre-split single-service default).
+- **Verified the real order path once**, deliberately, per the long-standing open-decision-4 below: `verify_orders.py`
+  (places one real resting limit order 50% below market, confirms it, cancels it) against the live keys. Needed two
+  fixes along the way, both committed: the test's own quantity undershot CoinDCX's REAL minimum order value (₹6,120
+  on BTC — noticeably higher than what `instrument()`'s own `min_notional` field implied), and the listing check fired
+  before a fresh order left CoinDCX's own `'initial'` status. Neither issue touches the live engine itself (which uses
+  market orders + position-based stop tracking, never `open_orders()`).
+
+### Slot-pairing policy (`SA134_ENFORCE_COMPANION_PAIRS`, on for both services)
+The 2 shared slots may only ever hold one of `backtest.SA134_COMPANION_PAIRS`: **BTC+Oil, BTC+NatGas, or Oil+NatGas**.
+Gold and Silver are in none of them — each can still open **solo**, but never as the second position alongside
+anything (`backtest.compatible_with_open()`). Verified empty of disallowed overlaps across a full 5-symbol backtest
+before shipping.
+
+### Live-only order-book overlay (`ORDERBOOK_FILTER`, on for both services — effectively BTC-only)
+Umar's explicit ask: "liquidity or orders which are present, long or short." CoinDCX's real public order book
+(`coindcx.orderbook`, no auth) — checked directly against the live API, this **only exists for BTC**; Gold/Silver/Oil/
+NatGas all return `422 Invalid pair`, every naming variant tried. Delta Exchange was checked too as an alternative
+for the other 4 (no Oil/Silver/NatGas there at all; "Gold" is only PAXG, a stablecoin, not a comparable commodity
+CFD) — no fix available there either. So this overlay is real for BTC and a confirmed no-op (fails open) elsewhere.
+- **Entry gate**: skip the trade if a wall (`ORDERBOOK_WALL_MULT`× the average resting size) sits within
+  `ORDERBOOK_GATE_PCT` of entry, against the breakout direction.
+- **Stop placement**: search up to `ORDERBOOK_STOP_SEARCH_PCT` beyond the existing fixed-buffer stop for a
+  protective-side wall; if found, move the stop just past it. Only ever widens, never tightens.
+- **Cannot be backtested** — CoinDCX archives no historical order book anywhere, confirmed directly (every
+  historical-depth/OI endpoint tried 404s). This is the one piece of the live engine that has never been, and can
+  never be, validated against history the way everything else here has.
+- **First live data point (5 Nov, NY session, BTC)**: a textbook clean SA4 SHORT (entry 78,262, correct stop, right
+  on time) was gated by a 2.19 BTC wall (5.3× average) sitting 0.07% away — and the wall didn't hold; price blew
+  through it and fell to the 76,000s in the same candle. A real, confirmed false-avoid. Defaults loosened the same
+  day in response: `ORDERBOOK_WALL_MULT` 5.0→**8.0**, `ORDERBOOK_GATE_PCT` 0.3%→**0.15%** — gate stays on (Umar wants
+  to keep watching it live, not disable it), just fires less often. Outcome of the loosened version: unknown, watch it.
+
+### Session times shifted for DST (`main()`'s `C.override(SESSIONS=...)`, both services)
+`config.SESSIONS` itself is untouched (so the baseline-fingerprint regression test still means what it always has) —
+`main()` overrides it for the live/paper processes only. New York's original 19:00 IST open matched NYSE's real
+9:30am-ET open **exactly** during US daylight saving — confirmed independently via web search, not just computed.
+Both the US (fell back 1 Nov) and UK (fell back 25 Oct) are now on winter/standard time, so the real anchors moved:
+NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45–20:00, New York 20:00–21:45–02:15**
+(both +1h; Tokyo untouched — Japan has no DST, so its real open never moves).
+- **Backtested worse, deployed anyway at Umar's explicit instruction to monitor live rather than trust the
+  backtest**: shifting both London+NY, full period net −₹26,485 vs −₹2,294 baseline; NY-only, −₹15,648. Neither
+  variant improved on the stale-but-empirically-better fixed blocks. Outcome of running it live: unknown, watch it.
+- Fixed a real bug this surfaced: `main.ALL_SESSIONS` was a module-level dict frozen at import time, BEFORE
+  `main()`'s override ever runs — the shift would have been silently ignored by `window()`/`active_session()`.
+  Converted to `main.all_sessions()`, read fresh every call; regression test added so this can't silently recur.
+
+### Built, tested, NOT deployed (backtested worse or didn't survive scrutiny — kept for reference, stay off)
+- **`SA134_LIQUIDITY_HUNT_REVERSAL`** — generalizes SA1's single-first-candle sweep-reversal flip to any candle in
+  the session, gated by a volume filter (`sa.good_volume`). The tight version (pullback must be the very next candle)
+  is barely net-positive (+₹82 full period, first ever non-negative number) but doesn't catch the Gold 4-Nov example
+  Umar flagged (that move was a multi-candle grind, no sharp pin-bar). A looser multi-candle pullback window tested
+  far worse (−₹30,717). Fragile either way — not a real edge yet.
+- **`SA134_HUNT_REENTRY`** — Umar's "book the 1R leg, don't move to breakeven" redesign (legs 25/25/25/25 at
+  1R/2R/3R/4R, stop never moves) plus two watch-for-reentry rules (continuation after the 1R leg, reversal after the
+  original stop breaks further) gated by the same volume filter. Fixes the exact 2-Nov NatGas case it was built for
+  (loss cut from −₹952 to −₹513) but makes the AGGREGATE portfolio worse (−₹10,319 vs −₹2,294 baseline) — it helps
+  the one trade you can see and hurts the ones you can't.
+- Both are real, causality-audited code (`backtest._sa134_manage_hunt`, `sa134_entry_signal`'s hunt-reversal block),
+  just toggled off (`SA134_LIQUIDITY_HUNT_REVERSAL=False`, `SA134_HUNT_REENTRY=False` by default) — don't turn them
+  on without re-validating, and don't present either as a win without saying the above.
+
+### Known risk, carried over, still unresolved
+Fixed-margin sizing against a variable-width stop (same issue flagged 27 Oct) means per-trade risk is uncontrolled.
+The full 5-symbol portfolio backtest's max drawdown (−₹36,356 on ₹10,000 capital, baseline config) is still a large
+multiple of starting capital. This is now live with real money on 3 symbols and has not been fixed.
+
+### Infra
+DigitalOcean droplet `tradeverse-bots` (Ubuntu 24.04, `s-1vcpu-1gb`), non-root user `sorb15`, checkout at
+`~/sorb15-bot`, Python venv. `root` SSH access needs the droplet's web console (Claude Code's own permission
+classifier blocks placing real orders or enabling new persistent systemd units over SSH from here — those steps are
+run by Umar directly in the DigitalOcean console, with exact commands provided). `git pull` + `systemctl restart` on
+both services is the deploy step for ordinary code changes.
+
+## CURRENT LIVE ENGINE (as of 27 Oct 2026) — the shared engine both services above run
+The live bot (`sorb15/main.py`) no longer runs the SA1–SA5 engine described in the rest of this file.
+It now runs **SA1 + SA4 + Tokyo continuation**, Umar's explicit redesign, multi-symbol since 28 Oct
+(BTC, Gold, Silver, Oil, NatGas — `BT.SA134_SYMBOLS`), migrated off Railway to the DigitalOcean droplet
+described above, and now split live/real-money vs paper per the section above this one:
+- Sessions (IST): **Tokyo 05:30–07:15–14:00**, then London and New York (`config.py` — shifted +1h on
+  the live/paper processes as of 5 Nov, see above; these are the UNSHIFTED values `config.py` itself
+  still holds). One position per symbol at a time — a later session is skipped entirely for that
+  symbol while an earlier one is still open. Two symbols can run concurrently, up to
+  `BT.SA134_MAX_SLOTS` (2), now gated by the companion-pairs policy above.
 - Only SA1 and SA4 fire, both requiring a CLEAN breakout (closes beyond the line with ≤10% of the
   candle back inside the range — tightened from the old 15%). SA1 also catches a liquidity-sweep
   reversal: an impure first breakout followed by a confirmed opposite close flips the trade.
@@ -16,25 +110,22 @@ the rest of this file. It now runs **SA1 + SA4 + Tokyo continuation**, Umar's ex
   Umar's explicit call: "the sl should remain as it not to be shifted").
 - Targets: **50% at 2R, 25% at 3R, 25% at 4R**; whatever is still open at the next Tokyo open (the
   "day end") closes there, whichever comes first besides the stop.
-- Sizing is **fixed margin**, not risk-targeted: margin/slot = capital ÷ 2 (one of up to 2 planned
-  slots; only 1 is used today, BTC-only), exposure = margin × 10x leverage. `sizing.qty_for_fixed_notional()`.
-- Capital **Rs 10,000** and the tightened 10%-touch-tolerance are hardcoded via `C.override(...)` at
-  the top of `main()` in `main.py` — deliberately NOT left to a Railway variable, so a stale or
-  missing env var on Railway can never silently drift the live bot from what was backtested.
+- Sizing is **fixed margin**, not risk-targeted: margin/slot = capital ÷ `MAX_SLOTS` (2), exposure =
+  margin × 10x leverage. `sizing.qty_for_fixed_notional()`. Capital is ₹10,042.53 on the real-money
+  service, ₹10,000 on the paper one (see above) — deliberately hardcoded via `C.override(...)` at the
+  top of `main()`, tied to `DRY_RUN` itself, so a stale or missing env var on the droplet can never
+  silently drift either service from what was backtested.
 - Shared source of truth for both backtest and live: `sorb15/backtest.py` —
-  `sa134_entry_signal`, `TOKYO_SESSION`, `SA134_SL_BUFFER_PCT`, `SA134_TP_R`, `SA134_TP_FRACS`.
-  Live-only order management is `sorb15/main.py`'s `enter()` / `manage()`.
-- **Backtest result (BTC, Jan–Oct 2026, this config): 260 trades, net −₹13,134, PF 0.85, max
+  `sa134_entry_signal`, `TOKYO_SESSION`, `SA134_SL_BUFFER_PCT`, `SA134_TP_R`, `SA134_TP_FRACS`,
+  `SA134_SYMBOLS`, `SA134_MAX_SLOTS`, `SA134_COMPANION_PAIRS`. Live-only order management is
+  `sorb15/main.py`'s `enter()` / `manage()`, plus the order-book overlay functions above it.
+- **Backtest result (BTC-only, Jan–Oct 2026, this config): 260 trades, net −₹13,134, PF 0.85, max
   drawdown −₹20,516 on ₹10,000 capital — net LOSING, deployed anyway at Umar's explicit instruction
   for live paper-data validation**, same as the earlier SA4/SA5 decisions below. Known issues, not
   yet fixed: (a) SA4 can still preempt a later SA1 liquidity-sweep flip within the same session
-  (the 14 Sept case) — unresolved; (b) fixed-margin sizing against a variable-width stop means
-  per-trade risk is uncontrolled and max drawdown has repeatedly exceeded a large fraction of
-  starting capital — the single biggest real-money risk if this is ever switched off DRY_RUN.
-  SA1 alone, isolated, is the one profitable piece so far (58 trades, net +₹2,824, PF 1.18).
-- `DRY_RUN=true` stays true. Nothing here has traded with real money.
-- The multi-symbol (10-asset, cap-of-2-slots) design is still only a plan — not implemented.
-  BTC-only validation was the explicitly agreed first step.
+  (the 14 Sept case) — unresolved; (b) see "Known risk, carried over" above — still unresolved, now
+  live with real money. SA1 alone, isolated, is the one profitable piece so far (58 trades, net
+  +₹2,824, PF 1.18).
 - Everything from "Where things stand" down to "Open decisions" below is the **OLD SA1–SA5 engine**:
   historical record of the original backtest, kept for reference, no longer what's running live.
 
@@ -66,14 +157,17 @@ sorb15/subagents.py   causal detectors; used by backtest AND live (never fork th
 sorb15/backtest.py    replays history one candle at a time; audit_causality() scrambles the future
 sorb15/sizing.py      shared sizing: floors to 0.001 BTC, enforces min size / min notional 60 USDT
 sorb15/config.py      all settings from env vars; C.override(**kw) context manager for runs
-sorb15/coindcx.py     futures client (signed GET-with-body wallet, create_tpsl stops, never retries orders)
-sorb15/main.py        live loop (paper mode when DRY_RUN=true)
+sorb15/coindcx.py     futures client (signed GET-with-body wallet, create_tpsl stops, never retries orders,
+                      + orderbook()/nearest_wall() -- public, live-only, BTC-only in practice)
+sorb15/main.py        live loop (paper mode when DRY_RUN=true); active_symbols()/all_sessions() read their
+                      ACTIVE_SYMBOLS/SESSIONS config fresh each call -- never bind these at import time
 sorb15/data.py report.py notify.py
 synth.py              deterministic fake candles + baseline fingerprint (tests only)
-test_local.py         124 offline tests          verify_api.py / verify_orders.py   exchange checks (not needed for backtesting)
-reference/            result files from the Colab runs (see below)
+test_local.py         152 offline tests          verify_api.py (read-only) / verify_orders.py (locked,
+                      places one real cancel-only order -- actually run once, 5 Nov, see above)
+reference/            result files from the Colab runs AND later live/portfolio runs (see below)
 ```
-Run tests: `DRY_RUN=true python test_local.py` → must print `124 passed, 0 failed`.
+Run tests: `DRY_RUN=true python test_local.py` → must print `152 passed, 0 failed`.
 Candles are **not** in the repo (they lived in Colab). Fetch them (public API, no keys):
 ```python
 import os; os.environ["DRY_RUN"] = "true"
@@ -118,16 +212,22 @@ Class findings on the 301 trades: touching SA1 candles (41) lost *less* per trad
 1. **Stop, or a different design?** Do not tune this one further. Costs take ~₹27/trade against ~₹82 average risk because stops are tight; a design aiming for bigger moves per trade with fewer trades is the only direction that changes that. That is a new strategy, not a tweak.
 2. His **real** fee and slippage → re-run via `B.run(candles, TAKER_FEE=..., SLIPPAGE=...)` (exact; the trade set can change when costs change).
 3. **Flip after a veto:** a veto currently *skips* the session. Umar expects the 15 Oct NY case to become a BUY. That needs his definition of what qualifies the buy (e.g. two clean closes beyond the line).
-4. The live order path (stops via `create_tpsl`, trailing, partial close) is built from the exchange docs and a futures client library and covered by mocked-HTTP tests, but **has never touched the real exchange**. Only matters if he ever goes live: run `verify_api.py`, the locked `verify_orders.py`, then a supervised minimum-size first trade.
+4. ~~The live order path... has never touched the real exchange~~ — **done, 5 Nov**: `verify_api.py` and
+   `verify_orders.py` both run against the real exchange with the DigitalOcean-whitelisted keys; two real bugs in
+   the test script itself fixed along the way (see "LIVE DEPLOYMENT" above). He then went live with real money on
+   BTC/Oil/NatGas the same day. Stop-loss placement specifically (`create_tpsl`) is still only validated by whatever
+   the first real trade on the live service actually does — watch the first one closely.
 
 ## How to work with Umar
 - Plain language, short, direct. He is easily frustrated by repeated rounds and by being asked to run things — **front-load every check up front** instead of surfacing problems one at a time.
-- Times in **IST**. Convert UTC timestamps from logs.
-- Be honest about negative results; never present a filter that merely removes trades as an improvement. Never pick a winner by tuning on the same data you score it on.
-- Never claim a change works without running it. After any engine change: tests pass, **baseline fingerprint unchanged** (`synth.signature` → `('b0b0fd5f8380f66b', 242)` with all optional rules off), and `B.audit_causality` reports 0 changed decisions.
-- Keep the engine causal: detectors only ever see candles that have already closed.
-- Optional rules (`SA1_REQUIRE_CLEAN`, `SA2_STRICT_REJECTION`, `VETO_MODE`, `VETO_AGENTS`) are all off by default — keep it that way.
-- Never put API keys in files or commit them. They come from env vars only.
+- Times in **IST**. Convert UTC timestamps from logs. Careful with DST now that London/NY are live-shifted — see above.
+- Be honest about negative results; never present a filter that merely removes trades as an improvement. Never pick a winner by tuning on the same data you score it on. This held even for real-money decisions on 5 Nov: told him plainly when the order-book gate false-avoided a good trade, and when the session-time shift backtested worse — he deployed both anyway, explicitly, having seen the honest number first.
+- Never claim a change works without running it. After any engine change: tests pass, **baseline fingerprint unchanged** (`synth.signature` → `('b0b0fd5f8380f66b', 242)` with all optional rules off), and `B.audit_causality` reports 0 changed decisions. For a change to a fundamental constant (session times, symbol roster) rather than an optional rule, the fingerprint test isn't the right check — apply it via `main()`'s `C.override(...)` instead, so `config.py`'s raw defaults (and the regression tests built on them) stay meaningful.
+- Keep the engine causal: detectors only ever see candles that have already closed. This extends to the hunt-reentry management code (`_sa134_manage_hunt`) — verify causality there by scrambling candles strictly after each leg's own entry and confirming that leg's parameters don't change, not just by eyeballing the logic.
+- Optional rules (`SA1_REQUIRE_CLEAN`, `SA2_STRICT_REJECTION`, `VETO_MODE`, `VETO_AGENTS`, `SA134_LIQUIDITY_HUNT_REVERSAL`, `SA134_HUNT_REENTRY`) are all off by default — keep it that way unless he explicitly re-approves after seeing fresh numbers.
+- Never put API keys in files or commit them. They come from env vars only. He pastes credentials directly in chat when asked (his explicit choice) — treat them as sensitive in handling, not as something to refuse.
+- **He now explicitly wants deployment and real-money operations** — the opposite of the original "don't drag him into credentials or deployment" rule. Still confirm explicitly before anything irreversible (going live, capital changes, real orders) — he has been giving that confirmation directly and clearly, not resisting being asked.
+- **Platform limitation, not Umar's preference**: Claude Code's own permission classifier blocks (a) placing real orders on the exchange and (b) enabling new persistent systemd units (`systemctl enable --now` on a freshly-created unit) over SSH from this session. Writing the unit file is fine; starting it the first time is not — hand Umar the exact commands for those two categories specifically and let him run them in the DigitalOcean web console. Ordinary `git pull` + `systemctl restart` on an *already-enabled* service has worked fine directly.
 
-## `reference/` (outputs from the Colab runs)
-`final_trades.csv` (301 trades, IST) · `final_signals.csv` (every session incl. no-setup) · `final_sensitivity.csv` (9 exact re-runs) · `rule_test_summary.csv` + `rule_test_trades.csv` (variants 0, A–F) · `SORB15_Backtest_Data_and_Calculator.xlsx` (fee/slippage calculator) · `railway_variables.txt` (settings the backtest used).
+## `reference/` (outputs from the Colab runs, plus later live/portfolio runs)
+`final_trades.csv` (301 trades, IST) · `final_signals.csv` (every session incl. no-setup) · `final_sensitivity.csv` (9 exact re-runs) · `rule_test_summary.csv` + `rule_test_trades.csv` (variants 0, A–F) · `SORB15_Backtest_Data_and_Calculator.xlsx` (fee/slippage calculator) · `railway_variables.txt` (settings the old Railway backtest used, now historical) · `sa134_portfolio_*` / `variant_sa134_*` (the multi-symbol SA1+SA4+Tokyo engine's own variant runs) · `Last7Days_Portfolio_PnL.xlsx` + `last7days_portfolio_trades.csv` (the Oct 29–Nov 5 report, backtest-based substitute since Railway's logs were gone and the DO deployment was too young at the time) · monthly `*_Profit_Loss.xlsx` files.
