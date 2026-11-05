@@ -435,16 +435,102 @@ rc_ob = {"high": 100000.0, "low": 99000.0}
 
 log_msgs.clear()
 ex.orderbook = lambda pair=None: ob_with_wall("asks", 100020 * 1.0005, 50.0)   # right at entry
-with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True,
-                ORDERBOOK_WALL_MULT=5.0, ORDERBOOK_GATE_PCT=0.003):
-    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
-check("a wall right against the entry gates the trade",
-      (t, any("Order-book wall against the trade" in m for m in log_msgs)), (None, True))
+with C.override(ORDERBOOK_FILTER=True, ORDERBOOK_WALL_MULT=5.0, ORDERBOOK_GATE_PCT=0.003):
+    wall = M._orderbook_wall_against("B-BTC_USDT", 1, 100020)
+check("_orderbook_wall_against finds a wall right against the entry",
+      wall is not None and round(wall[1], 1), 50.0)
+with C.override(ORDERBOOK_FILTER=False):
+    check("same wall ignored with the feature off (default)",
+          M._orderbook_wall_against("B-BTC_USDT", 1, 100020), None)
+with C.override(ORDERBOOK_FILTER=True, ORDERBOOK_WALL_MULT=5.0, ORDERBOOK_GATE_PCT=0.0001):
+    check("same wall ignored once it's outside the proximity threshold",
+          M._orderbook_wall_against("B-BTC_USDT", 1, 100020), None)
+
+print("Liquidity-hunt reversal — a wall gets WATCHED (sweep + reverse), not avoided")
+state_h = {"halted": False, "day_pnl": 0.0, "consec_losses": 0, "trades": {}}
+real.update({k: getattr(ex, k) for k in ("market_order", "open_position", "set_stop", "exit_position")})
+notify.send = lambda text, silent=False: log_msgs.append(text)
+ex.market_order = lambda *a, **k: {"ok": 1}
+# entry=None -> enter_hunt_reversal() falls back to its own computed entry_px,
+# so this mock works at any price scale instead of assuming BTC's ~100,000
+ex.open_position = lambda *a, **k: {"id": "P1", "entry": None, "qty": 1.0, "raw": {}}
+ex.set_stop = lambda pid, px: {"ok": 1}
+ex.exit_position = lambda pid: closed.append(pid) or {"ok": 1}
+M.time.sleep = lambda s: None
 
 log_msgs.clear()
-with C.override(DRY_RUN=False, ORDERBOOK_FILTER=False):
-    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
-check("the SAME wall is ignored with the feature off (default)", t is not None, True)
+state_h = {"halted": False, "day_pnl": 0.0, "consec_losses": 0, "trades": {}}
+with C.override(DRY_RUN=False):
+    M.register_hunt_watch(state_h, "BTC", "B-BTC_USDT", 1, 100100.0, 50.0, "London",
+                          100000.0, 99000.0, M.now_ms() + 3_600_000)
+check("register_hunt_watch stores it and notifies instead of entering",
+      ("BTC" in state_h["hunt_watches"], any("watching for a sweep" in m for m in log_msgs)),
+      (True, True))
+
+# an expired watch is dropped with no trade, no crash
+state_h2 = {"halted": False, "day_pnl": 0.0, "consec_losses": 0, "trades": {},
+           "hunt_watches": {"BTC": {"pair": "B-BTC_USDT", "d0": 1, "wall_px": 100100.0,
+                                    "wall_qty": 50.0, "session": "London", "H": 100000.0,
+                                    "L": 99000.0, "registered_at": M.now_ms() - 10000,
+                                    "expires_at": M.now_ms() - 1000}}}
+log_msgs.clear()
+with C.override(DRY_RUN=False):
+    got = M.check_hunt_watches(state_h2, {"BTC": SPEC}, 2)
+check("an expired watch is dropped, no trade",
+      (got, "BTC" in state_h2["hunt_watches"], any("expired" in m for m in log_msgs)),
+      ({}, False, True))
+
+
+def mk_vol_candle(o, h, l, c, v, t):
+    return {"t": t, "open": o, "high": h, "low": l, "close": c, "volume": v}
+
+
+# 20 quiet candles (needed lookback for good_volume), then a high-volume sweep
+# ABOVE a 100.0 wall (original breakout was LONG, d0=1), then a doji right after
+# -- confirms the reversal, should enter SHORT (the reverse of d0).
+base_t = M.now_ms() - 25 * 900_000
+quiet = [mk_vol_candle(96 + i * 0.05, 96.3 + i * 0.05, 95.8 + i * 0.05, 96.1 + i * 0.05, 10.0,
+                       base_t + i * 900_000) for i in range(20)]
+sweep = mk_vol_candle(99.5, 103.0, 99.4, 102.0, 500.0, base_t + 20 * 900_000)     # closes above 100.0 wall, huge volume
+confirm = mk_vol_candle(102.0, 104.0, 101.9, 102.05, 10.0, base_t + 21 * 900_000)  # doji
+hunt_candles = quiet + [sweep, confirm]
+
+state_h3 = {"halted": False, "day_pnl": 0.0, "consec_losses": 0, "trades": {},
+           "hunt_watches": {"BTC": {"pair": "B-BTC_USDT", "d0": 1, "wall_px": 100.0,
+                                    "wall_qty": 50.0, "session": "London", "H": 105.0,
+                                    "L": 95.0, "registered_at": base_t,
+                                    "expires_at": M.now_ms() + 3_600_000}}}
+ex.candles = lambda *a, _cs=hunt_candles, **k: _cs
+log_msgs.clear()
+with C.override(DRY_RUN=False):
+    got = M.check_hunt_watches(state_h3, {"BTC": SPEC}, 2)
+check("sweep above the wall + doji confirms -> enters the REVERSE (SHORT) direction",
+      ("BTC" in got, got.get("BTC", {}).get("direction")), (True, -1))
+check("the watch is cleared once it resolves", "BTC" in state_h3["hunt_watches"], False)
+
+# same setup but no reversal candle after the sweep -- stays pending, no trade
+no_confirm = mk_vol_candle(102.0, 108.0, 101.0, 106.0, 10.0, base_t + 21 * 900_000)  # strong green, not a reversal
+state_h4 = {"halted": False, "day_pnl": 0.0, "consec_losses": 0, "trades": {},
+           "hunt_watches": {"BTC": {"pair": "B-BTC_USDT", "d0": 1, "wall_px": 100.0,
+                                    "wall_qty": 50.0, "session": "London", "H": 105.0,
+                                    "L": 95.0, "registered_at": base_t,
+                                    "expires_at": M.now_ms() + 3_600_000}}}
+ex.candles = lambda *a, _cs=quiet + [sweep, no_confirm], **k: _cs
+with C.override(DRY_RUN=False):
+    got = M.check_hunt_watches(state_h4, {"BTC": SPEC}, 2)
+check("no reversal candle yet -> still pending, no trade",
+      (got, "BTC" in state_h4["hunt_watches"]), ({}, True))
+
+# a budget of 0 free slots blocks entry even if the pattern already confirmed
+state_h5 = {"halted": False, "day_pnl": 0.0, "consec_losses": 0, "trades": {},
+           "hunt_watches": {"BTC": {"pair": "B-BTC_USDT", "d0": 1, "wall_px": 100.0,
+                                    "wall_qty": 50.0, "session": "London", "H": 105.0,
+                                    "L": 95.0, "registered_at": base_t,
+                                    "expires_at": M.now_ms() + 3_600_000}}}
+ex.candles = lambda *a, _cs=hunt_candles, **k: _cs
+with C.override(DRY_RUN=False):
+    got = M.check_hunt_watches(state_h5, {"BTC": SPEC}, 0)
+check("zero free slots -> no entry even though the pattern confirmed", got, {})
 
 base_sl = 100000.0 * (1 - 1 * B.SA134_SL_BUFFER_PCT)
 wall_px = base_sl * (1 - 0.003)      # a bit further out than the baseline stop, same side
@@ -474,6 +560,7 @@ check("order-book fetch failing never blocks the trade (fails open)",
       (t is not None, t and round(t["sl"], 6)), (True, round(base_sl, 6)))
 
 ex.orderbook = real_ob
+ex.candles = real_candles
 for k, v in real.items():
     setattr(ex, k, v)
 notify.send, M.time.sleep = real_send, real_sleep

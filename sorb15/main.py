@@ -267,9 +267,12 @@ def _safe_orderbook(pair):
         return None
 
 
-def _orderbook_gate(pair, d, entry_px):
-    """None = no wall found (or the feature is off, or the fetch failed) --
-    proceed as usual. A string = the AVOID reason; the caller should stand down."""
+def _orderbook_wall_against(pair, d, entry_px):
+    """None if no wall, the feature is off, or the fetch failed. Otherwise
+    (wall_px, wall_qty) -- a resting level on the side AGAINST the breakout
+    direction, within ORDERBOOK_GATE_PCT of entry. The caller doesn't avoid the
+    trade on this any more (see the hunt-watch functions below) -- it diverts
+    to watching for a sweep-through + reversal instead."""
     if not C.ORDERBOOK_FILTER:
         return None
     ob = _safe_orderbook(pair)
@@ -282,8 +285,7 @@ def _orderbook_gate(pair, d, entry_px):
     wpx, wq = wall
     if abs(wpx - entry_px) / entry_px > C.ORDERBOOK_GATE_PCT:
         return None
-    return (f"Order-book wall against the trade: {wq:g} resting at {wpx:,.2f}, within "
-            f"{C.ORDERBOOK_GATE_PCT:.1%} of entry (live-only check, never backtested)")
+    return wpx, wq
 
 
 def _orderbook_stop(pair, d, entry_px, sl):
@@ -337,9 +339,6 @@ def enter(sym, pair, spec, sig, session, rc, sess):
     if (d == 1 and entry_px <= sl) or (d == -1 and entry_px >= sl):
         return avoid("Entry is already beyond its own stop")
 
-    gate_reason = _orderbook_gate(pair, d, entry_px)
-    if gate_reason:
-        return avoid(gate_reason)
     sl, stop_note = _orderbook_stop(pair, d, entry_px, sl)
     if stop_note:
         log.info("%s: %s", label, stop_note)
@@ -410,6 +409,176 @@ def enter(sym, pair, spec, sig, session, rc, sess):
                                            f"risk Rs {risk_inr:.0f}"))
     log.info("ENTER %s %s %s qty=%s entry=%.2f sl=%.2f", sym, sig["sub_agent"], d, qty, entry_px, sl)
     return trade
+
+
+# ── liquidity-hunt reversal (replaces the old defensive order-book gate) ────
+# Umar's explicit redesign, 5 Nov: a wall sitting against the breakout isn't a
+# reason to stand down -- it's where a hunt is likely. Instead of avoiding,
+# watch for price to SWEEP THROUGH the wall (continuing the original breakout
+# direction, consuming that resting liquidity) on good volume, then a reversal
+# candle right after -- and if that happens, trade the REVERSAL, not the
+# original breakout. Same mental model as the Gold 4-Nov example Umar flagged
+# (a stop-hunt then a hard reverse), anchored to a real resting order instead
+# of an inferred session range line. Still BTC-only in practice (the only
+# symbol with a real CoinDCX order book) and still cannot be backtested -- no
+# historical order book exists to replay this against, so this can only ever
+# be judged by watching it trade live.
+
+def register_hunt_watch(state, sym, pair, d0, wall_px, wall_qty, session, H, L, expires_at):
+    state.setdefault("hunt_watches", {})[sym] = {
+        "pair": pair, "d0": d0, "wall_px": wall_px, "wall_qty": wall_qty,
+        "session": session, "H": H, "L": L,
+        "registered_at": now_ms(), "expires_at": expires_at,
+    }
+    notify.send(f"<b>{sym} {session}</b> — order-book wall against the breakout "
+                f"({wall_qty:g} resting at {wall_px:,.2f}): watching for a sweep through it "
+                f"+ a reversal candle, instead of entering the original breakout "
+                f"(live-only check, never backtested).", silent=False)
+
+
+def enter_hunt_reversal(sym, pair, spec, sig, session, H, L, entry_px, sl):
+    """Places the REVERSAL trade once a hunt watch confirms. Mirrors enter()'s
+    order-placement core but isn't anchored to a session's range candle the
+    way enter() is, so it's kept as its own function rather than sharing that
+    lag/deadline machinery, which doesn't apply here."""
+    d = sig["direction"]
+    label = f"{sym} {session}"
+
+    def avoid(why):
+        notify.send(notify.signal_block(sig, label, H, L, round(entry_px, 2), round(sl, 2),
+                                        "AVOID", why))
+        return None
+
+    if (d == 1 and entry_px <= sl) or (d == -1 and entry_px >= sl):
+        return avoid("Entry is already beyond its own stop")
+
+    fixed_margin = C.CAPITAL_INR / MAX_SLOTS
+    with C.override(QTY_STEP=spec["QTY_STEP"], MIN_QTY=spec["MIN_QTY"],
+                    MIN_NOTIONAL_USDT=spec["MIN_NOTIONAL_USDT"], PRICE_STEP=spec["PRICE_STEP"]):
+        qty = sizing.qty_for_fixed_notional(entry_px, fixed_margin)
+        if qty <= 0:
+            return avoid(f"Size is below the exchange minimum (min qty {spec['MIN_QTY']}, "
+                         f"min notional {spec['MIN_NOTIONAL_USDT']:g} USDT, step {spec['QTY_STEP']})")
+
+        cid = f"sorb15-{sym}-HUNT-{int(time.time())}"
+        live = None
+        try:
+            ex.market_order("buy" if d == 1 else "sell", qty, pair=pair)
+        except Exception as err:
+            time.sleep(2)
+            live = None if C.DRY_RUN else ex.open_position(pair=pair)
+            if not live:
+                return avoid(f"Entry order failed: {err}")
+            notify.send(f"⚠️ Entry call errored ({err}) but the position exists. Protecting it.")
+
+        pid, fill = None, entry_px
+        if not C.DRY_RUN:
+            live = live or wait_for_position(pair)
+            if not live:
+                return avoid("Entry order sent but no position appeared on the exchange")
+            pid, fill = live["id"], (live["entry"] or entry_px)
+            if (d == 1 and fill <= sl) or (d == -1 and fill >= sl):
+                flatten(pid, "FILL BEYOND STOP — closed", sym, session, sig["sub_agent"])
+                return None
+        try:
+            place_stop(pid, sl)
+        except Exception as err:
+            flatten(pid, f"STOP NOT CONFIRMED ({err}) — closed", sym, session, sig["sub_agent"])
+            return None
+        entry_px = fill
+
+        risk_px = abs(entry_px - sl)
+        tp_levels = [entry_px + d * r * risk_px for r in BT.SA134_TP_R]
+        leg_qtys, remaining = [], qty
+        for frac in BT.SA134_TP_FRACS[:-1]:
+            q = sizing.floor_step(qty * frac, spec["QTY_STEP"])
+            if q < spec["MIN_QTY"] - 1e-12:
+                q = 0.0
+            leg_qtys.append(q)
+            remaining = round(remaining - q, 8)
+        leg_qtys.append(round(remaining, 8))
+
+    notional_inr = qty * entry_px * C.USDINR
+    risk_inr = notional_inr * risk_px / entry_px
+
+    entry_bar = (now_ms() // STEP_MS) * STEP_MS
+    trade = {"symbol": sym, "pair": pair, "sub_agent": sig["sub_agent"], "setup": sig["setup"],
+             "session": session, "direction": d, "level": sig["level"], "entry": entry_px, "sl": sl,
+             "qty": qty, "open_qty": qty, "risk_px": risk_px, "realised": 0.0, "seen": {},
+             "missing_polls": 0, "position_id": pid,
+             "entry_bar": entry_bar, "opened_at": int(time.time()),
+             "client_id": cid, "range_high": H, "range_low": L,
+             "tp_levels": tp_levels, "leg_qtys": leg_qtys, "tp_hit": [False, False, False],
+             "day_end_ms": ms(day_end_for(now_ist()))}
+    notify.send(notify.signal_block(sig, label, H, L, round(entry_px, 2), round(sl, 2), "ENTER",
+                                    sig.get("detail", ""),
+                                    result=f"qty {qty}  margin Rs {fixed_margin:.0f}  "
+                                           f"risk Rs {risk_inr:.0f}"))
+    log.info("ENTER %s HUNT %s qty=%s entry=%.2f sl=%.2f", sym, d, qty, entry_px, sl)
+    return trade
+
+
+def check_hunt_watches(state, specs, free_slots):
+    """Advances every pending hunt watch by one poll. Returns {sym: trade} for
+    anything actually entered this poll (the caller merges these into
+    state['trades']). `free_slots` bounds how many of this poll's confirmations
+    can actually enter -- in practice at most one watch is ever pending at a
+    time (only BTC has a real order book), but this keeps two watches that
+    happened to confirm in the same poll from ever exceeding the slot cap."""
+    watches = state.get("hunt_watches") or {}
+    entered = {}
+    for sym in list(watches.keys()):
+        if free_slots - len(entered) <= 0:
+            break
+        w = watches[sym]
+        if now_ms() >= w["expires_at"]:
+            notify.send(f"<b>{sym} {w['session']}</b> — liquidity-hunt watch expired "
+                        f"(the wall at {w['wall_px']:,.2f} was never swept + confirmed this "
+                        f"session). No trade.", silent=False)
+            del watches[sym]
+            continue
+
+        pair, d0, wall_px = w["pair"], w["d0"], w["wall_px"]
+        try:
+            cs = ex.candles(pair=pair, minutes_back=600)
+        except Exception as err:
+            log.warning("hunt-watch candle fetch failed for %s (%s)", sym, err)
+            continue
+        cs = [c for c in cs if c["t"] >= w["registered_at"]]
+        if len(cs) < 2:
+            continue
+
+        found = None
+        for i in range(len(cs) - 1):
+            c = cs[i]
+            beyond = (c["close"] > wall_px) if d0 == 1 else (c["close"] < wall_px)
+            if not beyond:
+                continue
+            if not sa.good_volume(cs, i, C.SA134_VOL_WINDOW, C.SA134_VOL_MULT):
+                continue
+            nxt = cs[i + 1]
+            if sa.reversal_candle(nxt, d0):
+                found = (c, nxt)
+                break
+        if found is None:
+            continue
+
+        sweep_c, confirm_c = found
+        new_d = -d0
+        entry_px = confirm_c["close"] * (1 + C.SLIPPAGE * new_d)
+        new_level = sweep_c["low"] if new_d == 1 else sweep_c["high"]
+        sl = new_level * (1 - new_d * BT.SA134_SL_BUFFER_PCT)
+        sig = {"sub_agent": "HUNT", "setup": "Liquidity-hunt reversal off a real order-book wall",
+               "direction": new_d, "level": wall_px, "breakout": True, "rejection": True,
+               "momentum_shift": True,
+               "detail": f"swept past a {w['wall_qty']:g} wall at {wall_px:,.2f} on volume, "
+                         f"confirmed by a reversal candle -- trading the reversal"}
+        del watches[sym]
+        trade = enter_hunt_reversal(sym, pair, specs[sym], sig, w["session"], w["H"], w["L"],
+                                    entry_px, sl)
+        if trade:
+            entered[sym] = trade
+    return entered
 
 
 # ── management ──────────────────────────────────────────────────────────────
@@ -593,8 +762,9 @@ def _main_loop():
                 f"a free slot goes to the fastest qualifying breakout, strength breaks a tie\n"
                 f"pairing   : only BTC+Oil, BTC+NatGas, or Oil+NatGas may be open together "
                 f"(Gold/Silver trade solo only)\n"
-                f"order book: live BTC order-book gate/stop overlay ON (other 4 symbols have no "
-                f"order book on CoinDCX — no-op there, never backtested)</pre>")
+                f"order book: live BTC order-book stop-widening + liquidity-hunt reversal ON "
+                f"(wall against a breakout -> watch for a sweep + reversal, trade that instead; "
+                f"other 4 symbols have no order book on CoinDCX — no-op there, never backtested)</pre>")
     if missing:
         log.warning("missing env vars (ok in dry run): %s", missing)
     state = notify.load()
@@ -620,6 +790,14 @@ def _main_loop():
                     trades[sym] = t
             state["trades"] = trades
 
+            # ---- advance every pending liquidity-hunt watch, regardless of session ----
+            hunted = check_hunt_watches(state, specs, MAX_SLOTS - len(trades))
+            for sym, t in hunted.items():
+                trades[sym] = t
+            if hunted:
+                state["trades"] = trades
+            notify.save(state)
+
             if name is None:
                 notify.save(state)
                 nap = min(seconds_to_next_open(now), 900)
@@ -637,7 +815,7 @@ def _main_loop():
             # ---- scan every free symbol for a qualifying signal this poll ----
             candidates = []
             for sym, pair in SYMBOLS.items():
-                if sym in trades:
+                if sym in trades or sym in (state.get("hunt_watches") or {}):
                     continue
                 key = f"{o.date()}|{name}|{sym}"
                 if key in state["done_sessions"]:
@@ -711,6 +889,16 @@ def _main_loop():
                 # crash or exception mid-entry can never trigger a second entry.
                 state["done_sessions"].append(c["key"])
                 notify.save(state)
+
+                entry_px_est = c["sess"][-1]["close"]
+                wall = _orderbook_wall_against(c["pair"], sig["direction"], entry_px_est)
+                if wall is not None:
+                    wpx, wq = wall
+                    register_hunt_watch(state, sym, c["pair"], sig["direction"], wpx, wq,
+                                        name, H, L, ms(e))
+                    notify.save(state)
+                    continue
+
                 trade = enter(sym, c["pair"], specs[sym], sig, name, c["rc"], c["sess"])
                 if trade:
                     trades[sym] = trade
