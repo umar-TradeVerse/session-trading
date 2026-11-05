@@ -39,8 +39,16 @@ oid = None
 try:
     px = ex.last_price()
     limit = sizing.price(px * 0.5)
-    print(f"market {px:,.2f}  ->  resting BUY {C.MIN_QTY} at {limit:,.2f}  (50% below; cannot fill)")
-    resp = ex.limit_order("buy", C.MIN_QTY, limit)
+    # MIN_QTY alone can undershoot the exchange's REAL minimum order value once the
+    # price is halved for this test -- discovered live: CoinDCX enforced ~Rs 6,120 on
+    # BTC, noticeably above what the instrument spec's min_notional (60 USDT) implied
+    # at the configured USDINR. Size the test order generously above that minimum
+    # instead of trusting the spec exactly -- still 50% below market, still cannot
+    # fill, still trivial; this only needs to clear the exchange's order-value floor
+    # so the test exercises the order lifecycle instead of failing on sizing.
+    qty = max(C.MIN_QTY, sizing.floor_step(2.5 * C.MIN_NOTIONAL_USDT / limit, C.QTY_STEP))
+    print(f"market {px:,.2f}  ->  resting BUY {qty} at {limit:,.2f}  (50% below; cannot fill)")
+    resp = ex.limit_order("buy", qty, limit)
     oid = ex.order_id_of(resp)
     print("create response:", resp)
     if not oid:
