@@ -538,15 +538,21 @@ def manage(trade, state):
 
 def main():
     """Entry point. Wraps the loop in the exact parameters the backtest validated
-    this engine with (tightened clean-breakout, Rs 10,000 capital) so the live bot
-    can never silently drift from them because of a Railway variable that is
+    this engine with (tightened clean-breakout) so the live bot can never
+    silently drift from them because of a Railway/droplet env var that is
     missing, stale, or still set for the old engine.
 
+    CAPITAL_INR is tied to DRY_RUN itself, not to a separate env var, for the
+    same drift-proofing reason: the real-money service (DRY_RUN=false) uses
+    Rs 10,042.53 -- the actual usable futures-wallet balance Umar confirmed --
+    the paper service (DRY_RUN=true, Gold/Silver) keeps the round Rs 10,000
+    it's always backtested against.
+
     ORDERBOOK_FILTER and SA134_ENFORCE_COMPANION_PAIRS are Umar's explicit
-    instruction to go live with (still DRY_RUN=true, paper only) -- hardcoded
-    here for the same reason: a missing env var on the droplet must never
-    silently turn either back off."""
-    with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=10000,
+    instruction to go live with -- hardcoded here for the same reason: a
+    missing env var on the droplet must never silently turn either back off."""
+    capital = 10042.53 if not C.DRY_RUN else 10000
+    with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
                     ORDERBOOK_FILTER=True, SA134_ENFORCE_COMPANION_PAIRS=True):
         _main_loop()
 
