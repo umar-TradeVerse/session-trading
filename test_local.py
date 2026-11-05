@@ -400,6 +400,94 @@ for k, v in real.items():
     setattr(ex, k, v)
 notify.send, M.time.sleep = real_send, real_sleep
 
+print("Order-book overlay — live-only (cannot be backtested); off by default, fails open")
+real_ob = ex.orderbook
+check("nearest_wall: finds the one level that stands out",
+      ex.nearest_wall([(100, 1), (99, 1.1), (98, 0.9), (97, 1), (96, 1),
+                        (95, 1), (94, 1), (93, 1), (92, 1), (91, 12.0)], mult=5.0),
+      (91, 12.0))
+check("nearest_wall: nothing stands out -> None",
+      ex.nearest_wall([(100, 1), (99, 1.1), (98, 0.9), (97, 1), (96, 1),
+                        (95, 1), (94, 1), (93, 1), (92, 1), (91, 1.2)], mult=5.0), None)
+check("nearest_wall: too few levels to judge -> None",
+      ex.nearest_wall([(100, 50), (99, 1)], mult=5.0), None)
+
+flat = [(100000 - i * 10, 1.0) for i in range(1, 15)]     # no symbol's own price, just a flat book
+
+
+def ob_with_wall(side, px, qty):
+    book = {"bids": list(flat), "asks": list(flat)}
+    book[side] = [(px, qty)] + [lv for lv in book[side] if lv[0] != px]
+    return book
+
+
+real.update({k: getattr(ex, k) for k in ("market_order", "open_position", "set_stop", "exit_position")})
+notify.send = lambda text, silent=False: log_msgs.append(text)
+ex.market_order = lambda *a, **k: {"ok": 1}
+ex.open_position = pos_ok
+ex.set_stop = lambda pid, px: {"ok": 1}
+ex.exit_position = lambda pid: closed.append(pid) or {"ok": 1}
+M.time.sleep = lambda s: None
+
+now = M.now_ms()
+sess_ob = [K(100000, 100100, 99950, 100020, now - STEP - 5000)]
+rc_ob = {"high": 100000.0, "low": 99000.0}
+
+log_msgs.clear()
+ex.orderbook = lambda pair=None: ob_with_wall("asks", 100020 * 1.0005, 50.0)   # right at entry
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
+check("a wall right against the entry gates the trade",
+      (t, any("Order-book wall against the trade" in m for m in log_msgs)), (None, True))
+
+log_msgs.clear()
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=False):
+    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
+check("the SAME wall is ignored with the feature off (default)", t is not None, True)
+
+base_sl = 100000.0 * (1 - 1 * B.SA134_SL_BUFFER_PCT)
+wall_px = base_sl * (1 - 0.003)      # a bit further out than the baseline stop, same side
+# a handful of ordinary resting levels inside the search band too, so the wall
+# has something to stand out against (a real book is thin this far from price)
+near_sl_bids = [(base_sl * (1 - 0.001 * i), 1.0) for i in range(1, 8)] + [(wall_px, 50.0)]
+ex.orderbook = lambda pair=None: {"bids": near_sl_bids, "asks": list(flat)}
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
+check("a protective-side wall WIDENS the stop, trade still opens",
+      (t is not None, t and t["sl"] < base_sl), (True, True))
+
+ex.orderbook = lambda pair=None: {"bids": list(flat), "asks": list(flat)}   # no wall anywhere
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
+check("no wall found -> baseline stop unchanged", t and round(t["sl"], 6), round(base_sl, 6))
+
+
+def boom_ob(pair=None):
+    raise RuntimeError("timeout")
+
+
+ex.orderbook = boom_ob
+with C.override(DRY_RUN=False, ORDERBOOK_FILTER=True):
+    t = M.enter("BTC", "B-BTC_USDT", SPEC, make_sig(), "London", rc_ob, sess_ob)
+check("order-book fetch failing never blocks the trade (fails open)",
+      (t is not None, t and round(t["sl"], 6)), (True, round(base_sl, 6)))
+
+ex.orderbook = real_ob
+for k, v in real.items():
+    setattr(ex, k, v)
+notify.send, M.time.sleep = real_send, real_sleep
+
+print("Companion-pairs slot policy — Gold/Silver solo-only, BTC/Oil/NatGas pairwise")
+check("first position ever (nothing open) is always allowed",
+      B.compatible_with_open(set(), "Gold"), True)
+check("BTC may join Oil", B.compatible_with_open({"Oil"}, "BTC"), True)
+check("BTC may join NatGas", B.compatible_with_open({"NatGas"}, "BTC"), True)
+check("Oil may join NatGas", B.compatible_with_open({"NatGas"}, "Oil"), True)
+check("Gold may NOT join BTC", B.compatible_with_open({"BTC"}, "Gold"), False)
+check("Silver may NOT join Oil", B.compatible_with_open({"Oil"}, "Silver"), False)
+check("BTC may NOT join Gold", B.compatible_with_open({"Gold"}, "BTC"), False)
+check("Gold may NOT join Silver", B.compatible_with_open({"Silver"}, "Gold"), False)
+
 print("Optional rules — the two trades flagged on the charts (all OFF by default)")
 def cd(o, h, l, c, i=0):
     return {"t": i * 900000, "open": o, "high": h, "low": l, "close": c, "volume": 1.0}

@@ -120,6 +120,20 @@ def reversal_candle(c, direction):
     return False
 
 
+def good_volume(sess, i, window, mult):
+    """True if sess[i]'s own volume is at least `mult` times the average volume of the
+    `window` candles strictly before it. Causal and session-local: never looks past i,
+    never reaches into a prior session. False (not "unknown") when there isn't enough
+    lookback yet -- a hunt this early in the session can't be judged against history
+    that doesn't exist."""
+    lo = i - window
+    if lo < 0:
+        return False
+    hist = sess[lo:i]
+    avg = sum(c["volume"] for c in hist) / len(hist)
+    return avg > 0 and sess[i]["volume"] >= mult * avg
+
+
 def deadline_index(sess, deadline_ms):
     """Index of the last candle that closed by the deadline (-1 if none)."""
     step = C.TIMEFRAME_MIN * 60 * 1000

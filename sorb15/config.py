@@ -110,6 +110,47 @@ SA4_SCAN_PAST_IMPURE_BREAKOUT = _b("SA4_SCAN_PAST_IMPURE_BREAKOUT", False)
 # confirmed reversal instead FLIPS the trade to the opposite side, mirroring the flip SA1
 # already has -- a test of whether the SA4 veto is leaving a real opposite move on the table.
 SA4_FLIP_ON_REVERSAL = _b("SA4_FLIP_ON_REVERSAL", False)
+# SA1+SA4+Tokyo portfolio (backtest.run_sa134_portfolio / main.py) only: baseline ranks
+# a session's competing candidates purely by trigger time then strength when slots run
+# out. When on, a candidate whose OWN symbol was just stopped out THE SAME TRADING DAY,
+# now signalling the OPPOSITE direction (the stop-hunt-then-reversal pattern), outranks
+# every other candidate competing for that slot -- it no longer has to out-race an
+# unrelated symbol's breakout on raw timing alone.
+SA134_PRIORITIZE_REVERSAL_REENTRY = _b("SA134_PRIORITIZE_REVERSAL_REENTRY", False)
+# SA1+SA4+Tokyo trade management (backtest._sa134_manage / main.py manage()) only:
+# baseline stops never move and the first target is 2R. When on, a 25% leg is taken at
+# 1R too (legs become 25/25/25/25 at 1R/2R/3R/4R) and the stop moves to breakeven the
+# moment that first leg fills -- a trade that was genuinely in profit can no longer
+# round-trip all the way into a full stop-out loss.
+SA134_EARLY_LEG_AND_BREAKEVEN = _b("SA134_EARLY_LEG_AND_BREAKEVEN", False)
+# "Good volume" gate shared by the liquidity-hunt rules below: a candle's own volume
+# must be at least VOL_MULT times the average of the SA134_VOL_WINDOW candles before it.
+# Always causal (only ever looks at candles strictly before the one being judged). The
+# entry-side rule (SA134_LIQUIDITY_HUNT_REVERSAL) computes this within the current
+# session only, same as every other entry detector; the management-side reentry rules
+# (SA134_HUNT_REENTRY) compute it over the full candle history, since by then the trade
+# is already open and may run past a session boundary.
+SA134_VOL_WINDOW = _i("SA134_VOL_WINDOW", 20)
+SA134_VOL_MULT = _f("SA134_VOL_MULT", 1.5)
+# SA1+SA4+Tokyo entry (backtest.sa134_entry_signal) only -- Umar's "liquidity hunt" rule.
+# Baseline's sweep-reversal flip only looks at the SESSION'S SECOND CANDLE (prefix[0]).
+# When on, the SAME flip (a candle closing beyond a line, invalidated by a pullback candle
+# right after) is scanned for on EVERY candle of the session, gated by the volume filter
+# above so a plain noisy wick doesn't count as a hunt -- real liquidity sweeps print volume.
+SA134_LIQUIDITY_HUNT_REVERSAL = _b("SA134_LIQUIDITY_HUNT_REVERSAL", False)
+# SA1+SA4+Tokyo trade management (backtest._sa134_manage_hunt / main.py) only -- Umar's
+# "book the 1R leg, don't move to breakeven" rule, replacing SA134_EARLY_LEG_AND_BREAKEVEN
+# for this specific ask: legs become 25/25/25/25 at 1R/2R/3R/4R but the stop is NEVER moved
+# (explicitly not breakeven -- his standing rule). Two watch-for-reentry rules run alongside:
+#   scenario 1 (continuation): once the 1R leg is booked, if price later makes a NEW extreme
+#     beyond the 1R candle's own high/low on good volume, followed by a pullback candle, add
+#     one more 25%-sized leg back in the SAME direction (stop = the pullback candle's own
+#     extreme, same buffer convention as everywhere else). At most one such add-back per trade.
+#   scenario 2 (reversal): once the ORIGINAL stop is hit, keep watching -- if price breaks
+#     further past that same stop level on good volume, followed by a pullback candle, open a
+#     brand-new position in that (continuing) direction, sized like a fresh fixed-margin entry,
+#     stop = the break candle's own extreme. At most one such reentry per trade.
+SA134_HUNT_REENTRY = _b("SA134_HUNT_REENTRY", False)
 # SA5 (breakout + flip-on-reversal): baseline stops each leg at the exact signal candle's
 # own extreme (the range candle for leg 1, the reversal candle for every flip after). When
 # on, each leg's stop instead sits SL_LEVEL_BUFFER beyond that same level, same convention
@@ -148,6 +189,38 @@ HALT_DAYS = _i("HALT_DAYS", 1)                    # after a streak, skip this ma
 # can only match that if it acts within seconds of the close. If the bot is
 # later than this (restart, outage), it skips the trade rather than chase it.
 MAX_ENTRY_LAG_SECONDS = _i("MAX_ENTRY_LAG_SECONDS", 90)
+
+# SA1+SA4+Tokyo portfolio (backtest.run_sa134_portfolio / main.py) only -- Umar's
+# explicit slot-pairing rule: the two concurrent slots may only ever be one of
+# backtest.SA134_COMPANION_PAIRS (BTC+Oil, BTC+NatGas, Oil+NatGas). Gold and
+# Silver are in none of them, so each can still open SOLO, just never alongside
+# a second symbol. Off by default like every optional rule; main() turns it on
+# explicitly for live/paper trading once Umar asked for it.
+SA134_ENFORCE_COMPANION_PAIRS = _b("SA134_ENFORCE_COMPANION_PAIRS", False)
+
+# ── live-only order-book overlay (main.py enter()/manage() ONLY) ────────────
+# CoinDCX's real, free, public order book (coindcx.orderbook) -- what Umar asked
+# for directly: "liquidity or orders which are present, long or short." It is a
+# LIVE snapshot only -- CoinDCX does not archive historical order books anywhere
+# (checked directly: no such endpoint exists), so NOTHING here has ever been, or
+# ever can be, run through the backtest the way every other rule in this project
+# has been. Off by default; Umar's explicit instruction to turn both halves on
+# despite that gap.
+ORDERBOOK_FILTER = _b("ORDERBOOK_FILTER", False)
+# A resting level counts as a "wall" once its size is at least this many times
+# the average size across the levels being compared.
+ORDERBOOK_WALL_MULT = _f("ORDERBOOK_WALL_MULT", 5.0)
+# Entry gate: skip the trade if a wall sits on the side AGAINST the breakout
+# direction, within this fraction of the entry price.
+ORDERBOOK_GATE_PCT = _f("ORDERBOOK_GATE_PCT", 0.003)
+# Stop placement: search up to this far beyond the existing fixed-buffer stop
+# (SA134_SL_BUFFER_PCT) for a protective-side wall, and if found, move the stop
+# just past it. Only ever pushes the stop FURTHER from entry, never tighter --
+# the fixed buffer stays the floor, this can only widen it.
+ORDERBOOK_STOP_SEARCH_PCT = _f("ORDERBOOK_STOP_SEARCH_PCT", 0.01)
+# How far past the wall itself to park the stop, so a single sweep through the
+# wall's own price doesn't immediately clip it.
+ORDERBOOK_STOP_PAD_PCT = _f("ORDERBOOK_STOP_PAD_PCT", 0.0005)
 
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)

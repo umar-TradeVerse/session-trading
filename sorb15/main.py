@@ -233,6 +233,63 @@ def place_stop(position_id, price):
             raise RuntimeError("the exchange does not show a stop on the position")
 
 
+# ── live-only order-book overlay ─────────────────────────────────────────────
+# Cannot be backtested (see config.ORDERBOOK_FILTER) -- read that before touching
+# this. Both functions fail OPEN: an API hiccup here must never block a trade or
+# leave a position without the baseline stop it would otherwise have gotten.
+
+def _safe_orderbook(pair):
+    try:
+        return ex.orderbook(pair=pair)
+    except Exception as err:
+        log.warning("order-book fetch failed for %s (%s) — skipping the overlay this time", pair, err)
+        return None
+
+
+def _orderbook_gate(pair, d, entry_px):
+    """None = no wall found (or the feature is off, or the fetch failed) --
+    proceed as usual. A string = the AVOID reason; the caller should stand down."""
+    if not C.ORDERBOOK_FILTER:
+        return None
+    ob = _safe_orderbook(pair)
+    if ob is None:
+        return None
+    against = ob["asks"] if d == 1 else ob["bids"]
+    wall = ex.nearest_wall(against, mult=C.ORDERBOOK_WALL_MULT)
+    if wall is None:
+        return None
+    wpx, wq = wall
+    if abs(wpx - entry_px) / entry_px > C.ORDERBOOK_GATE_PCT:
+        return None
+    return (f"Order-book wall against the trade: {wq:g} resting at {wpx:,.2f}, within "
+            f"{C.ORDERBOOK_GATE_PCT:.1%} of entry (live-only check, never backtested)")
+
+
+def _orderbook_stop(pair, d, entry_px, sl):
+    """Returns (sl, note) -- `sl` widened past a protective-side wall if one is
+    found within ORDERBOOK_STOP_SEARCH_PCT beyond the baseline stop; otherwise
+    the baseline `sl` unchanged and note=None. Never tightens the stop."""
+    if not C.ORDERBOOK_FILTER:
+        return sl, None
+    ob = _safe_orderbook(pair)
+    if ob is None:
+        return sl, None
+    protective = ob["bids"] if d == 1 else ob["asks"]
+    search_limit = sl * (1 - d * C.ORDERBOOK_STOP_SEARCH_PCT)
+    beyond = [(p, q) for p, q in protective
+              if ((sl > p >= search_limit) if d == 1 else (sl < p <= search_limit))]
+    # A 1% search band this far from the entry price is naturally thin in a real
+    # book (depth clusters near the current price) -- judge it against its own
+    # few levels rather than demanding the same 10-level minimum the entry gate
+    # uses right at the money.
+    wall = ex.nearest_wall(beyond, mult=C.ORDERBOOK_WALL_MULT, min_levels=3)
+    if wall is None:
+        return sl, None
+    wpx, wq = wall
+    new_sl = wpx * (1 - d * C.ORDERBOOK_STOP_PAD_PCT)
+    return new_sl, f"stop widened to {new_sl:,.2f}, past a {wq:g} wall at {wpx:,.2f}"
+
+
 # ── entry ───────────────────────────────────────────────────────────────────
 
 def enter(sym, pair, spec, sig, session, rc, sess):
@@ -258,6 +315,13 @@ def enter(sym, pair, spec, sig, session, rc, sess):
                      f"limit {C.MAX_ENTRY_LAG_SECONDS}s")
     if (d == 1 and entry_px <= sl) or (d == -1 and entry_px >= sl):
         return avoid("Entry is already beyond its own stop")
+
+    gate_reason = _orderbook_gate(pair, d, entry_px)
+    if gate_reason:
+        return avoid(gate_reason)
+    sl, stop_note = _orderbook_stop(pair, d, entry_px, sl)
+    if stop_note:
+        log.info("%s: %s", label, stop_note)
 
     fixed_margin = C.CAPITAL_INR / MAX_SLOTS
     with C.override(QTY_STEP=spec["QTY_STEP"], MIN_QTY=spec["MIN_QTY"],
@@ -461,8 +525,14 @@ def main():
     """Entry point. Wraps the loop in the exact parameters the backtest validated
     this engine with (tightened clean-breakout, Rs 10,000 capital) so the live bot
     can never silently drift from them because of a Railway variable that is
-    missing, stale, or still set for the old engine."""
-    with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=10000):
+    missing, stale, or still set for the old engine.
+
+    ORDERBOOK_FILTER and SA134_ENFORCE_COMPANION_PAIRS are Umar's explicit
+    instruction to go live with (still DRY_RUN=true, paper only) -- hardcoded
+    here for the same reason: a missing env var on the droplet must never
+    silently turn either back off."""
+    with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=10000,
+                    ORDERBOOK_FILTER=True, SA134_ENFORCE_COMPANION_PAIRS=True):
         _main_loop()
 
 
@@ -478,7 +548,11 @@ def _main_loop():
                 f"agents    : SA1, SA4 (clean breakout {1 - C.CLEAR_TOUCH_TOLERANCE:.0%} outside)\n"
                 f"stop      : broken level +/- {BT.SA134_SL_BUFFER_PCT:.1%}, never moves\n"
                 f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R, else close at the next Tokyo open\n"
-                f"a free slot goes to the fastest qualifying breakout, strength breaks a tie</pre>")
+                f"a free slot goes to the fastest qualifying breakout, strength breaks a tie\n"
+                f"pairing   : only BTC+Oil, BTC+NatGas, or Oil+NatGas may be open together "
+                f"(Gold/Silver trade solo only)\n"
+                f"order book: live BTC order-book gate/stop overlay ON (other 4 symbols have no "
+                f"order book on CoinDCX — no-op there, never backtested)</pre>")
     if missing:
         log.warning("missing env vars (ok in dry run): %s", missing)
     state = notify.load()
@@ -572,6 +646,7 @@ def _main_loop():
 
             # ---- allocate free slots: earliest trigger first, strength breaks a tie ----
             candidates.sort(key=lambda c: (c["trigger_ms"], -c["strength"]))
+            open_syms = set(trades.keys())
             for c in candidates:
                 sym, sig, H, L = c["sym"], c["sig"], c["H"], c["L"]
                 label = f"{sym} {name}"
@@ -582,6 +657,13 @@ def _main_loop():
                         reason="No free slot this poll — claimed by a faster or stronger "
                                "breakout on another symbol"), silent=False)
                     continue
+                if C.SA134_ENFORCE_COMPANION_PAIRS and not BT.compatible_with_open(open_syms, sym):
+                    state["done_sessions"].append(c["key"])
+                    notify.send(notify.signal_block(
+                        sig, label, H, L, action="AVOID",
+                        reason=f"Slot-pairing policy — {sym} may not open alongside "
+                               f"{', '.join(sorted(open_syms))}"), silent=False)
+                    continue
 
                 # Mark the session done BEFORE any order leaves the building, so a
                 # crash or exception mid-entry can never trigger a second entry.
@@ -591,6 +673,7 @@ def _main_loop():
                 if trade:
                     trades[sym] = trade
                     free_slots -= 1
+                    open_syms.add(sym)
                 state["trades"] = trades
                 notify.save(state)
 

@@ -101,6 +101,43 @@ def last_price(pair=None):
     return cs[-1]["close"]
 
 
+def orderbook(pair=None):
+    """Live L2 order book (public, no signing) -- up to 50 resting price levels
+    on each side. Returns {"bids": [(price, qty), ...], "asks": [(price, qty), ...]},
+    each sorted best-first (bids highest-price-first, asks lowest-price-first).
+
+    This is a LIVE-ONLY snapshot: CoinDCX does not archive historical order
+    books anywhere (confirmed -- no such endpoint exists), so nothing built on
+    this can ever be run through the backtest. It can only be read at the
+    moment a live decision is made."""
+    r = _session.get(C.PUBLIC_URL + "/market_data/orderbook",
+                     params={"pair": pair or C.PAIR}, timeout=10)
+    r.raise_for_status()
+    js = r.json()
+    bids = sorted(((float(p), float(q)) for p, q in js.get("bids", {}).items()),
+                  key=lambda x: -x[0])
+    asks = sorted(((float(p), float(q)) for p, q in js.get("asks", {}).items()),
+                  key=lambda x: x[0])
+    return {"bids": bids, "asks": asks}
+
+
+def nearest_wall(levels, mult=5.0, min_levels=10):
+    """The first (nearest-to-price) level in `levels` (best-first) whose size is
+    at least `mult` times the average size of all the levels given -- a resting
+    order cluster large enough to call a 'wall'. None if there are too few
+    levels to judge from, or nothing stands out."""
+    if len(levels) < min_levels:
+        return None
+    qtys = [q for _, q in levels]
+    avg = sum(qtys) / len(qtys)
+    if avg <= 0:
+        return None
+    for px, q in levels:
+        if q >= mult * avg:
+            return px, q
+    return None
+
+
 def instrument(pair=None):
     """Contract specification (public). Source of truth for min size and precision."""
     r = _session.get(C.BASE_URL + FUT + "/data/instrument",

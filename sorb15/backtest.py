@@ -1091,6 +1091,24 @@ SA134_TP_FRACS = (0.50, 0.25, 0.25)
 SA134_SYMBOLS = {"BTC": "B-BTC_USDT", "Gold": "B-XAU_USDT", "Silver": "B-XAG_USDT",
                  "Oil": "B-CL_USDT", "NatGas": "B-NATGAS_USDT"}
 SA134_MAX_SLOTS = 2
+# Umar's explicit slot-pairing rule: the two concurrent slots may only ever hold
+# one of these three combinations. Gold and Silver appear in none of them, so
+# each can still trade SOLO (the first/only open position), but never as the
+# SECOND position alongside anything -- while one is open, the other slot sits
+# unusable until it closes. Checked with compatible_with_open() below, used by
+# both run_sa134_portfolio and main.py's live slot allocation.
+SA134_COMPANION_PAIRS = {frozenset({"BTC", "Oil"}), frozenset({"BTC", "NatGas"}),
+                         frozenset({"Oil", "NatGas"})}
+
+
+def compatible_with_open(open_syms, candidate_sym):
+    """True if `candidate_sym` may take a free slot given the symbols already
+    open. Only checked when SA134_ENFORCE_COMPANION_PAIRS is on. The first
+    position (open_syms empty) is always allowed -- the rule only governs who
+    may join an already-open position, not who may open first."""
+    if not open_syms:
+        return True
+    return all(frozenset({o, candidate_sym}) in SA134_COMPANION_PAIRS for o in open_syms)
 
 
 def sa134_session_windows(day):
@@ -1118,8 +1136,10 @@ def _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms):
     notional = qty * entry * C.USDINR
     entry_ms = candles[entry_i]["t"]
     risk_px = abs(entry - sl)
-    tp_levels = [entry + d * r * risk_px for r in SA134_TP_R]
-    fracs = SA134_TP_FRACS
+    early = C.SA134_EARLY_LEG_AND_BREAKEVEN
+    tp_r = (1, 2, 3, 4) if early else SA134_TP_R
+    fracs = (0.25, 0.25, 0.25, 0.25) if early else SA134_TP_FRACS
+    tp_levels = [entry + d * r * risk_px for r in tp_r]
     leg_qtys, remaining = [], qty
     for frac in fracs[:-1]:
         q = sizing.floor_step(qty * frac, C.QTY_STEP)
@@ -1131,7 +1151,7 @@ def _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms):
 
     legs = []
     open_qty = qty
-    hit = [False, False, False]
+    hit = [False] * len(tp_levels)
     n = len(candles)
 
     def hours(t):
@@ -1145,10 +1165,11 @@ def _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms):
             gap = (c["open"] < sl) if d == 1 else (c["open"] > sl)
             px = (c["open"] if gap else sl) * (1 - slip * d)
             legs.append((px, open_qty / qty, hours(c["t"])))
-            return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "stop_loss")
+            reason = "stop_loss" if sl == entry - d * risk_px else "breakeven_stop"
+            return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, reason)
 
         fav = c["high"] if d == 1 else c["low"]
-        for k in range(3):
+        for k in range(len(tp_levels)):
             if hit[k] or leg_qtys[k] <= 0:
                 continue
             reached = (fav >= tp_levels[k]) if d == 1 else (fav <= tp_levels[k])
@@ -1157,6 +1178,8 @@ def _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms):
                 px = tp_levels[k] * (1 - slip * d)
                 legs.append((px, leg_qtys[k] / qty, hours(c["t"])))
                 open_qty = round(open_qty - leg_qtys[k], 8)
+                if early and k == 0:
+                    sl = entry      # first leg booked -- the rest can no longer lose money
         if open_qty <= 1e-9:
             return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "all_targets_hit")
         if c["t"] + STEP_MS >= day_end_ms:
@@ -1171,11 +1194,195 @@ def _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms):
     return _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "ran_out_of_data")
 
 
-def sa134_entry_signal(prefix, H, L, deadline_i):
+def _simple_leg_exit(candles, entry_i, d, entry, sl, qty, day_end_ms):
+    """One leg, fixed stop (never moved), flattened at day_end_ms otherwise -- the
+    exit shape shared by both SA134_HUNT_REENTRY reentry legs (no staged TP of
+    their own; they exist to capture a continuation/reversal move, not to be
+    re-managed recursively)."""
+    slip = C.SLIPPAGE
+    notional = qty * entry * C.USDINR
+    entry_ms = candles[entry_i]["t"]
+    n = len(candles)
+
+    def hours(t):
+        return (t - entry_ms) / 3_600_000
+
+    j = entry_i
+    while j < n:
+        c = candles[j]
+        adv = c["low"] if d == 1 else c["high"]
+        if (adv <= sl) if d == 1 else (adv >= sl):
+            gap = (c["open"] < sl) if d == 1 else (c["open"] > sl)
+            px = (c["open"] if gap else sl) * (1 - slip * d)
+            return _sa134_result(d, entry, notional, qty, [(px, 1.0, hours(c["t"]))],
+                                  c["t"] + STEP_MS, "stop_loss")
+        if c["t"] + STEP_MS >= day_end_ms:
+            px = c["close"] * (1 - slip * d)
+            return _sa134_result(d, entry, notional, qty, [(px, 1.0, hours(c["t"]))],
+                                  c["t"] + STEP_MS, "day_end")
+        j += 1
+    c = candles[-1]
+    px = c["close"] * (1 - slip * d)
+    return _sa134_result(d, entry, notional, qty, [(px, 1.0, hours(c["t"]))],
+                          c["t"] + STEP_MS, "ran_out_of_data")
+
+
+def _hunt_pullback_break(candles, start_j, n, break_dir, ref_level, day_end_ms):
+    """From start_j, scan for a candle closing further past ref_level in break_dir
+    on good volume, followed immediately by a candle reversal_candle() against that
+    same direction (the pullback). Returns (break_i, confirm_i, entry_i) or None.
+    Bounded to day_end_ms, same convention as every other day-end flatten here."""
+    j = start_j
+    while j < n - 1:
+        c = candles[j]
+        if c["t"] + STEP_MS >= day_end_ms:
+            return None
+        beyond = (c["close"] > ref_level) if break_dir == 1 else (c["close"] < ref_level)
+        if beyond and sa.good_volume(candles, j, C.SA134_VOL_WINDOW, C.SA134_VOL_MULT):
+            nxt = candles[j + 1]
+            if sa.reversal_candle(nxt, break_dir) and j + 2 < n \
+                    and candles[j + 2]["t"] < day_end_ms:
+                return j, j + 1, j + 2
+        j += 1
+    return None
+
+
+def _sa134_manage_hunt(candles, entry_i, d, entry, sl, qty, day_end_ms, fixed_margin):
+    """Umar's 'book the 1R leg, don't move to breakeven' management (legs become
+    25/25/25/25 at 1R/2R/3R/4R, stop never moves), plus the two liquidity-hunt
+    watch-for-reentry rules described at SA134_HUNT_REENTRY in config.py.
+
+    Returns a list of leg dicts: always the original trade first, then zero or one
+    scenario-1 add-back leg (same direction, fired while the original is still open),
+    then zero or one scenario-2 reversal leg (opposite direction, fired only after the
+    original's own stop is hit). Each dict is _sa134_result's output plus
+    kind/direction/entry/sl/qty/entry_ms so the caller can log it as its own trade row."""
+    slip = C.SLIPPAGE
+    notional = qty * entry * C.USDINR
+    entry_ms = candles[entry_i]["t"]
+    risk_px = abs(entry - sl)
+    tp_levels = [entry + d * r * risk_px for r in (1, 2, 3, 4)]
+    leg_qtys, remaining = [], qty
+    for frac in (0.25, 0.25, 0.25):
+        q = sizing.floor_step(qty * frac, C.QTY_STEP)
+        if q < C.MIN_QTY - 1e-12:
+            q = 0.0
+        leg_qtys.append(q)
+        remaining = round(remaining - q, 8)
+    leg_qtys.append(round(remaining, 8))
+
+    def hours(t):
+        return (t - entry_ms) / 3_600_000
+
+    legs = []
+    open_qty = qty
+    hit = [False] * len(tp_levels)
+    n = len(candles)
+    results = []
+
+    j = entry_i
+    while j < n:
+        c = candles[j]
+        adv = c["low"] if d == 1 else c["high"]
+        if (adv <= sl) if d == 1 else (adv >= sl):
+            gap = (c["open"] < sl) if d == 1 else (c["open"] > sl)
+            px = (c["open"] if gap else sl) * (1 - slip * d)
+            legs.append((px, open_qty / qty, hours(c["t"])))
+            res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "stop_loss")
+            results.append(dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                                 qty=qty, entry_ms=entry_ms))
+            # scenario 2: the original's own stop is the liquidity level now -- watch for
+            # it breaking FURTHER (continuing the move that just stopped us out), on good
+            # volume, with a pullback confirming -- then take that continuation.
+            found = _hunt_pullback_break(candles, j + 1, n, -d, sl, day_end_ms)
+            if found:
+                _, _, new_entry_i = found
+                new_d = -d
+                new_entry = candles[new_entry_i]["open"] * (1 + slip * new_d)
+                break_c = candles[found[0]]
+                new_level = break_c["low"] if new_d == 1 else break_c["high"]
+                new_sl = new_level * (1 - new_d * SA134_SL_BUFFER_PCT)
+                if not ((new_d == 1 and new_entry <= new_sl) or (new_d == -1 and new_entry >= new_sl)):
+                    new_qty = sizing.qty_for_fixed_notional(new_entry, fixed_margin)
+                    if new_qty > 0:
+                        res2 = _simple_leg_exit(candles, new_entry_i, new_d, new_entry,
+                                                 new_sl, new_qty, day_end_ms)
+                        results.append(dict(res2, kind="s2_reversal", direction=new_d,
+                                             entry=new_entry, sl=new_sl, qty=new_qty,
+                                             entry_ms=candles[new_entry_i]["t"]))
+            return results
+
+        fav = c["high"] if d == 1 else c["low"]
+        for k in range(len(tp_levels)):
+            if hit[k] or leg_qtys[k] <= 0:
+                continue
+            reached = (fav >= tp_levels[k]) if d == 1 else (fav <= tp_levels[k])
+            if reached:
+                hit[k] = True
+                px = tp_levels[k] * (1 - slip * d)
+                legs.append((px, leg_qtys[k] / qty, hours(c["t"])))
+                open_qty = round(open_qty - leg_qtys[k], 8)
+                if k == 0:
+                    # scenario 1, computed ONCE right here (not re-polled every later
+                    # tick): from the very next candle on, is there a later new extreme
+                    # beyond this 1R candle's own high/low, on good volume, with a
+                    # pullback confirming? If so, add one more 25%-sized leg back in the
+                    # SAME direction (continuation) -- the earliest such occurrence is
+                    # exactly what a live bot scanning forward candle-by-candle would
+                    # also find first, so finding it in one pass here is still causal.
+                    found = _hunt_pullback_break(candles, j + 1, n, d, fav, day_end_ms)
+                    if found:
+                        break_i, _, new_entry_i = found
+                        new_entry = candles[new_entry_i]["open"] * (1 + slip * d)
+                        break_c = candles[break_i]
+                        new_level = break_c["low"] if d == 1 else break_c["high"]
+                        new_sl = new_level * (1 - d * SA134_SL_BUFFER_PCT)
+                        addback_qty = leg_qtys[0] if leg_qtys[0] > 0 else \
+                            sizing.floor_step(qty * 0.25, C.QTY_STEP)
+                        if not ((d == 1 and new_entry <= new_sl) or
+                                (d == -1 and new_entry >= new_sl)) and addback_qty > 0:
+                            res1 = _simple_leg_exit(candles, new_entry_i, d, new_entry, new_sl,
+                                                     addback_qty, day_end_ms)
+                            results.append(dict(res1, kind="s1_addback", direction=d,
+                                                 entry=new_entry, sl=new_sl, qty=addback_qty,
+                                                 entry_ms=candles[new_entry_i]["t"]))
+
+        if open_qty <= 1e-9:
+            res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "all_targets_hit")
+            results.insert(0, dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                                    qty=qty, entry_ms=entry_ms))
+            return results
+        if c["t"] + STEP_MS >= day_end_ms:
+            px = c["close"] * (1 - slip * d)
+            legs.append((px, open_qty / qty, hours(c["t"])))
+            res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "day_end")
+            results.insert(0, dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                                    qty=qty, entry_ms=entry_ms))
+            return results
+        j += 1
+
+    c = candles[-1]
+    px = c["close"] * (1 - slip * d)
+    legs.append((px, open_qty / qty, hours(c["t"])))
+    res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "ran_out_of_data")
+    results.insert(0, dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                            qty=qty, entry_ms=entry_ms))
+    return results
+
+
+def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None):
     """Called with a GROWING prefix (prefix = sess[:k+1]) and re-evaluated fresh
     at each new candle k -- same causal convention the shared router uses -- so
     the flip-scan below can never see a candle that, in real time, closes after
     SA4 would already have committed to a trade.
+
+    `candles`/`base_i` (the full global candle series for this symbol, and that
+    global index of prefix[0]) are optional and used ONLY by the liquidity-hunt
+    reversal's volume gate below, so an early-session hunt can be judged against
+    real recent volume instead of starving for lookback at the top of every
+    session. Everything else here only ever looks at `prefix` -- still causal,
+    just the volume average is allowed to reach into already-closed history from
+    a prior session, exactly like the management-side volume gate already does.
 
     SA1 first, then SA4 -- both require a CLEAN breakout (clear_of_level, so
     tightened via CLEAR_TOUCH_TOLERANCE override when this engine is run).
@@ -1217,6 +1424,36 @@ def sa134_entry_signal(prefix, H, L, deadline_i):
                             "exempt_deadline": True,
                             "detail": f"flipped {'LONG' if dm == 1 else 'SHORT'} after an "
                                       f"opposite breakout at candle {m}, confirmed by the next"}
+
+    if C.SA134_LIQUIDITY_HUNT_REVERSAL:
+        for i in range(1, len(prefix) - 1):
+            c = prefix[i]
+            d = sa.closes_beyond(c, H, L)
+            if d == 0:
+                continue
+            if candles is not None and base_i is not None:
+                vol_ok = sa.good_volume(candles, base_i + i, C.SA134_VOL_WINDOW, C.SA134_VOL_MULT)
+            else:
+                vol_ok = sa.good_volume(prefix, i, C.SA134_VOL_WINDOW, C.SA134_VOL_MULT)
+            if not vol_ok:
+                continue
+            # Tried widening this to a multi-candle window (like SA4's MOMENTUM_WINDOW) so
+            # a slower, grind-style reversal would also qualify -- net result got WORSE
+            # (more false reversals than real ones), so this stays the very next candle
+            # only, even though that means a slow reversal (no single sharp pin/doji in
+            # the first candle after the sweep) will not be caught by this rule.
+            nxt = prefix[i + 1]
+            if not sa.reversal_candle(nxt, d):
+                continue
+            rd = -d
+            return {"sub_agent": "SA1", "direction": rd, "trigger_i": i + 1,
+                    "setup": "Liquidity-hunt reversal -- high-volume sweep beyond a line, "
+                             "confirmed by a pullback candle",
+                    "breakout": True, "rejection": True, "momentum_shift": True,
+                    "level": H if rd == 1 else L, "state": "ready", "exempt_deadline": True,
+                    "detail": f"high-volume sweep {'above the high' if d == 1 else 'below the low'} "
+                              f"at candle {i}, pullback confirmed -- flipped "
+                              f"{'LONG' if rd == 1 else 'SHORT'}"}
 
     for i in range(min(len(prefix), deadline_i + 1)):
         c = prefix[i]
@@ -1298,7 +1535,7 @@ def _run_sa134_continuation(candles):
             for k in range(len(sess)):
                 prefix = sess[:k + 1]
                 kdi = sa.deadline_index(prefix, dl_ms)
-                sig = sa134_entry_signal(prefix, H, L, kdi)
+                sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=i0 + 1)
                 if sig is None:
                     continue
                 if sig.get("state") == "pending":
@@ -1363,7 +1600,7 @@ def _run_sa134_continuation(candles):
     return trades, signals
 
 
-def _sa134_session_candidate(sess, H, L, dl_ms):
+def _sa134_session_candidate(sess, H, L, dl_ms, candles=None, base_i=None):
     """The single-symbol entry-detection loop from _run_sa134_continuation, isolated
     so run_sa134_portfolio can run it once per free symbol and THEN allocate slots
     across symbols -- instead of each symbol deciding in isolation whether it alone
@@ -1373,7 +1610,7 @@ def _sa134_session_candidate(sess, H, L, dl_ms):
     for k in range(len(sess)):
         prefix = sess[:k + 1]
         kdi = sa.deadline_index(prefix, dl_ms)
-        sig = sa134_entry_signal(prefix, H, L, kdi)
+        sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=base_i)
         if sig is None:
             continue
         if sig.get("state") == "pending":
@@ -1417,6 +1654,7 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
     trades, signals = [], []
     equity = C.CAPITAL_INR
     busy_until = {}   # symbol -> ms its open trade resolves at
+    last_exit = {}    # symbol -> (exit_reason, direction, day) of its most recent trade
 
     for day in days:
         day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
@@ -1451,7 +1689,8 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                 if len(sess) < 3:
                     continue
                 H, L = rc["high"], rc["low"]
-                entry_i, sig, avoid = _sa134_session_candidate(sess, H, L, dl_ms)
+                entry_i, sig, avoid = _sa134_session_candidate(sess, H, L, dl_ms,
+                                                                 candles=candles, base_i=i0 + 1)
 
                 if entry_i is None:
                     if sig is not None:
@@ -1488,8 +1727,19 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
 
             # Allocate the session's free slots in the order a live poller would see
             # these signals complete (earliest trigger candle first); an exact tie
-            # goes to the stronger breakout (close_strength).
-            candidates.sort(key=lambda c: (c["trigger_ms"], -c["strength"]))
+            # goes to the stronger breakout (close_strength). When on, a candidate whose
+            # OWN symbol was just stopped out today and is now signalling the OPPOSITE
+            # direction (the stop-hunt-then-reversal pattern) jumps the queue -- it isn't
+            # racing an unrelated symbol's breakout on raw timing alone.
+            def rank(c):
+                boost = 0
+                if C.SA134_PRIORITIZE_REVERSAL_REENTRY:
+                    le = last_exit.get(c["sym"])
+                    if le and le[0] == "stop_loss" and le[1] == -c["d"] and le[2] == day:
+                        boost = -1
+                return (boost, c["trigger_ms"], -c["strength"])
+            candidates.sort(key=rank)
+            open_syms = {s for s in syms if busy_until.get(s) is not None and o_ms < busy_until[s]}
             for c in candidates:
                 sym, sig, rc, H, L, sess = c["sym"], c["sig"], c["rc"], c["H"], c["L"], c["sess"]
                 d, entry, sl, qty, log, base = c["d"], c["entry"], c["sl"], c["qty"], c["log"], c["base"]
@@ -1499,10 +1749,63 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                                       "stronger breakout on another symbol")
                     signals.append(log)
                     continue
+                if C.SA134_ENFORCE_COMPANION_PAIRS and not compatible_with_open(open_syms, sym):
+                    log.update(**base, action="AVOID",
+                               reason=f"Slot-pairing policy — {sym} may not open alongside "
+                                      f"{', '.join(sorted(open_syms))}")
+                    signals.append(log)
+                    continue
                 free_slots -= 1
+                open_syms.add(sym)
 
                 entry_ms = sess[c["entry_i"]]["t"]
                 entry_global_i = by_t[sym][entry_ms]
+
+                if C.SA134_HUNT_REENTRY:
+                    chain = _sa134_manage_hunt(candles_by_symbol[sym], entry_global_i, d,
+                                                entry, sl, qty, day_end_ms, fixed_margin)
+                    for leg in chain:
+                        equity += leg["pnl_inr"]
+                        leg_risk_pct = abs(leg["entry"] - leg["sl"]) / leg["entry"]
+                        leg_cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / leg_risk_pct
+                        is_orig = leg["kind"] == "original"
+                        trades.append(dict(
+                            symbol=sym, date=day, weekday=day.strftime("%a"), session=name,
+                            sub_agent=sig["sub_agent"] if is_orig else f"hunt_{leg['kind']}",
+                            setup=sig["setup"] if is_orig else
+                                  ("Scenario 1: continuation add-back after the 1R leg" if
+                                   leg["kind"] == "s1_addback" else
+                                   "Scenario 2: reversal after the original stop broke further"),
+                            side="LONG" if leg["direction"] == 1 else "SHORT",
+                            range_high=H, range_low=L, range_pct=(H - L) / L,
+                            level=sig["level"] if is_orig else leg["sl"],
+                            breakout=sig["breakout"] if is_orig else False,
+                            rejection=sig["rejection"] if is_orig else True,
+                            momentum_shift=sig["momentum_shift"] if is_orig else True,
+                            trigger_time=dt.datetime.fromtimestamp(c["trigger_ms"] / 1000, IST)
+                                         if is_orig else
+                                         dt.datetime.fromtimestamp(leg["entry_ms"] / 1000, IST),
+                            entry_time=dt.datetime.fromtimestamp(leg["entry_ms"] / 1000, IST),
+                            entry=leg["entry"], sl=leg["sl"], risk_pct=leg_risk_pct,
+                            cost_in_R=leg_cost_in_R,
+                            exit_time=dt.datetime.fromtimestamp(leg["exit_ms"] / 1000, IST),
+                            equity_after=round(equity),
+                            reason=sig["detail"] if is_orig else
+                                   f"hunt reentry ({leg['kind']})",
+                            **{k2: v for k2, v in leg.items()
+                               if k2 not in ("exit_ms", "kind", "direction", "entry", "sl",
+                                             "qty", "entry_ms")}))
+                    last_leg = max(chain, key=lambda lg: lg["exit_ms"])
+                    log.update(**base, action="ENTER", reason=sig["detail"],
+                               entry=round(entry, 2), sl=round(sl, 2),
+                               pnl_inr=round(sum(lg["pnl_inr"] for lg in chain), 2),
+                               exit_reason=chain[0]["exit_reason"])
+                    signals.append(log)
+                    busy_until[sym] = last_leg["exit_ms"]
+                    orig_leg = chain[0]
+                    last_exit[sym] = (orig_leg["exit_reason"], orig_leg["direction"], day)
+                    continue
+
                 res = _sa134_manage(candles_by_symbol[sym], entry_global_i, d, entry, sl, qty, day_end_ms)
 
                 equity += res["pnl_inr"]
@@ -1526,6 +1829,7 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                     equity_after=round(equity), reason=sig["detail"],
                     **{k2: v for k2, v in res.items() if k2 != "exit_ms"}))
                 busy_until[sym] = res["exit_ms"]
+                last_exit[sym] = (res["exit_reason"], d, day)
     return trades, signals
 
 
