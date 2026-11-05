@@ -747,6 +747,17 @@ def main():
         _main_loop()
 
 
+def _session_times_str():
+    """Reads the ACTUAL session windows in effect (all_sessions(), which honors
+    main()'s SESSIONS override) instead of a hardcoded string, so the startup
+    banner can never claim a session time this process isn't really running."""
+    parts = []
+    for name, s in all_sessions().items():
+        parts.append(f"{name} {s['open'].strftime('%H:%M')}-{s['deadline'].strftime('%H:%M')}"
+                     f"-{s['end'].strftime('%H:%M')}")
+    return ", ".join(parts) + " (IST)"
+
+
 def _main_loop():
     missing = C.validate()
     specs = sync_specs()
@@ -755,7 +766,7 @@ def _main_loop():
                 f"symbols   : {', '.join(SYMBOLS)} ({MAX_SLOTS} concurrent slots)\n"
                 f"leverage  : {C.LEVERAGE}x\n"
                 f"capital   : Rs {C.CAPITAL_INR:,.0f}  (margin/slot Rs {C.CAPITAL_INR / MAX_SLOTS:,.0f})\n"
-                f"sessions  : Tokyo 05:30-07:15-14:00, London, New York (IST)\n"
+                f"sessions  : {_session_times_str()}\n"
                 f"agents    : SA1, SA4 (clean breakout {1 - C.CLEAR_TOUCH_TOLERANCE:.0%} outside)\n"
                 f"stop      : broken level +/- {BT.SA134_SL_BUFFER_PCT:.1%}, never moves\n"
                 f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R, else close at the next Tokyo open\n"
