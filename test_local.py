@@ -446,6 +446,19 @@ with C.override(ORDERBOOK_FILTER=True, ORDERBOOK_WALL_MULT=5.0, ORDERBOOK_GATE_P
     check("same wall ignored once it's outside the proximity threshold",
           M._orderbook_wall_against("B-BTC_USDT", 1, 100020), None)
 
+
+def _boom(pair=None):
+    raise AssertionError(f"orderbook() must not be called for unsupported pair {pair}")
+
+
+ex.orderbook = _boom
+with C.override(ORDERBOOK_FILTER=True, ORDERBOOK_WALL_MULT=5.0, ORDERBOOK_GATE_PCT=0.003):
+    check("_orderbook_wall_against skips the HTTP call entirely for a non-BTC pair (always 422 on CoinDCX)",
+          M._orderbook_wall_against("B-NATGAS_USDT", 1, 100020), None)
+    check("_orderbook_stop skips the HTTP call entirely for a non-BTC pair too",
+          M._orderbook_stop("B-NATGAS_USDT", 1, 100020, 99000)[0], 99000)
+ex.orderbook = lambda pair=None: ob_with_wall("asks", 100020 * 1.0005, 50.0)   # restore
+
 print("Liquidity-hunt reversal — a wall gets WATCHED (sweep + reverse), not avoided")
 state_h = {"halted": False, "day_pnl": 0.0, "consec_losses": 0, "trades": {}}
 real.update({k: getattr(ex, k) for k in ("market_order", "open_position", "set_stop", "exit_position")})

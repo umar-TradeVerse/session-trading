@@ -273,7 +273,7 @@ def _orderbook_wall_against(pair, d, entry_px):
     direction, within ORDERBOOK_GATE_PCT of entry. The caller doesn't avoid the
     trade on this any more (see the hunt-watch functions below) -- it diverts
     to watching for a sweep-through + reversal instead."""
-    if not C.ORDERBOOK_FILTER:
+    if not C.ORDERBOOK_FILTER or pair not in C.ORDERBOOK_SUPPORTED_PAIRS:
         return None
     ob = _safe_orderbook(pair)
     if ob is None:
@@ -292,7 +292,7 @@ def _orderbook_stop(pair, d, entry_px, sl):
     """Returns (sl, note) -- `sl` widened past a protective-side wall if one is
     found within ORDERBOOK_STOP_SEARCH_PCT beyond the baseline stop; otherwise
     the baseline `sl` unchanged and note=None. Never tightens the stop."""
-    if not C.ORDERBOOK_FILTER:
+    if not C.ORDERBOOK_FILTER or pair not in C.ORDERBOOK_SUPPORTED_PAIRS:
         return sl, None
     ob = _safe_orderbook(pair)
     if ob is None:

@@ -207,6 +207,14 @@ SA134_ENFORCE_COMPANION_PAIRS = _b("SA134_ENFORCE_COMPANION_PAIRS", False)
 # has been. Off by default; Umar's explicit instruction to turn both halves on
 # despite that gap.
 ORDERBOOK_FILTER = _b("ORDERBOOK_FILTER", False)
+# CoinDCX's order-book endpoint only serves BTC -- Gold/Silver/Oil/NatGas all
+# 422 "Invalid pair" (every naming variant tried; Delta Exchange checked too,
+# no fix there either). main.py's overlay functions fail open on those symbols
+# already (a 422 is caught and just skips the overlay), so this was never a
+# correctness bug -- only a guaranteed-fail HTTP call, and a WARNING log line,
+# on every poll for 4 of the 5 symbols. ORDERBOOK_SUPPORTED_PAIRS lets the
+# overlay skip straight past those without making the doomed request at all.
+ORDERBOOK_SUPPORTED_PAIRS = {"B-BTC_USDT"}
 # A resting level counts as a "wall" once its size is at least this many times
 # the average size across the levels being compared. Raised from 5.0 after the
 # first live BTC case (a 2.19 BTC wall, 5.3x average) blocked a trade whose wall
