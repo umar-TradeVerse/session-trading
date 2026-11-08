@@ -235,6 +235,23 @@ ORDERBOOK_STOP_SEARCH_PCT = _f("ORDERBOOK_STOP_SEARCH_PCT", 0.01)
 # wall's own price doesn't immediately clip it.
 ORDERBOOK_STOP_PAD_PCT = _f("ORDERBOOK_STOP_PAD_PCT", 0.0005)
 
+# ── daily pivot confluence for SA1/SA4 (backtest.py's sa134_entry_signal) ───
+# Umar's explicit ask (9 Nov): combine the session-breakout level with the
+# standard-Fibonacci daily pivot he added to his own chart. Unlike the
+# order-book overlay, this IS fully backtestable -- a Fibonacci pivot is just
+# P/R1-3/S1-3 computed from the PRIOR day's high/low/close (prior day = the
+# previous Tokyo-open-to-Tokyo-open window, matching this engine's own day
+# boundary), so no live-only data is involved. Off by default, like every
+# optional rule here.
+SA134_PIVOT_CONFLUENCE = _b("SA134_PIVOT_CONFLUENCE", False)
+# A session's broken H/L only counts as "confluent" with a pivot when it sits
+# within this fraction of R1/R2/R3/P (for a LONG breakout) or S1/S2/S3/P (for
+# a SHORT) -- i.e. the market's own already-drawn line and the session-range
+# edge are effectively the same level. 0.3% is MY choice, not tuned against
+# the Oct/Nov window it was evaluated on (see CLAUDE.md) -- a guess at "close
+# enough to call it the same level," nothing more.
+SA134_PIVOT_TOLERANCE_PCT = _f("SA134_PIVOT_TOLERANCE_PCT", 0.003)
+
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)
 STATE_FILE = os.getenv("STATE_FILE", "/tmp/sorb15_state.json")

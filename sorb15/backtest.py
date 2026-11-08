@@ -1370,7 +1370,42 @@ def _sa134_manage_hunt(candles, entry_i, d, entry, sl, qty, day_end_ms, fixed_ma
     return results
 
 
-def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None):
+def daily_pivot_fib(candles, by_t, day):
+    """Causal standard-Fibonacci pivot levels for `day`, computed from the FULL
+    PRIOR day's high/low/close -- prior day = previous Tokyo-open to this day's
+    Tokyo-open, the same day boundary this engine already uses everywhere else
+    (day_end_ms). Returns None when the prior day isn't fully present in the
+    data (only the very first day in a run), in which case the confluence
+    check below simply doesn't block anything -- there's nothing to judge it
+    against, not a reason to avoid the trade."""
+    today_open_ms = _ms(_at(day, TOKYO_SESSION["open"]))
+    prev_open_ms = _ms(_at(day - dt.timedelta(days=1), TOKYO_SESSION["open"]))
+    i_today = by_t.get(today_open_ms)
+    i_prev = by_t.get(prev_open_ms)
+    if i_today is None or i_prev is None or i_today <= i_prev:
+        return None
+    window = candles[i_prev:i_today]
+    H, L, Cc = max(c["high"] for c in window), min(c["low"] for c in window), window[-1]["close"]
+    rng = H - L
+    if rng <= 0:
+        return None
+    P = (H + L + Cc) / 3
+    return {"P": P, "R1": P + 0.382 * rng, "R2": P + 0.618 * rng, "R3": P + 1.000 * rng,
+            "S1": P - 0.382 * rng, "S2": P - 0.618 * rng, "S3": P - 1.000 * rng}
+
+
+def _pivot_confluent(level, direction, pivots, tol_pct):
+    """True if `level` (the session H/L a breakout broke) sits within tol_pct
+    of a pivot on the correct side: resistance (R1-3, P) for a LONG breakout,
+    support (S1-3, P) for a SHORT. None `pivots` (no prior day yet) passes --
+    see daily_pivot_fib's docstring."""
+    if pivots is None:
+        return True
+    keys = ("R1", "R2", "R3", "P") if direction == 1 else ("S1", "S2", "S3", "P")
+    return any(abs(level - pivots[k]) / level <= tol_pct for k in keys)
+
+
+def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivots=None):
     """Called with a GROWING prefix (prefix = sess[:k+1]) and re-evaluated fresh
     at each new candle k -- same causal convention the shared router uses -- so
     the flip-scan below can never see a candle that, in real time, closes after
@@ -1402,11 +1437,20 @@ def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None):
 
     SA4: scans to the deadline for the first clean breakout (skipping past an
     impure one rather than giving up), then its usual 2-candle momentum window.
+
+    `pivots` (optional, see daily_pivot_fib) gates every return below through
+    SA134_PIVOT_CONFLUENCE when that's on: a breakout whose broken H/L isn't
+    also sitting on a same-side daily pivot is treated as if it weren't clean
+    at all -- the scan just keeps looking, same as an ordinary impure touch.
     """
+    def passes(d, level):
+        return not C.SA134_PIVOT_CONFLUENCE or _pivot_confluent(
+            level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT)
+
     if len(prefix) >= 1:
         d0 = sa.closes_beyond(prefix[0], H, L)
         if d0 != 0:
-            if sa.clear_of_level(prefix[0], d0, H, L):
+            if sa.clear_of_level(prefix[0], d0, H, L) and passes(d0, H if d0 == 1 else L):
                 return {"sub_agent": "SA1", "direction": d0, "trigger_i": 0,
                         "setup": "Second-candle clear breakout", "breakout": True,
                         "rejection": False, "momentum_shift": False,
@@ -1415,7 +1459,8 @@ def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None):
                                   f"{'above the high' if d0 == 1 else 'below the low'}"}
             for m in range(1, len(prefix) - 1):
                 dm = sa.closes_beyond(prefix[m], H, L)
-                if dm == -d0 and sa.closes_beyond(prefix[m + 1], H, L) == dm:
+                if dm == -d0 and sa.closes_beyond(prefix[m + 1], H, L) == dm \
+                        and passes(dm, H if dm == 1 else L):
                     return {"sub_agent": "SA1", "direction": dm, "trigger_i": m + 1,
                             "setup": "Second-candle breakout invalidated by a later opposite "
                                      "breakout (liquidity sweep), confirmed by the next candle",
@@ -1446,6 +1491,8 @@ def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None):
             if not sa.reversal_candle(nxt, d):
                 continue
             rd = -d
+            if not passes(rd, H if rd == 1 else L):
+                continue
             return {"sub_agent": "SA1", "direction": rd, "trigger_i": i + 1,
                     "setup": "Liquidity-hunt reversal -- high-volume sweep beyond a line, "
                              "confirmed by a pullback candle",
@@ -1458,13 +1505,15 @@ def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None):
     for i in range(min(len(prefix), deadline_i + 1)):
         c = prefix[i]
         d = sa.closes_beyond(c, H, L)
-        if d == 0 or not sa.clear_of_level(c, d, H, L):
+        if d == 0 or not sa.clear_of_level(c, d, H, L) or not passes(d, H if d == 1 else L):
             continue
         base = {"sub_agent": "SA4", "direction": d, "breakout": True, "level": H if d == 1 else L,
                 "setup": "Clean breakout, candle not touching the marked lines"}
         sig = sa._momentum_check(prefix, d, i, base)
         if sig.get("state") == "veto" and C.SA4_FLIP_ON_REVERSAL:
             new_d = -d
+            if not passes(new_d, H if new_d == 1 else L):
+                continue
             return {"sub_agent": "SA4", "direction": new_d, "trigger_i": sig["trigger_i"],
                     "setup": "Clean breakout reversed by a confirmed momentum flip",
                     "breakout": True, "rejection": True, "momentum_shift": True,
@@ -1496,6 +1545,7 @@ def _run_sa134_continuation(candles):
         day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
         if day_end_ms > t_end_data:
             day_end_ms = t_end_data
+        pivots = daily_pivot_fib(candles, by_t, day) if C.SA134_PIVOT_CONFLUENCE else None
 
         for name, o, dl, e in sa134_session_windows(day):
             o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
@@ -1535,7 +1585,8 @@ def _run_sa134_continuation(candles):
             for k in range(len(sess)):
                 prefix = sess[:k + 1]
                 kdi = sa.deadline_index(prefix, dl_ms)
-                sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=i0 + 1)
+                sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=i0 + 1,
+                                          pivots=pivots)
                 if sig is None:
                     continue
                 if sig.get("state") == "pending":
@@ -1600,7 +1651,7 @@ def _run_sa134_continuation(candles):
     return trades, signals
 
 
-def _sa134_session_candidate(sess, H, L, dl_ms, candles=None, base_i=None):
+def _sa134_session_candidate(sess, H, L, dl_ms, candles=None, base_i=None, pivots=None):
     """The single-symbol entry-detection loop from _run_sa134_continuation, isolated
     so run_sa134_portfolio can run it once per free symbol and THEN allocate slots
     across symbols -- instead of each symbol deciding in isolation whether it alone
@@ -1610,7 +1661,7 @@ def _sa134_session_candidate(sess, H, L, dl_ms, candles=None, base_i=None):
     for k in range(len(sess)):
         prefix = sess[:k + 1]
         kdi = sa.deadline_index(prefix, dl_ms)
-        sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=base_i)
+        sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=base_i, pivots=pivots)
         if sig is None:
             continue
         if sig.get("state") == "pending":
@@ -1658,6 +1709,8 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
 
     for day in days:
         day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
+        pivots = {s: daily_pivot_fib(candles_by_symbol[s], by_t[s], day) for s in syms} \
+            if C.SA134_PIVOT_CONFLUENCE else {}
 
         for name, o, dl, e in sa134_session_windows(day):
             o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
@@ -1690,7 +1743,8 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                     continue
                 H, L = rc["high"], rc["low"]
                 entry_i, sig, avoid = _sa134_session_candidate(sess, H, L, dl_ms,
-                                                                 candles=candles, base_i=i0 + 1)
+                                                                 candles=candles, base_i=i0 + 1,
+                                                                 pivots=pivots.get(sym))
 
                 if entry_i is None:
                     if sig is not None:

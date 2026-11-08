@@ -6,6 +6,22 @@ credentials or deployment unless he asks" — he has since asked, repeatedly and
 new API keys pasted in chat, going live with real money on 3 symbols. Credentials and deployment are now squarely in
 scope; the caution that still applies is the one below (real financial risk needs explicit confirmation, not silence).
 
+## ⚠ REAL MONEY IS OFF (as of 7 Nov 2026, 00:3x IST) — read before touching `sorb15-live`
+Umar asked for "only SORB-15 paper for now" on 5 Nov 23:24 IST (in his liquidity-bot session). `sorb15-live` was
+locked off by a kill switch: drop-in `/etc/systemd/system/sorb15-live.service.d/off-switch.conf`
+(`ConditionPathExists=!/etc/sorb15-live.disabled`) + the file `/etc/sorb15-live.disabled`. On 6 Nov 23:16 IST a
+session WITHOUT that context saw it off, called it unexplained, and Umar re-enabled it — that was a mistake, not a
+decision. Re-locked 7 Nov: file present, `sorb15-live` inactive, `sorb15-live-watchdog.timer` disabled. The unit
+itself was left `enabled` (harmless: at boot the condition check skips it while the file exists). Paper
+`sorb15.service` (Gold/Silver) keeps running. **Never remove `/etc/sorb15-live.disabled` or start `sorb15-live`
+unless Umar explicitly asks to go live again in that conversation.** If he does:
+`rm /etc/sorb15-live.disabled && systemctl enable --now sorb15-live.service sorb15-live-watchdog.timer`.
+No real-money entry ever happened (lag guard refused a stale NatGas signal on the 6 Nov restart), so the
+exchange-side stop (`create_tpsl`) is still unproven on a real position.
+Also not reflected below yet: since commit 30bf0fb (5 Nov) a BTC order-book wall no longer AVOIDs the trade — it
+registers a liquidity-hunt-reversal watch (`register_hunt_watch` / `check_hunt_watches` / `enter_hunt_reversal`)
+and trades the reversal. Live-only, never backtested.
+
 ## LIVE DEPLOYMENT (as of 5 Nov 2026) — supersedes the engine section below until noted otherwise
 Two independent systemd services on a DigitalOcean droplet (`tradeverse-bots`, 206.189.138.66, IP whitelisted on
 CoinDCX), both running the identical `sorb15/main.py` / `sorb15/backtest.py` engine described in the next section —
@@ -80,11 +96,45 @@ NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45�
 - Both are real, causality-audited code (`backtest._sa134_manage_hunt`, `sa134_entry_signal`'s hunt-reversal block),
   just toggled off (`SA134_LIQUIDITY_HUNT_REVERSAL=False`, `SA134_HUNT_REENTRY=False` by default) — don't turn them
   on without re-validating, and don't present either as a win without saying the above.
+- **`SA134_PIVOT_CONFLUENCE`** (added 9 Nov) — Umar's own chart addition (standard-Fibonacci daily pivot) combined
+  with the session-breakout level for SA1/SA4: a breakout only counts if the broken H/L also sits within
+  `SA134_PIVOT_TOLERANCE_PCT` (0.3%, mine, untuned) of a same-side daily pivot (R1-3/P for a LONG, S1-3/P for a
+  SHORT). Unlike the order-book overlay, this IS fully backtestable — the pivot comes from the prior day's candles,
+  nothing live-only. Causal by construction: `backtest.daily_pivot_fib` only ever slices `candles` strictly before
+  the current day's Tokyo-open index. **Tested on BTC, current live config, full period (31 Dec 2025 – 9 Nov 2026)
+  and the Oct–Nov 2026 window specifically — it does not help:**
+  | | n | net ₹ | win rate | avg/trade ₹ |
+  |---|---|---|---|---|
+  | Full period, baseline | 299 | −22,337 | 37.5% | −74.70 |
+  | Full period, +pivot confluence | 187 | −18,379 | 37.4% | **−98.28** |
+  | Oct–Nov, baseline | 38 | −3,277 | 36.8% | −86.23 |
+  | Oct–Nov, +pivot confluence | 24 | −3,508 | 45.8% | **−146.18** |
+  Win rate is flat-to-slightly-better; average economics per trade get WORSE both times, and the Oct–Nov net loss is
+  actually larger despite 14 fewer trades — the filter removed 4 of 14 winners (₹3,002 of winning P&L) along with
+  13 of 24 losers, and the slot-timing side effect of removing trades let 3 new (net −₹616) trades in that baseline
+  never saw. Smaller headline loss on the full-period row is trade-count shrinkage, not better selection — same
+  pattern as every other filter tried in this project (see "Rule test" further down). Code stays in
+  (`sorb15/backtest.py`'s `daily_pivot_fib`/`_pivot_confluent`, 12 new unit tests, 173/173 passing, baseline
+  fingerprint and existing causality audit untouched), **default OFF**, same as the two above.
+- **On "does this need a 5th sub-agent?"** (asked 9 Nov, alongside the pivot test) — the Oct–Nov failure data says
+  no, not yet, and points somewhere else instead. Broken down by exit reason (full period): `day_end` exits are
+  net **+₹37,191** over 225 trades (49% win rate, avg +₹165) — the staged-TP/day-end side of this engine is fine.
+  Virtually the entire net loss is `stop_loss`: 72 trades, net **−₹61,998**, 1.4% win rate (expected — "stop_loss"
+  means it went against entry), avg **−₹861/trade** — 5.2× the size of an average day_end outcome. A new entry
+  detector doesn't touch this; it's the "Known risk" below (fixed-margin sizing against a variable-width stop)
+  showing up exactly as predicted. Also by sub-agent (Oct–Nov): SA1 is still the stronger half, now net
+  *positive* (+₹437, 10 trades, 40% win) same as the older BTC-only finding above; SA4 is the one losing money
+  (−₹3,714, 28 trades, 35.7% win) and is also where most of the big stop-losses sit. Recommendation: fix the known
+  sizing issue (bound risk per trade regardless of stop width) before adding a 5th sub-agent — that lever is bigger
+  than anything a new entry filter could plausibly add, and a prior attempt at a different new-entry idea
+  (`SA134_LIQUIDITY_HUNT_REVERSAL`, above) was already "fragile... not a real edge." Not built; ask first.
 
 ### Known risk, carried over, still unresolved
 Fixed-margin sizing against a variable-width stop (same issue flagged 27 Oct) means per-trade risk is uncontrolled.
 The full 5-symbol portfolio backtest's max drawdown (−₹36,356 on ₹10,000 capital, baseline config) is still a large
-multiple of starting capital. This is now live with real money on 3 symbols and has not been fixed.
+multiple of starting capital. This is now live with real money on 3 symbols and has not been fixed. **Confirmed
+again 9 Nov** on BTC alone: `stop_loss` exits average −₹861/trade vs `day_end` exits averaging +₹165/trade (see
+above) — this is the single biggest lever on this engine's economics, bigger than any entry-side filter tried so far.
 
 ### Infra
 DigitalOcean droplet `tradeverse-bots` (Ubuntu 24.04, `s-1vcpu-1gb`), non-root user `sorb15`, checkout at

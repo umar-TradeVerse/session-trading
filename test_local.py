@@ -618,6 +618,54 @@ check("Silver may NOT join Oil", B.compatible_with_open({"Oil"}, "Silver"), Fals
 check("BTC may NOT join Gold", B.compatible_with_open({"Gold"}, "BTC"), False)
 check("Gold may NOT join Silver", B.compatible_with_open({"Silver"}, "Gold"), False)
 
+print("Daily pivot confluence for SA1/SA4 — fully backtestable, OFF by default")
+_tokyo_open_ms = lambda day: B._ms(B._at(day, B.TOKYO_SESSION["open"]))
+_day0 = dt.date(2026, 1, 1)
+_day1 = dt.date(2026, 1, 2)
+_prior_day_candles = [
+    K(100.0, 110.0, 95.0, 103.0, _tokyo_open_ms(_day0)),
+    K(103.0, 105.0, 101.0, 104.0, _tokyo_open_ms(_day0) + STEP),
+]
+_pivot_candles = _prior_day_candles + [K(104.0, 106.0, 103.0, 105.0, _tokyo_open_ms(_day1))]
+_by_t = {c["t"]: i for i, c in enumerate(_pivot_candles)}
+_piv = B.daily_pivot_fib(_pivot_candles, _by_t, _day1)
+# hand-computed: H=110, L=95, C=104 (last prior-day candle) -> P=(110+95+104)/3=103.0
+check("daily_pivot_fib: P from prior day's H/L/C", round(_piv["P"], 4), round((110 + 95 + 104) / 3, 4))
+check("daily_pivot_fib: R1 = P + 0.382*(H-L)",
+      round(_piv["R1"], 4), round((110 + 95 + 104) / 3 + 0.382 * 15, 4))
+check("daily_pivot_fib: S1 = P - 0.382*(H-L)",
+      round(_piv["S1"], 4), round((110 + 95 + 104) / 3 - 0.382 * 15, 4))
+check("daily_pivot_fib: no prior day in the data -> None (first day, can't judge)",
+      B.daily_pivot_fib(_pivot_candles, _by_t, _day0), None)
+
+check("_pivot_confluent: None pivots always passes (nothing to judge against)",
+      B._pivot_confluent(85200, 1, None, 0.003), True)
+_piv2 = {"P": 85200.0, "R1": 90000.0, "R2": 92000.0, "R3": 94000.0,
+         "S1": 78000.0, "S2": 76000.0, "S3": 74000.0}
+check("_pivot_confluent: LONG breakout level sitting exactly on P passes",
+      B._pivot_confluent(85200, 1, _piv2, 0.003), True)
+check("_pivot_confluent: LONG breakout far from every resistance pivot fails",
+      B._pivot_confluent(85200, 1, {**_piv2, "P": 80000.0}, 0.003), False)
+check("_pivot_confluent: SHORT breakout level sitting exactly on S1 passes",
+      B._pivot_confluent(78000, -1, _piv2, 0.003), True)
+
+with C.override(SA134_PIVOT_CONFLUENCE=False):
+    s = B.sa134_entry_signal([K(85150, 85600, 85140, 85560)], H_, L_, DI)
+    check("feature OFF (default): SA1 second-candle fires exactly as before",
+          s and s["state"], "ready")
+with C.override(SA134_PIVOT_CONFLUENCE=True):
+    s = B.sa134_entry_signal([K(85150, 85600, 85140, 85560)], H_, L_, DI, pivots=None)
+    check("feature ON, no prior-day pivots yet: doesn't block (nothing to judge)",
+          s and s["state"], "ready")
+    s = B.sa134_entry_signal([K(85150, 85600, 85140, 85560)], H_, L_, DI,
+                              pivots={**_piv2, "P": 80000.0})
+    check("feature ON, breakout level far from every resistance pivot: SA1 does NOT fire",
+          s, None)
+    s = B.sa134_entry_signal([K(85150, 85600, 85140, 85560)], H_, L_, DI,
+                              pivots={**_piv2, "P": H_})
+    check("feature ON, breakout level confluent with P: SA1 fires",
+          s and s["state"], "ready")
+
 print("Optional rules — the two trades flagged on the charts (all OFF by default)")
 def cd(o, h, l, c, i=0):
     return {"t": i * 900000, "open": o, "high": h, "low": l, "close": c, "volume": 1.0}
