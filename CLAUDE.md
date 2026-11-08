@@ -197,7 +197,20 @@ NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45�
   the profit floor didn't just stop the false positives, it made the category dramatically cleaner). This is a real,
   substantial improvement over baseline, not a wash — the strongest result anything in this project has produced so
   far. 8 unit tests incl. the entry-already-at-the-pivot case, 178/178 passing, baseline fingerprint and causality
-  untouched. **Still default OFF** — not yet turned on live; ask before enabling.
+  untouched.
+  **Turned ON live, 9 Nov, Umar's explicit instruction.** This needed real new code, not just the config flag —
+  nothing in `main.py`'s live polling loop called any of this before today, only the backtest did. Added:
+  `main.daily_pivots_live(pair, day)` (fetches the prior Tokyo-open-to-Tokyo-open window via the same public,
+  unauthenticated candles endpoint, computed through `backtest.pivot_levels_from_hlc` — the exact formula extracted
+  out so backtest and live can never drift apart on the math) and `main.pivot_booking_due(...)`, the live-polling
+  counterpart of `_sa134_manage_pivot_booking`'s scan (deliberately a separate function, not a refactor of the
+  already-verified backtest loop right before a live cutover — **must be kept in sync with it if either changes**).
+  `enter()` computes and freezes `trade["pivots"]` once at entry; `manage()` checks it each poll between the TP-leg
+  step and day-end. `main()`'s override now includes `SA134_PIVOT_PROFIT_BOOKING=True` — reaches both the live
+  (BTC/Oil/NatGas) and paper (Gold/Silver) services identically, like every other override here. 6 new unit tests
+  (direct `pivot_booking_due` scans incl. the 1 Nov Tokyo zero-profit case, and a full mocked `manage()` poll),
+  184/184 passing. **This is the first time anything beyond entry detection in the live loop has been wired from a
+  feature only ever exercised in backtest before today — watch the first few live exits closely.**
 
 ### Known risk, carried over, still unresolved
 Fixed-margin sizing against a variable-width stop (same issue flagged 27 Oct) means per-trade risk is uncontrolled.

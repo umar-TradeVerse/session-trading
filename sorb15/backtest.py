@@ -1370,6 +1370,20 @@ def _sa134_manage_hunt(candles, entry_i, d, entry, sl, qty, day_end_ms, fixed_ma
     return results
 
 
+def pivot_levels_from_hlc(H, L, Cc):
+    """The standard-Fibonacci pivot formula, pulled out so the backtest
+    (daily_pivot_fib, below) and the live poller (main.daily_pivots_live) both
+    call the exact same math on the same H/L/C instead of risking two
+    implementations silently drifting apart. Returns None for a degenerate
+    (zero-range) window."""
+    rng = H - L
+    if rng <= 0:
+        return None
+    P = (H + L + Cc) / 3
+    return {"P": P, "R1": P + 0.382 * rng, "R2": P + 0.618 * rng, "R3": P + 1.000 * rng,
+            "S1": P - 0.382 * rng, "S2": P - 0.618 * rng, "S3": P - 1.000 * rng}
+
+
 def daily_pivot_fib(candles, by_t, day):
     """Causal standard-Fibonacci pivot levels for `day`, computed from the FULL
     PRIOR day's high/low/close -- prior day = previous Tokyo-open to this day's
@@ -1386,10 +1400,7 @@ def daily_pivot_fib(candles, by_t, day):
         return None
     window = candles[i_prev:i_today]
     H, L, Cc = max(c["high"] for c in window), min(c["low"] for c in window), window[-1]["close"]
-    rng = H - L
-    if rng <= 0:
-        return None
-    P = (H + L + Cc) / 3
+    return pivot_levels_from_hlc(H, L, Cc)
     return {"P": P, "R1": P + 0.382 * rng, "R2": P + 0.618 * rng, "R3": P + 1.000 * rng,
             "S1": P - 0.382 * rng, "S2": P - 0.618 * rng, "S3": P - 1.000 * rng}
 

@@ -395,6 +395,7 @@ def enter(sym, pair, spec, sig, session, rc, sess):
     risk_inr = notional_inr * risk_px / entry_px
 
     entry_bar = (now_ms() // STEP_MS) * STEP_MS
+    pivots = daily_pivots_live(pair, now_ist().date()) if C.SA134_PIVOT_PROFIT_BOOKING else None
     trade = {"symbol": sym, "pair": pair, "sub_agent": sig["sub_agent"], "setup": sig["setup"],
              "session": session, "direction": d, "level": level0, "entry": entry_px, "sl": sl,
              "qty": qty, "open_qty": qty, "risk_px": risk_px, "realised": 0.0, "seen": {},
@@ -402,7 +403,7 @@ def enter(sym, pair, spec, sig, session, rc, sess):
              "entry_bar": entry_bar, "opened_at": int(time.time()),
              "client_id": cid, "range_high": H, "range_low": L,
              "tp_levels": tp_levels, "leg_qtys": leg_qtys, "tp_hit": [False, False, False],
-             "day_end_ms": ms(day_end_for(now_ist()))}
+             "day_end_ms": ms(day_end_for(now_ist())), "pivots": pivots}
     notify.send(notify.signal_block(sig, label, H, L, round(entry_px, 2), round(sl, 2), "ENTER",
                                     sig.get("detail", ""),
                                     result=f"qty {qty}  margin Rs {fixed_margin:.0f}  "
@@ -604,6 +605,60 @@ def stop_was_hit(trade, since):
     return hit
 
 
+# ── pivot profit-booking (live) — SA134_PIVOT_PROFIT_BOOKING ────────────────
+# Backtested in sorb15/backtest.py (_sa134_manage_pivot_booking); this is the
+# live-polling counterpart, kept deliberately separate rather than refactoring
+# the backtest's already-verified candle-replay loop right before a live
+# cutover. MUST be kept in sync with it if either changes.
+
+def daily_pivots_live(pair, day):
+    """Fetches the prior Tokyo-open-to-Tokyo-open window via the public,
+    unauthenticated candles endpoint and runs it through the identical
+    pivot formula the backtest uses (BT.pivot_levels_from_hlc). None if
+    that window isn't available yet (e.g. a pair just listed)."""
+    today_open_ms = ms(BT._at(day, BT.TOKYO_SESSION["open"]))
+    prev_open_ms = ms(BT._at(day - dt.timedelta(days=1), BT.TOKYO_SESSION["open"]))
+    try:
+        cs = ex.candles(pair=pair, minutes_back=3000, include_forming=False)
+    except Exception as err:
+        log.warning("daily pivot fetch failed for %s (%s)", pair, err)
+        return None
+    window = [c for c in cs if prev_open_ms <= c["t"] < today_open_ms]
+    if not window:
+        return None
+    H = max(c["high"] for c in window)
+    L = min(c["low"] for c in window)
+    return BT.pivot_levels_from_hlc(H, L, window[-1]["close"])
+
+
+def pivot_booking_due(closed_since_entry, d, entry, risk_px, pivots):
+    """True once the at-pivot (>= SA134_PIVOT_MIN_PROFIT_R in profit AND
+    within SA134_PIVOT_TOLERANCE_PCT of a same-side pivot) + two-candle
+    follow-through confirmation has completed anywhere in
+    `closed_since_entry` (oldest first, CLOSED candles only -- never the
+    forming one, same causal rule as every other detector here)."""
+    if pivots is None:
+        return False
+    tol = C.SA134_PIVOT_TOLERANCE_PCT
+    pivot_keys = ("R1", "R2", "R3") if d == 1 else ("S1", "S2", "S3")
+    n = len(closed_since_entry)
+    for i in range(n - 2):
+        c = closed_since_entry[i]
+        fav = c["high"] if d == 1 else c["low"]
+        if d * (fav - entry) / risk_px < C.SA134_PIVOT_MIN_PROFIT_R:
+            continue
+        at_pivot = any((fav >= pivots[k] * (1 - tol)) if d == 1 else (fav <= pivots[k] * (1 + tol))
+                       for k in pivot_keys)
+        if not at_pivot:
+            continue
+        nxt, confirm_c = closed_since_entry[i + 1], closed_since_entry[i + 2]
+        follow_through = (confirm_c["close"] < nxt["close"]) if d == 1 \
+            else (confirm_c["close"] > nxt["close"])
+        if sa.reversal_candle(nxt, d) and follow_through:
+            return True
+    return False
+
+
 def finish(trade, exit_px, pnl, reason, state, day_delta=None):
     # `pnl` is the trade's FULL realised total (it may include an earlier leg
     # already added to day_pnl when it was booked) — day_pnl must only move by
@@ -702,7 +757,18 @@ def manage(trade, state):
     if trade["open_qty"] <= 1e-9:
         return end_trade(trade, last_px, "all_targets_hit", state)
 
-    # 3. Day end — the next Tokyo open. The stop never trails; nothing else closes it.
+    # 3. Pivot profit-booking (SA134_PIVOT_PROFIT_BOOKING, off by default) --
+    # see backtest._sa134_manage_pivot_booking for the full rationale. Scans
+    # only CLOSED candles since entry (since[:-1]; include_forming=True above
+    # always puts the currently-forming candle last) -- never acts on an
+    # unfinished candle's shape, same causal rule as every detector here.
+    if C.SA134_PIVOT_PROFIT_BOOKING and trade.get("pivots") is not None:
+        closed = since[:-1]
+        if pivot_booking_due(closed, d, trade["entry"], trade["risk_px"], trade["pivots"]):
+            return end_trade(trade, last_px * (1 - slip * d), "pivot_profit_booking", state,
+                             place_order=not C.DRY_RUN)
+
+    # 4. Day end — the next Tokyo open. The stop never trails; nothing else closes it.
     if now_ms() >= trade["day_end_ms"] - 60_000:
         return end_trade(trade, last_px * (1 - slip * d), "day_end", state,
                          place_order=not C.DRY_RUN)
@@ -735,7 +801,17 @@ def main():
     live rather than trust the backtest here. Tokyo is untouched: Japan has no
     DST, so its real open never moves. config.SESSIONS itself stays the old
     values (so the baseline fingerprint/regression tests keep meaning what they
-    always have) -- this override is what actually reaches the live/paper bots."""
+    always have) -- this override is what actually reaches the live/paper bots.
+
+    SA134_PIVOT_PROFIT_BOOKING turned on 9 Nov, Umar's explicit instruction
+    after the full iteration documented in CLAUDE.md: real bug found and
+    fixed (SA134_PIVOT_MIN_PROFIT_R -- the exit no longer arms before the
+    trade has actually gained anything), backtested as a genuine improvement
+    over baseline (full period: -Rs22,334 -> -Rs14,787, win rate 37.5% ->
+    48.1%), continuation re-entry dropped entirely (never had an edge). This
+    is the first time anything in this live loop other than entry detection
+    has been live-wired from a feature that was ONLY ever exercised in the
+    backtest before today -- watch its first few live exits closely."""
     capital = 10042.53 if not C.DRY_RUN else 10000
     shifted_sessions = {
         "London":   {"open": dt.time(15, 0), "deadline": dt.time(16, 45), "end": dt.time(20, 0)},
@@ -743,7 +819,7 @@ def main():
     }
     with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
                     ORDERBOOK_FILTER=True, SA134_ENFORCE_COMPANION_PAIRS=True,
-                    SESSIONS=shifted_sessions):
+                    SESSIONS=shifted_sessions, SA134_PIVOT_PROFIT_BOOKING=True):
         _main_loop()
 
 

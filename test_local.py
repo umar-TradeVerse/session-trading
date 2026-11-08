@@ -203,6 +203,49 @@ at_day_end = dt.datetime(2026, 9, 29, 5, 29, 30, tzinfo=M.IST)   # inside the la
 t, st = run_manage(mk_trade(), [[K(100000, 100100, 99900, 100050, T0)]], at_day_end, sent)
 check("day end (next Tokyo open) flattens a paper trade that hit neither", t, None)
 check("closed as day_end", any("day_end" in m for m in sent), True)
+
+print("Pivot profit-booking (live) — mirrors the backtest's _sa134_manage_pivot_booking")
+_pb_pivots_live = {"P": 99000.0, "R1": 100697.0, "R2": 101500.0, "R3": 102500.0,
+                   "S1": 97000.0, "S2": 96000.0, "S3": 95000.0}
+check("pivot_booking_due: direct scan finds the confirmed pattern",
+      M.pivot_booking_due([
+          K(100050, 100200, 99950, 100100, T0),
+          K(100100, 100800, 100050, 100700, T0 + STEP),      # at_pivot, in profit
+          K(100700, 101200, 100500, 100600, T0 + 2 * STEP),  # reversal-shaped
+          K(100600, 100650, 100350, 100400, T0 + 3 * STEP),  # follow-through
+      ], 1, 100000.0, 1500.0, _pb_pivots_live), True)
+check("pivot_booking_due: pivots=None never fires", M.pivot_booking_due([
+    K(100050, 100200, 99950, 100100, T0), K(100100, 100800, 100050, 100700, T0 + STEP),
+    K(100700, 101200, 100500, 100600, T0 + 2 * STEP), K(100600, 100650, 100350, 100400, T0 + 3 * STEP),
+], 1, 100000.0, 1500.0, None), False)
+check("pivot_booking_due: entry already at the pivot (zero real profit) does not fire -- 1 Nov Tokyo bug",
+      M.pivot_booking_due([
+          K(100690, 100700, 100650, 100680, T0),             # entry candle, barely below R1
+          K(100680, 101000, 100600, 100650, T0 + STEP),      # reversal-shaped, but no real profit yet
+          K(100650, 100700, 100500, 100550, T0 + 2 * STEP),  # "follow-through", still no profit
+      ], 1, 100690.0, 1500.0, _pb_pivots_live), False)
+
+with C.override(SA134_PIVOT_PROFIT_BOOKING=True):
+    t = mk_trade()
+    t["pivots"] = _pb_pivots_live
+    cs_book = [
+        K(100050, 100200, 99950, 100100, T0),
+        K(100100, 100800, 100050, 100700, T0 + STEP),
+        K(100700, 101200, 100500, 100600, T0 + 2 * STEP),
+        K(100600, 100650, 100350, 100400, T0 + 3 * STEP),
+        K(100400, 100450, 100300, 100350, T0 + 4 * STEP),    # currently forming -- not scanned for the pattern
+    ]
+    sent = []
+    out, st = run_manage(t, [cs_book], NOW, sent)
+    check("live manage(): pivot profit-booking closes the trade", out, None)
+    check("live manage(): closed as pivot_profit_booking", any("pivot_profit_booking" in m for m in sent), True)
+
+sent = []
+t3 = mk_trade()
+t3["pivots"] = _pb_pivots_live
+out, st = run_manage(t3, [cs_book], NOW, sent)
+check("feature OFF by default: identical candles do NOT book early", out is not None, True)
+
 notify.send, ex.candles, M.now_ist = real_send, real_candles, real_now
 
 
