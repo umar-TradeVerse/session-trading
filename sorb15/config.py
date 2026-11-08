@@ -251,6 +251,17 @@ SA134_PIVOT_CONFLUENCE = _b("SA134_PIVOT_CONFLUENCE", False)
 # the Oct/Nov window it was evaluated on (see CLAUDE.md) -- a guess at "close
 # enough to call it the same level," nothing more.
 SA134_PIVOT_TOLERANCE_PCT = _f("SA134_PIVOT_TOLERANCE_PCT", 0.003)
+# Umar's profit-booking redesign (9 Nov): close the WHOLE open position the
+# moment price reaches a same-side pivot (R1-3 for a LONG, S1-3 for a SHORT)
+# AND the very next candle is a reversal_candle against the trade -- "don't
+# let a profitable trade turn into a loss." Then watches the trade's OWN
+# original level for a fresh clean re-break in the SAME direction before
+# day-end: found -> re-enter (it was a pullback, not a reversal), resume
+# ordinary staged-TP management; not found -> nothing more this day (it was a
+# genuine reversal -- the next day's sessions are unaffected either way).
+# Entry rules and liquidity detection are untouched; this only changes what
+# happens to a position AFTER entry. Off by default like every optional rule.
+SA134_PIVOT_PROFIT_BOOKING = _b("SA134_PIVOT_PROFIT_BOOKING", False)
 
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)

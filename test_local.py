@@ -666,6 +666,57 @@ with C.override(SA134_PIVOT_CONFLUENCE=True):
     check("feature ON, breakout level confluent with P: SA1 fires",
           s and s["state"], "ready")
 
+print("Pivot profit-booking (SA134_PIVOT_PROFIT_BOOKING) — exit-side only, OFF by default")
+_PB_STEP = 900000
+_pb_pivots = {"P": 99000.0, "R1": 100697.0, "R2": 101500.0, "R3": 102500.0,
+              "S1": 97000.0, "S2": 96000.0, "S3": 95000.0}
+_level0 = 100000.0
+
+with C.override(SA134_PIVOT_PROFIT_BOOKING=True):
+    # pivots=None (no prior day yet) -- must reduce to a plain _sa134_manage trade
+    _cs_plain = [K(100100, 100200, 99900, 100050, 0), K(100050, 103100, 100000, 103050, _PB_STEP)]
+    chain = B._sa134_manage_pivot_booking(_cs_plain, 0, 1, 100000.0, 98500.0, 1.0,
+                                           100 * _PB_STEP, _level0, None, 1000.0)
+    plain = B._sa134_manage(_cs_plain, 0, 1, 100000.0, 98500.0, 1.0, 100 * _PB_STEP)
+    check("pivots=None: exactly one leg, identical to plain _sa134_manage",
+          (len(chain) == 1, chain[0]["exit_reason"], round(chain[0]["pnl_inr"], 2)),
+          (True, plain["exit_reason"], round(plain["pnl_inr"], 2)))
+
+    # genuine reversal: reaches R1, next candle rejects, then NEVER re-breaks level0 again
+    _cs_reversal = [
+        K(100100, 100200, 99900, 100050, 0 * _PB_STEP),       # quiet
+        K(100050, 100800, 100000, 100700, 1 * _PB_STEP),      # pushes to R1 (100697) -> at_pivot
+        K(100700, 101200, 100500, 100600, 2 * _PB_STEP),      # upper-wick rejection -> confirmed
+        K(100600, 100650, 99500, 99600, 3 * _PB_STEP),        # stays below level0 from here on
+        K(99600, 99700, 99400, 99500, 4 * _PB_STEP),
+    ]
+    chain = B._sa134_manage_pivot_booking(_cs_reversal, 0, 1, 100000.0, 98500.0, 1.0,
+                                           100 * _PB_STEP, _level0, _pb_pivots, 1000.0)
+    check("genuine reversal: pivot+confirmation closes the trade",
+          chain[0]["exit_reason"], "pivot_profit_booking")
+    check("genuine reversal: no re-break before day_end -> exactly one leg (no re-entry)",
+          len(chain), 1)
+    check("genuine reversal: pnl_inr > 0 (booked while still in profit)",
+          chain[0]["pnl_inr"] > 0, True)
+
+    # temporary pullback: same start, but price dips under level0 then cleanly re-breaks it
+    _cs_pullback = _cs_reversal + [
+        K(99600, 100700, 99900, 100600, 5 * _PB_STEP),        # clean re-break of level0 (100000)
+        K(100650, 100900, 100550, 100800, 6 * _PB_STEP),      # re-entry fill candle
+        K(100800, 100850, 100700, 100750, 7 * _PB_STEP),      # quiet -> re-entry runs out of data
+    ]
+    chain = B._sa134_manage_pivot_booking(_cs_pullback, 0, 1, 100000.0, 98500.0, 1.0,
+                                           100 * _PB_STEP, _level0, _pb_pivots, 1000.0)
+    check("temporary pullback: original leg still books at the pivot",
+          chain[0]["exit_reason"], "pivot_profit_booking")
+    check("temporary pullback: a continuation re-entry fires", len(chain), 2)
+    check("temporary pullback: re-entry is the SAME direction (continuation, not a flip)",
+          chain[1]["kind"] == "continuation_reentry" and chain[1]["direction"], 1)
+    check("temporary pullback: re-entry stop is level0's own buffer (98,500)",
+          round(chain[1]["sl"], 2), round(_level0 * (1 - 1 * 0.015), 2))
+    check("temporary pullback: re-entry runs out of data (no SL/TP hit after it)",
+          chain[1]["exit_reason"], "ran_out_of_data")
+
 print("Optional rules — the two trades flagged on the charts (all OFF by default)")
 def cd(o, h, l, c, i=0):
     return {"t": i * 900000, "open": o, "high": h, "low": l, "close": c, "volume": 1.0}

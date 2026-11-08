@@ -128,6 +128,33 @@ NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45�
   sizing issue (bound risk per trade regardless of stop width) before adding a 5th sub-agent — that lever is bigger
   than anything a new entry filter could plausibly add, and a prior attempt at a different new-entry idea
   (`SA134_LIQUIDITY_HUNT_REVERSAL`, above) was already "fragile... not a real edge." Not built; ask first.
+- **`SA134_PIVOT_PROFIT_BOOKING`** (added 9 Nov) — Umar's management-side redesign: while a position is open, watch
+  for price reaching a same-side daily pivot (R1-3 for a LONG, S1-3 for a SHORT) AND the very next candle being a
+  `reversal_candle()` against the trade (same primitive the hunt-reversal features already use — no new indicator).
+  On confirmation, close the WHOLE remaining position there and then watch the trade's OWN original level for a
+  fresh CLEAN re-break in the SAME direction before day-end (`clear_of_level`, the identical test SA1/SA4 use) — found
+  → re-enter and resume ordinary staged-TP management (a temporary pullback); not found by day-end → do nothing
+  further (a genuine reversal — there's no separate rule for that case beyond the absence of a re-entry). Entry rules
+  and liquidity detection untouched, exactly as asked. **Tested on BTC, same config, full period and Oct–Nov:**
+  | | n | net ₹ | win rate | avg/trade ₹ |
+  |---|---|---|---|---|
+  | Full period, baseline | 299 | −22,345 | 37.5% | −74.73 |
+  | Full period, +profit booking | 471 | **−35,126** | 36.5% | −74.58 |
+  | Oct–Nov, baseline | 38 | −3,285 | 36.8% | −86.45 |
+  | Oct–Nov, +profit booking | 58 | **−5,088** | 36.2% | −87.72 |
+  Split by piece, the picture is more interesting than the totals: the `pivot_profit_booking` exit itself is
+  genuinely good in isolation (full period: 178 occurrences, net **+₹28,109**, 49% win, avg +₹158 — better than
+  baseline's day_end average of +₹165 was spread over *more* trades, worse per-trade than it). Oct–Nov original legs
+  alone (ignoring re-entries) net −₹2,002 at avg **−₹53/trade — better than baseline's −₹86**. But the continuation
+  re-entry half loses money on both: Oct–Nov −₹3,086 over 20 re-entries (avg −₹154), full period's stop_loss bucket
+  (where many re-entries land) stays at −₹896/trade. Net effect: **worse than baseline both windows**, because the
+  re-entry mechanism gives back more than the early-exit mechanism saves — the same shape of result as
+  `SA134_HUNT_REENTRY` above ("book early, try to re-enter" doesn't have an edge in this engine so far, under two
+  different trigger designs now). Code is in (`backtest._sa134_manage_pivot_booking`, wired only into
+  `run_sa134_portfolio`, 9 new unit tests incl. hand-built genuine-reversal and temporary-pullback cases, 182/182
+  passing, baseline fingerprint and causality untouched), **default OFF**. Worth knowing separately if useful later:
+  the exit-only half (book profit at a confirmed pivot reversal, no re-entry) tested better than baseline in
+  isolation — that's a different, smaller change from what was built here, not yet tried on its own.
 
 ### Known risk, carried over, still unresolved
 Fixed-margin sizing against a variable-width stop (same issue flagged 27 Oct) means per-trade risk is uncontrolled.

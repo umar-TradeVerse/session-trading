@@ -1405,6 +1405,153 @@ def _pivot_confluent(level, direction, pivots, tol_pct):
     return any(abs(level - pivots[k]) / level <= tol_pct for k in keys)
 
 
+def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms,
+                                 level0, pivots, fixed_margin):
+    """Umar's profit-booking redesign (9 Nov), SA134_PIVOT_PROFIT_BOOKING.
+
+    Runs the ordinary staged 2R/3R/4R management (same as _sa134_manage) but
+    additionally watches, on every candle, whether price has reached a
+    same-side daily pivot (R1-3 for a LONG, S1-3 for a SHORT -- "approaches or
+    reaches" = within SA134_PIVOT_TOLERANCE_PCT, same tolerance the entry-side
+    confluence check uses) while the position is still open. Touching alone
+    does nothing -- "require meaningful confirmation": only the very next
+    candle being a reversal_candle() against the trade's own direction closes
+    the ENTIRE remaining position there, booking whatever profit is live.
+
+    After that early close, the SAME original level (level0 -- the session
+    range H/L this trade's own entry broke) is watched for a fresh CLEAN close
+    beyond it in the SAME direction before day_end_ms (clear_of_level, the
+    identical "clean breakout" test SA1/SA4 already use -- no new indicator).
+    If found: re-enter in the original direction, then hand off to the
+    ordinary _sa134_manage for the rest of the day ("continue managing the new
+    trade using the existing SA rules"). If day_end arrives with no re-break,
+    nothing more happens today -- the next day's sessions proceed completely
+    normally, which IS "wait for the next trading session" for a genuine
+    reversal: there is no separate rule to encode for that case, only the
+    absence of a continuation re-entry.
+
+    Returns a list of leg dicts like _sa134_manage_hunt: the original trade
+    first (exit_reason becomes "pivot_profit_booking" only when the pivot
+    exit actually fired; every other outcome -- stop_loss / all_targets_hit /
+    day_end / ran_out_of_data -- is identical to a plain _sa134_manage trade),
+    then zero or one "continuation_reentry" leg."""
+    if pivots is None:
+        res = _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms)
+        return [dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                     qty=qty, entry_ms=candles[entry_i]["t"])]
+
+    slip = C.SLIPPAGE
+    notional = qty * entry * C.USDINR
+    entry_ms = candles[entry_i]["t"]
+    risk_px = abs(entry - sl)
+    tp_levels = [entry + d * r * risk_px for r in SA134_TP_R]
+    leg_qtys, remaining = [], qty
+    for frac in SA134_TP_FRACS[:-1]:
+        q = sizing.floor_step(qty * frac, C.QTY_STEP)
+        if q < C.MIN_QTY - 1e-12:
+            q = 0.0
+        leg_qtys.append(q)
+        remaining = round(remaining - q, 8)
+    leg_qtys.append(round(remaining, 8))
+
+    def hours(t):
+        return (t - entry_ms) / 3_600_000
+
+    pivot_keys = ("R1", "R2", "R3") if d == 1 else ("S1", "S2", "S3")
+    tol = C.SA134_PIVOT_TOLERANCE_PCT
+    legs = []
+    open_qty = qty
+    hit = [False] * len(tp_levels)
+    n = len(candles)
+    results = []
+
+    j = entry_i
+    while j < n:
+        c = candles[j]
+        adv = c["low"] if d == 1 else c["high"]
+        if (adv <= sl) if d == 1 else (adv >= sl):
+            gap = (c["open"] < sl) if d == 1 else (c["open"] > sl)
+            px = (c["open"] if gap else sl) * (1 - slip * d)
+            legs.append((px, open_qty / qty, hours(c["t"])))
+            res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "stop_loss")
+            results.append(dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                                 qty=qty, entry_ms=entry_ms))
+            return results
+
+        fav = c["high"] if d == 1 else c["low"]
+        for k in range(len(tp_levels)):
+            if hit[k] or leg_qtys[k] <= 0:
+                continue
+            reached = (fav >= tp_levels[k]) if d == 1 else (fav <= tp_levels[k])
+            if reached:
+                hit[k] = True
+                px = tp_levels[k] * (1 - slip * d)
+                legs.append((px, leg_qtys[k] / qty, hours(c["t"])))
+                open_qty = round(open_qty - leg_qtys[k], 8)
+        if open_qty <= 1e-9:
+            res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "all_targets_hit")
+            results.append(dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                                 qty=qty, entry_ms=entry_ms))
+            return results
+
+        at_pivot = any((fav >= pivots[k] * (1 - tol)) if d == 1 else (fav <= pivots[k] * (1 + tol))
+                        for k in pivot_keys)
+        if at_pivot and j + 1 < n and candles[j + 1]["t"] < day_end_ms:
+            nxt = candles[j + 1]
+            if sa.reversal_candle(nxt, d):
+                px = nxt["open"] * (1 - slip * d)
+                legs.append((px, open_qty / qty, hours(nxt["t"])))
+                res = _sa134_result(d, entry, notional, qty, legs, nxt["t"] + STEP_MS,
+                                     "pivot_profit_booking")
+                results.append(dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                                     qty=qty, entry_ms=entry_ms))
+
+                # Scenario 2 watch: the SAME original level, SAME direction, a
+                # fresh clean close beyond it before day_end_ms. Found -> the
+                # trade WAS a temporary pullback, re-enter and resume normal
+                # management. Not found by day_end -> nothing more this day
+                # (the trade WAS a genuine reversal; no action needed for that
+                # beyond having already closed it).
+                k2 = j + 2
+                reentry_i = None
+                while k2 < n and candles[k2]["t"] + STEP_MS <= day_end_ms:
+                    cc = candles[k2]
+                    if sa.closes_beyond(cc, level0, level0) == d \
+                            and sa.clear_of_level(cc, d, level0, level0):
+                        reentry_i = k2 + 1
+                        break
+                    k2 += 1
+                if reentry_i is not None and reentry_i < n and candles[reentry_i]["t"] < day_end_ms:
+                    new_entry = candles[reentry_i]["open"] * (1 + slip * d)
+                    new_sl = level0 * (1 - d * SA134_SL_BUFFER_PCT)
+                    if not ((d == 1 and new_entry <= new_sl) or (d == -1 and new_entry >= new_sl)):
+                        new_qty = sizing.qty_for_fixed_notional(new_entry, fixed_margin)
+                        if new_qty > 0:
+                            res2 = _sa134_manage(candles, reentry_i, d, new_entry, new_sl,
+                                                  new_qty, day_end_ms)
+                            results.append(dict(res2, kind="continuation_reentry", direction=d,
+                                                 entry=new_entry, sl=new_sl, qty=new_qty,
+                                                 entry_ms=candles[reentry_i]["t"]))
+                return results
+
+        if c["t"] + STEP_MS >= day_end_ms:
+            px = c["close"] * (1 - slip * d)
+            legs.append((px, open_qty / qty, hours(c["t"])))
+            res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "day_end")
+            results.append(dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                                 qty=qty, entry_ms=entry_ms))
+            return results
+        j += 1
+
+    c = candles[-1]
+    px = c["close"] * (1 - slip * d)
+    legs.append((px, open_qty / qty, hours(c["t"])))
+    res = _sa134_result(d, entry, notional, qty, legs, c["t"] + STEP_MS, "ran_out_of_data")
+    results.append(dict(res, kind="original", direction=d, entry=entry, sl=sl,
+                         qty=qty, entry_ms=entry_ms))
+    return results
+
+
 def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivots=None):
     """Called with a GROWING prefix (prefix = sess[:k+1]) and re-evaluated fresh
     at each new candle k -- same causal convention the shared router uses -- so
@@ -1710,7 +1857,7 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
     for day in days:
         day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
         pivots = {s: daily_pivot_fib(candles_by_symbol[s], by_t[s], day) for s in syms} \
-            if C.SA134_PIVOT_CONFLUENCE else {}
+            if (C.SA134_PIVOT_CONFLUENCE or C.SA134_PIVOT_PROFIT_BOOKING) else {}
 
         for name, o, dl, e in sa134_session_windows(day):
             o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
@@ -1846,6 +1993,51 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                             equity_after=round(equity),
                             reason=sig["detail"] if is_orig else
                                    f"hunt reentry ({leg['kind']})",
+                            **{k2: v for k2, v in leg.items()
+                               if k2 not in ("exit_ms", "kind", "direction", "entry", "sl",
+                                             "qty", "entry_ms")}))
+                    last_leg = max(chain, key=lambda lg: lg["exit_ms"])
+                    log.update(**base, action="ENTER", reason=sig["detail"],
+                               entry=round(entry, 2), sl=round(sl, 2),
+                               pnl_inr=round(sum(lg["pnl_inr"] for lg in chain), 2),
+                               exit_reason=chain[0]["exit_reason"])
+                    signals.append(log)
+                    busy_until[sym] = last_leg["exit_ms"]
+                    orig_leg = chain[0]
+                    last_exit[sym] = (orig_leg["exit_reason"], orig_leg["direction"], day)
+                    continue
+
+                if C.SA134_PIVOT_PROFIT_BOOKING:
+                    chain = _sa134_manage_pivot_booking(
+                        candles_by_symbol[sym], entry_global_i, d, entry, sl, qty, day_end_ms,
+                        sig["level"], pivots.get(sym), fixed_margin)
+                    for leg in chain:
+                        equity += leg["pnl_inr"]
+                        leg_risk_pct = abs(leg["entry"] - leg["sl"]) / leg["entry"]
+                        leg_cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / leg_risk_pct
+                        is_orig = leg["kind"] == "original"
+                        trades.append(dict(
+                            symbol=sym, date=day, weekday=day.strftime("%a"), session=name,
+                            sub_agent=sig["sub_agent"] if is_orig else "pivot_reentry",
+                            setup=sig["setup"] if is_orig else
+                                  "Continuation re-entry after a pivot-confirmed profit-booking exit",
+                            side="LONG" if leg["direction"] == 1 else "SHORT",
+                            range_high=H, range_low=L, range_pct=(H - L) / L,
+                            level=sig["level"] if is_orig else leg["sl"],
+                            breakout=sig["breakout"] if is_orig else True,
+                            rejection=sig["rejection"] if is_orig else False,
+                            momentum_shift=sig["momentum_shift"] if is_orig else False,
+                            trigger_time=dt.datetime.fromtimestamp(c["trigger_ms"] / 1000, IST)
+                                         if is_orig else
+                                         dt.datetime.fromtimestamp(leg["entry_ms"] / 1000, IST),
+                            entry_time=dt.datetime.fromtimestamp(leg["entry_ms"] / 1000, IST),
+                            entry=leg["entry"], sl=leg["sl"], risk_pct=leg_risk_pct,
+                            cost_in_R=leg_cost_in_R,
+                            exit_time=dt.datetime.fromtimestamp(leg["exit_ms"] / 1000, IST),
+                            equity_after=round(equity),
+                            reason=sig["detail"] if is_orig else
+                                   "re-entered the original direction after a fresh clean "
+                                   "break of the same level",
                             **{k2: v for k2, v in leg.items()
                                if k2 not in ("exit_ms", "kind", "direction", "entry", "sl",
                                              "qty", "entry_ms")}))
