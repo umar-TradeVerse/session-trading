@@ -1409,11 +1409,18 @@ def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms,
     """Umar's profit-booking redesign (9 Nov), SA134_PIVOT_PROFIT_BOOKING.
 
     Runs the ordinary staged 2R/3R/4R management (same as _sa134_manage) but
-    additionally watches, on every candle, whether price has reached a
-    same-side daily pivot (R1-3 for a LONG, S1-3 for a SHORT -- "approaches or
-    reaches" = within SA134_PIVOT_TOLERANCE_PCT, same tolerance the entry-side
-    confluence check uses) while the position is still open. Touching alone
-    does nothing -- "require meaningful confirmation": the next candle must be
+    additionally watches, on every candle, whether the trade is ALREADY AT
+    LEAST SA134_PIVOT_MIN_PROFIT_R in profit AND price has reached a same-side
+    daily pivot (R1-3 for a LONG, S1-3 for a SHORT -- "approaches or reaches" =
+    within SA134_PIVOT_TOLERANCE_PCT, same tolerance the entry-side confluence
+    check uses) while the position is still open. The profit floor exists
+    because a session's own breakout level often sits close to (or, 4 Nov New
+    York, entirely past) a pivot already -- without it, "at a pivot" can be
+    true from the very first candle after entry, arming the exit before the
+    trade has gained anything (1 Nov Tokyo: booked a LOSS labelled
+    "pivot_profit_booking" on one ordinary wick, found 9 Nov when Umar asked
+    for a candle-by-candle explanation). Touching alone still does nothing
+    beyond that -- "require meaningful confirmation": the next candle must be
     a reversal_candle() against the trade's own direction, AND the candle
     after THAT must keep closing further the same way (two-candle follow-
     through, not a single pin-bar/doji -- a real momentum shift keeps going
@@ -1497,8 +1504,10 @@ def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms,
                                  qty=qty, entry_ms=entry_ms))
             return results
 
-        at_pivot = any((fav >= pivots[k] * (1 - tol)) if d == 1 else (fav <= pivots[k] * (1 + tol))
-                        for k in pivot_keys)
+        in_profit = d * (fav - entry) / risk_px >= C.SA134_PIVOT_MIN_PROFIT_R
+        at_pivot = in_profit and any(
+            (fav >= pivots[k] * (1 - tol)) if d == 1 else (fav <= pivots[k] * (1 + tol))
+            for k in pivot_keys)
         if at_pivot and j + 2 < n and candles[j + 2]["t"] < day_end_ms:
             nxt, confirm_c = candles[j + 1], candles[j + 2]
             # Two-candle confirmation, not one: a single reversal-shaped candle

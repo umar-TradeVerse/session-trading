@@ -264,6 +264,16 @@ SA134_PIVOT_TOLERANCE_PCT = _f("SA134_PIVOT_TOLERANCE_PCT", 0.003)
 # detection are untouched; this only changes what happens to a position
 # AFTER entry. Off by default like every optional rule.
 SA134_PIVOT_PROFIT_BOOKING = _b("SA134_PIVOT_PROFIT_BOOKING", False)
+# Real bug found 9 Nov (1 Nov Tokyo, 4 Nov New York): "at a pivot" was being
+# satisfied the moment price merely sat within SA134_PIVOT_TOLERANCE_PCT of a
+# pivot -- which can already be true AT ENTRY (a session's own breakout level
+# often sits close to a pivot; 4 Nov New York's entry was already past R3
+# entirely). That let the exit arm itself before the trade had gained
+# anything, so an ordinary 1-candle pullback booked a small LOSS labelled
+# "pivot_profit_booking" -- the opposite of the feature's whole purpose. Now
+# requires the trade to actually be at least this many R in profit before the
+# pivot check is even evaluated.
+SA134_PIVOT_MIN_PROFIT_R = _f("SA134_PIVOT_MIN_PROFIT_R", 0.3)
 
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)

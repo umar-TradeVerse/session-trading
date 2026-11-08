@@ -177,9 +177,27 @@ NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45�
   separate re-entry rule anymore. `SA134_PIVOT_PROFIT_BOOKING` now runs the exit only; there is no longer a
   `SA134_PIVOT_REENTRY` flag.
   Code: `backtest._sa134_manage_pivot_booking` (two-candle confirmation, exit-only, 4 parameters simpler than before),
-  wired only into `run_sa134_portfolio`. 7 unit tests (pivots=None passthrough, genuine-reversal, no-follow-through),
-  177/177 passing, baseline fingerprint and causality untouched. **Still default OFF** — the feature itself beats
-  baseline (table above) but hasn't been turned on live; ask before enabling.
+  wired only into `run_sa134_portfolio`.
+  **Second real bug found and fixed same day (Umar asked for a candle-by-candle explanation of 1 Nov Tokyo):** "at a
+  pivot" only checked proximity, never profit. A session's own breakout level often sits close to (or, 4 Nov New
+  York, already past) a pivot, so the exit could arm itself before the trade had gained anything — 1 Nov Tokyo
+  booked **−₹67.35**, labelled `pivot_profit_booking`, off one ordinary post-entry wick with zero real profit behind
+  it. Fixed with `SA134_PIVOT_MIN_PROFIT_R` (default 0.3): the trade must actually be ≥0.3R in profit before the
+  pivot check is even evaluated. Verified directly: 1 Nov Tokyo now books **+₹103.80** (a real win, was baseline
+  +₹313.11); 4 Nov New York now correctly falls through to day_end and matches baseline exactly (−₹111.48, was a
+  false early exit at −₹251.63); 4 Nov Tokyo (the original flagged case) is unchanged (+₹183.74, was always correct).
+  | | n | net ₹ | win rate | avg/trade ₹ |
+  |---|---|---|---|---|
+  | Full period, baseline | 299 | −22,334 | 37.5% | −74.70 |
+  | Full period, pivot booking (fixed) | 335 | **−14,787** | **48.1%** | −44.14 |
+  | Oct–Nov, baseline | 38 | −3,274 | 36.8% | −86.16 |
+  | Oct–Nov, pivot booking (fixed) | 39 | **−3,014** | **43.6%** | −77.29 |
+  The `pivot_profit_booking` exit category alone is now unambiguously the best-performing piece of this engine:
+  full period 132 occurrences, **94.7% win rate**, net **+₹57,472**, avg +₹435/trade (was 54%/+₹166 before this fix —
+  the profit floor didn't just stop the false positives, it made the category dramatically cleaner). This is a real,
+  substantial improvement over baseline, not a wash — the strongest result anything in this project has produced so
+  far. 8 unit tests incl. the entry-already-at-the-pivot case, 178/178 passing, baseline fingerprint and causality
+  untouched. **Still default OFF** — not yet turned on live; ask before enabling.
 
 ### Known risk, carried over, still unresolved
 Fixed-margin sizing against a variable-width stop (same issue flagged 27 Oct) means per-trade risk is uncontrolled.

@@ -713,6 +713,23 @@ with C.override(SA134_PIVOT_PROFIT_BOOKING=True):
     check("reversal-shaped candle with no follow-through: does not book early",
           chain[0]["exit_reason"] != "pivot_profit_booking", True)
 
+    # the real bug found 9 Nov (1 Nov Tokyo / 4 Nov New York): entry sits
+    # almost ON the pivot already, so "at a pivot" is satisfied immediately
+    # with ~zero profit -- an ordinary post-entry wick must NOT book a LOSS
+    # labelled "pivot_profit_booking". risk_px=1500, so +0.3R = 100690+450=
+    # 101140; every high here stays below that, so the profit floor is never
+    # cleared and the trade falls through to its ordinary day_end handling.
+    _cs_entry_at_pivot = [
+        K(100690, 100700, 100650, 100680, 0 * _PB_STEP),   # entry candle, barely below R1 (100697)
+        K(100680, 101000, 100600, 100650, 1 * _PB_STEP),   # reversal-shaped wick, but no real profit yet
+        K(100650, 100700, 100500, 100550, 2 * _PB_STEP),   # "follow-through" lower -- still no profit
+        K(100550, 100600, 100500, 100550, 3 * _PB_STEP),
+    ]
+    chain = B._sa134_manage_pivot_booking(_cs_entry_at_pivot, 0, 1, 100690.0, 99190.0, 1.0,
+                                           4 * _PB_STEP, _pb_pivots)
+    check("entry already at the pivot, zero real profit: does not book a loss as 'profit booking'",
+          chain[0]["exit_reason"] != "pivot_profit_booking", True)
+
 print("Optional rules — the two trades flagged on the charts (all OFF by default)")
 def cd(o, h, l, c, i=0):
     return {"t": i * 900000, "open": o, "high": h, "low": l, "close": c, "volume": 1.0}
