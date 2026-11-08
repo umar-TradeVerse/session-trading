@@ -262,6 +262,14 @@ SA134_PIVOT_TOLERANCE_PCT = _f("SA134_PIVOT_TOLERANCE_PCT", 0.003)
 # Entry rules and liquidity detection are untouched; this only changes what
 # happens to a position AFTER entry. Off by default like every optional rule.
 SA134_PIVOT_PROFIT_BOOKING = _b("SA134_PIVOT_PROFIT_BOOKING", False)
+# Sub-switch: with SA134_PIVOT_PROFIT_BOOKING on, this controls just the
+# continuation-re-entry half. Backtested evidence (9 Nov, full period and
+# Oct-Nov, see CLAUDE.md): the profit-booking EXIT beats baseline on its own;
+# the re-entry has lost money on every version tried so far (even after a
+# volume gate + a tighter structural stop). Defaults OFF so turning on
+# SA134_PIVOT_PROFIT_BOOKING alone runs the exit half only -- the recommended
+# deployment. Set True only to re-test the full two-scenario design.
+SA134_PIVOT_REENTRY = _b("SA134_PIVOT_REENTRY", False)
 
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)

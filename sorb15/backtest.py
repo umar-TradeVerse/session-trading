@@ -1414,17 +1414,27 @@ def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms,
     same-side daily pivot (R1-3 for a LONG, S1-3 for a SHORT -- "approaches or
     reaches" = within SA134_PIVOT_TOLERANCE_PCT, same tolerance the entry-side
     confluence check uses) while the position is still open. Touching alone
-    does nothing -- "require meaningful confirmation": only the very next
-    candle being a reversal_candle() against the trade's own direction closes
-    the ENTIRE remaining position there, booking whatever profit is live.
+    does nothing -- "require meaningful confirmation": the next candle must be
+    a reversal_candle() against the trade's own direction, AND the candle
+    after THAT must keep closing further the same way (two-candle follow-
+    through, not a single pin-bar/doji -- a real momentum shift keeps going
+    for more than one candle, ordinary pullback noise inside a still-strong
+    trend usually doesn't; see the 29 Oct Tokyo case in CLAUDE.md, where a
+    single-candle confirmation booked early on exactly that kind of noise).
+    Only then does it close the ENTIRE remaining position, at the NEXT
+    candle's open (same "trade on the next candle's open" convention this
+    whole engine already uses), booking whatever profit is live.
 
     After that early close, the SAME original level (level0 -- the session
     range H/L this trade's own entry broke) is watched for a fresh CLEAN close
-    beyond it in the SAME direction before day_end_ms (clear_of_level, the
-    identical "clean breakout" test SA1/SA4 already use -- no new indicator).
-    If found: re-enter in the original direction, then hand off to the
-    ordinary _sa134_manage for the rest of the day ("continue managing the new
-    trade using the existing SA rules"). If day_end arrives with no re-break,
+    beyond it in the SAME direction, ON REAL VOLUME (clear_of_level +
+    good_volume, both already-existing primitives -- no new indicator; a
+    quiet re-break isn't trusted). Found before day_end_ms: re-enter in the
+    original direction with a stop at THAT re-break candle's own extreme (not
+    the original trade's much wider stop -- a second, later bite shouldn't
+    risk the full original distance again), then hand off to the ordinary
+    _sa134_manage for the rest of the day ("continue managing the new trade
+    using the existing SA rules"). If day_end arrives with no re-break,
     nothing more happens today -- the next day's sessions proceed completely
     normally, which IS "wait for the next trading session" for a genuine
     reversal: there is no separate rule to encode for that case, only the
@@ -1496,34 +1506,57 @@ def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms,
 
         at_pivot = any((fav >= pivots[k] * (1 - tol)) if d == 1 else (fav <= pivots[k] * (1 + tol))
                         for k in pivot_keys)
-        if at_pivot and j + 1 < n and candles[j + 1]["t"] < day_end_ms:
-            nxt = candles[j + 1]
-            if sa.reversal_candle(nxt, d):
-                px = nxt["open"] * (1 - slip * d)
-                legs.append((px, open_qty / qty, hours(nxt["t"])))
-                res = _sa134_result(d, entry, notional, qty, legs, nxt["t"] + STEP_MS,
+        if at_pivot and j + 2 < n and candles[j + 2]["t"] < day_end_ms:
+            nxt, confirm_c = candles[j + 1], candles[j + 2]
+            # Two-candle confirmation, not one: a single reversal-shaped candle
+            # (doji/long wick) fires on ordinary pullback noise inside a still-
+            # strong trend just as often as on a real reversal (29 Oct Tokyo --
+            # booked +615 at a single pin-bar, but price resumed and the full
+            # move was worth +1,768). Require the candle AFTER it to actually
+            # follow through further against the trade (close beyond nxt's own
+            # close, same direction) before booking -- real momentum shifts
+            # continue for more than one candle; noise doesn't.
+            follow_through = (confirm_c["close"] < nxt["close"]) if d == 1 \
+                else (confirm_c["close"] > nxt["close"])
+            if sa.reversal_candle(nxt, d) and follow_through \
+                    and j + 3 < n and candles[j + 3]["t"] < day_end_ms:
+                fill_c = candles[j + 3]
+                px = fill_c["open"] * (1 - slip * d)
+                legs.append((px, open_qty / qty, hours(fill_c["t"])))
+                res = _sa134_result(d, entry, notional, qty, legs, fill_c["t"] + STEP_MS,
                                      "pivot_profit_booking")
                 results.append(dict(res, kind="original", direction=d, entry=entry, sl=sl,
                                      qty=qty, entry_ms=entry_ms))
 
                 # Scenario 2 watch: the SAME original level, SAME direction, a
-                # fresh clean close beyond it before day_end_ms. Found -> the
-                # trade WAS a temporary pullback, re-enter and resume normal
-                # management. Not found by day_end -> nothing more this day
-                # (the trade WAS a genuine reversal; no action needed for that
-                # beyond having already closed it).
-                k2 = j + 2
-                reentry_i = None
-                while k2 < n and candles[k2]["t"] + STEP_MS <= day_end_ms:
+                # fresh clean close beyond it before day_end_ms, ON REAL VOLUME
+                # (sa.good_volume -- the same confirmation the hunt-reversal
+                # features already require; a quiet re-break is exactly what
+                # the 4 Nov Tokyo case showed isn't trustworthy). Found -> the
+                # trade WAS a temporary pullback, re-enter -- with a stop at
+                # THIS re-break candle's own extreme (the same tighter-stop
+                # convention _hunt_pullback_break's addback leg already uses),
+                # not the original trade's own much-wider stop, since this is
+                # a second, later bite and shouldn't risk the full original
+                # distance again. Not found by day_end -> nothing more this
+                # day (the trade WAS a genuine reversal). Gated by its own
+                # sub-switch, SA134_PIVOT_REENTRY (default off) -- backtested
+                # evidence says this half doesn't have an edge yet; running
+                # the exit alone (the recommended deployment) skips this scan.
+                k2 = j + 4
+                reentry_i = break_c = None
+                while C.SA134_PIVOT_REENTRY and k2 < n and candles[k2]["t"] + STEP_MS <= day_end_ms:
                     cc = candles[k2]
                     if sa.closes_beyond(cc, level0, level0) == d \
-                            and sa.clear_of_level(cc, d, level0, level0):
-                        reentry_i = k2 + 1
+                            and sa.clear_of_level(cc, d, level0, level0) \
+                            and sa.good_volume(candles, k2, C.SA134_VOL_WINDOW, C.SA134_VOL_MULT):
+                        reentry_i, break_c = k2 + 1, cc
                         break
                     k2 += 1
                 if reentry_i is not None and reentry_i < n and candles[reentry_i]["t"] < day_end_ms:
                     new_entry = candles[reentry_i]["open"] * (1 + slip * d)
-                    new_sl = level0 * (1 - d * SA134_SL_BUFFER_PCT)
+                    new_level = break_c["low"] if d == 1 else break_c["high"]
+                    new_sl = new_level * (1 - d * SA134_SL_BUFFER_PCT)
                     if not ((d == 1 and new_entry <= new_sl) or (d == -1 and new_entry >= new_sl)):
                         new_qty = sizing.qty_for_fixed_notional(new_entry, fixed_margin)
                         if new_qty > 0:

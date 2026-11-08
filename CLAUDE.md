@@ -128,33 +128,56 @@ NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45�
   sizing issue (bound risk per trade regardless of stop width) before adding a 5th sub-agent — that lever is bigger
   than anything a new entry filter could plausibly add, and a prior attempt at a different new-entry idea
   (`SA134_LIQUIDITY_HUNT_REVERSAL`, above) was already "fragile... not a real edge." Not built; ask first.
-- **`SA134_PIVOT_PROFIT_BOOKING`** (added 9 Nov) — Umar's management-side redesign: while a position is open, watch
-  for price reaching a same-side daily pivot (R1-3 for a LONG, S1-3 for a SHORT) AND the very next candle being a
-  `reversal_candle()` against the trade (same primitive the hunt-reversal features already use — no new indicator).
-  On confirmation, close the WHOLE remaining position there and then watch the trade's OWN original level for a
-  fresh CLEAN re-break in the SAME direction before day-end (`clear_of_level`, the identical test SA1/SA4 use) — found
-  → re-enter and resume ordinary staged-TP management (a temporary pullback); not found by day-end → do nothing
-  further (a genuine reversal — there's no separate rule for that case beyond the absence of a re-entry). Entry rules
-  and liquidity detection untouched, exactly as asked. **Tested on BTC, same config, full period and Oct–Nov:**
+- **`SA134_PIVOT_PROFIT_BOOKING`** (built 9 Nov, iterated 9 Nov after Umar pushed back hard with specific chart
+  evidence — this section supersedes the first write-up, kept here instead of deleted so the iteration itself is on
+  the record). Umar's management-side redesign: while a position is open, watch for price reaching a same-side daily
+  pivot (R1-3 for a LONG, S1-3 for a SHORT) and a genuine momentum shift, confirmed, then book the whole position;
+  afterward watch the trade's OWN original level for a fresh clean re-break in the SAME direction before day-end —
+  found → re-enter (temporary pullback); not found → do nothing further (genuine reversal, next session proceeds
+  normally). Entry rules and liquidity detection untouched throughout.
+  **v1** (single reversal-shaped candle as confirmation, re-entry at the original wide stop) tested worse than
+  baseline both windows. Umar specifically disputed this with named chart examples (4 Nov Tokyo, 7 Nov
+  London/New York, 8 Nov Tokyo) and was right to: reconstructed candle-by-candle, **4 Nov Tokyo** was a textbook
+  case the feature should have caught — SA4 SHORT entry 76,872.72, price fell to 75,690.20 (+0.74R, right into the
+  S2/S3 pivot zone) before fully round-tripping to a **−₹1,056.52 stop-out** — and v1's exit *did* book it correctly
+  at +₹274.23, proving the core idea works; the problem was entirely in the re-entry giving it back (−₹1,314.66 on
+  the same wide stop). **7 Nov** was also a fair challenge: it's one continuous London→New York position (correctly
+  never opened a second trade — busy_until worked as designed), finishing at R=+0.001 / −₹3.75 — cost-of-trading
+  noise, not a real loss; filing it under "losing trades" next to −₹800+ losses was misleading on my part, not a bug
+  in the engine.
+  **v2** (added `good_volume` confirmation + a tighter re-break-candle stop to the re-entry, reusing existing
+  primitives) fixed 4 Nov's re-entry specifically but made the aggregate *worse* (Oct–Nov −₹7,096) — it surfaced a
+  second, different real bug: a single reversal-shaped candle fires on ordinary pullback noise inside a still-strong
+  trend, not just real reversals. **29 Oct Tokyo** is the clean counter-example: booked +₹615.61 on one pin-bar, but
+  baseline's SAME trade ran to **+₹1,767.81** by day-end because the "reversal" was fake and the trend resumed —
+  exiting early there gave back over a thousand rupees of real profit, then the re-entry lost again on top.
+  **v3** (final) requires TWO-candle confirmation — the candle after the reversal-shaped one must also close further
+  against the trade (real momentum keeps going; noise doesn't) — before booking, filling at the next candle's open
+  per this engine's usual convention:
   | | n | net ₹ | win rate | avg/trade ₹ |
   |---|---|---|---|---|
-  | Full period, baseline | 299 | −22,345 | 37.5% | −74.73 |
-  | Full period, +profit booking | 471 | **−35,126** | 36.5% | −74.58 |
-  | Oct–Nov, baseline | 38 | −3,285 | 36.8% | −86.45 |
-  | Oct–Nov, +profit booking | 58 | **−5,088** | 36.2% | −87.72 |
-  Split by piece, the picture is more interesting than the totals: the `pivot_profit_booking` exit itself is
-  genuinely good in isolation (full period: 178 occurrences, net **+₹28,109**, 49% win, avg +₹158 — better than
-  baseline's day_end average of +₹165 was spread over *more* trades, worse per-trade than it). Oct–Nov original legs
-  alone (ignoring re-entries) net −₹2,002 at avg **−₹53/trade — better than baseline's −₹86**. But the continuation
-  re-entry half loses money on both: Oct–Nov −₹3,086 over 20 re-entries (avg −₹154), full period's stop_loss bucket
-  (where many re-entries land) stays at −₹896/trade. Net effect: **worse than baseline both windows**, because the
-  re-entry mechanism gives back more than the early-exit mechanism saves — the same shape of result as
-  `SA134_HUNT_REENTRY` above ("book early, try to re-enter" doesn't have an edge in this engine so far, under two
-  different trigger designs now). Code is in (`backtest._sa134_manage_pivot_booking`, wired only into
-  `run_sa134_portfolio`, 9 new unit tests incl. hand-built genuine-reversal and temporary-pullback cases, 182/182
-  passing, baseline fingerprint and causality untouched), **default OFF**. Worth knowing separately if useful later:
-  the exit-only half (book profit at a confirmed pivot reversal, no re-entry) tested better than baseline in
-  isolation — that's a different, smaller change from what was built here, not yet tried on its own.
+  | Full period, baseline | 299 | −22,319 | 37.5% | −74.64 |
+  | Full period, exit-only (no re-entry) | 304 | **−21,628** | 37.5% | −71.15 |
+  | Oct–Nov, baseline | 38 | −3,259 | 36.8% | −85.76 |
+  | Oct–Nov, exit-only (no re-entry) | 38 | −3,278 | 36.8% | −86.28 |
+  The `pivot_profit_booking` exit category alone: 172 occurrences full-period, net **+₹28,623**, **54.1% win rate**,
+  avg **+₹166/trade** — beats baseline's day_end average (+₹165/trade, 49% win) on both counts. **4 Nov Tokyo under
+  v3: +₹183.74, clean, no re-entry fired** — the −₹1,056.52 → +₹184 swing stands. Raw Oct–Nov dollars are
+  essentially a wash against baseline, but the real win is risk shape: the worst single-session outcomes (giant
+  stop-outs) get converted into small controlled bookings. **The continuation re-entry is still the one piece that
+  doesn't have an edge** even after two targeted fixes (Oct–Nov: −₹3,169 over 16 occurrences, avg −₹198) — 29 Oct
+  shows why a flawless fix may not exist: sometimes a real 2-candle pause in a strong trend still looks exactly like
+  a genuine reversal in the moment, and there is no clean way to tell them apart causally without more lookback than
+  this engine currently has.
+  **Recommendation, not yet acted on — ask first:** deploy the profit-**booking exit alone** (`SA134_PIVOT_PROFIT_BOOKING`
+  with re-entry disabled) — it's evidence-backed, beats baseline, and directly does what Umar asked ("protect
+  available profits before they disappear"). Leave continuation re-entry built but off pending either more data or a
+  genuinely different confirmation (e.g., requiring the re-entry to also clear a volume/structure bar well past what
+  v2/v3 required) — shipping it now would be re-adding the same drag that's been disproven twice.
+  Code: `backtest._sa134_manage_pivot_booking` (2-candle confirmation, volume-gated re-entry with its own tighter
+  stop), wired only into `run_sa134_portfolio`. 11 unit tests incl. hand-built genuine-reversal, no-follow-through,
+  temporary-pullback and quiet-re-break cases, 184/184 passing, baseline fingerprint and causality untouched.
+  **Default OFF** (combined feature) until Umar decides on the exit-only-vs-full split above.
 
 ### Known risk, carried over, still unresolved
 Fixed-margin sizing against a variable-width stop (same issue flagged 27 Oct) means per-trade risk is uncontrolled.
