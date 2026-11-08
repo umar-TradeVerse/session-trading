@@ -6,18 +6,24 @@ credentials or deployment unless he asks" — he has since asked, repeatedly and
 new API keys pasted in chat, going live with real money on 3 symbols. Credentials and deployment are now squarely in
 scope; the caution that still applies is the one below (real financial risk needs explicit confirmation, not silence).
 
-## ⚠ REAL MONEY IS OFF (as of 7 Nov 2026, 00:3x IST) — read before touching `sorb15-live`
-Umar asked for "only SORB-15 paper for now" on 5 Nov 23:24 IST (in his liquidity-bot session). `sorb15-live` was
-locked off by a kill switch: drop-in `/etc/systemd/system/sorb15-live.service.d/off-switch.conf`
-(`ConditionPathExists=!/etc/sorb15-live.disabled`) + the file `/etc/sorb15-live.disabled`. On 6 Nov 23:16 IST a
-session WITHOUT that context saw it off, called it unexplained, and Umar re-enabled it — that was a mistake, not a
-decision. Re-locked 7 Nov: file present, `sorb15-live` inactive, `sorb15-live-watchdog.timer` disabled. The unit
-itself was left `enabled` (harmless: at boot the condition check skips it while the file exists). Paper
-`sorb15.service` (Gold/Silver) keeps running. **Never remove `/etc/sorb15-live.disabled` or start `sorb15-live`
-unless Umar explicitly asks to go live again in that conversation.** If he does:
-`rm /etc/sorb15-live.disabled && systemctl enable --now sorb15-live.service sorb15-live-watchdog.timer`.
-No real-money entry ever happened (lag guard refused a stale NatGas signal on the 6 Nov restart), so the
-exchange-side stop (`create_tpsl`) is still unproven on a real position.
+## ⚠ REAL MONEY IS ON (as of 8 Nov 2026, 20:59 UTC / 9 Nov ~02:29 IST) — read before touching `sorb15-live`
+History, so the back-and-forth doesn't repeat: Umar asked for "only SORB-15 paper for now" on 5 Nov 23:24 IST (in his
+liquidity-bot session); `sorb15-live` was locked off by a kill switch (`/etc/sorb15-live.disabled` +
+`/etc/systemd/system/sorb15-live.service.d/off-switch.conf`'s `ConditionPathExists`). A 6 Nov session without that
+context saw it off, called it unexplained, and re-enabled it by mistake; re-locked 7 Nov. **Umar then explicitly
+asked, in THIS engagement (9 Nov), to turn it back on and monitor** — this time a deliberate decision, not a repeat
+of the 6 Nov mistake, made after the pivot profit-booking fix was backtested, live-wired (see below) and verified.
+He removed `/etc/sorb15-live.disabled` and ran `systemctl enable --now sorb15-live-watchdog.timer` +
+`systemctl start sorb15-live.service` himself from the DigitalOcean console (SSH here still can't run either —
+"[Production Deploy]"/"[Unauthorized Persistence]" block both regardless of consent). **Confirmed healthy
+immediately after**: PID 124230, contract specs loaded clean for BTC/Oil/NatGas, heartbeat fresh, watchdog active,
+state clean (no open trades, day reset, not halted). **Current state: `sorb15-live` ACTIVE, trading real money on
+BTC/Oil/NatGas, running the fixed pivot-profit-booking code (see "SA134_PIVOT_PROFIT_BOOKING" below) for the first
+time ever on a live position.** Don't re-lock it (don't recreate `/etc/sorb15-live.disabled` or stop the service)
+without Umar explicitly asking for that, the same standard that applied in the other direction before.
+No real-money entry had happened as of 7 Nov (lag guard refused a stale NatGas signal on the 6 Nov restart), so the
+exchange-side stop (`create_tpsl`) was still unproven on a real position as of that date — watch the first real
+entry under this restart closely for exactly that reason.
 Also not reflected below yet: since commit 30bf0fb (5 Nov) a BTC order-book wall no longer AVOIDs the trade — it
 registers a liquidity-hunt-reversal watch (`register_hunt_watch` / `check_hunt_watches` / `enter_hunt_reversal`)
 and trades the reversal. Live-only, never backtested.
