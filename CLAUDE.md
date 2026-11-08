@@ -169,15 +169,17 @@ NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45�
   shows why a flawless fix may not exist: sometimes a real 2-candle pause in a strong trend still looks exactly like
   a genuine reversal in the moment, and there is no clean way to tell them apart causally without more lookback than
   this engine currently has.
-  **Recommendation, not yet acted on — ask first:** deploy the profit-**booking exit alone** (`SA134_PIVOT_PROFIT_BOOKING`
-  with re-entry disabled) — it's evidence-backed, beats baseline, and directly does what Umar asked ("protect
-  available profits before they disappear"). Leave continuation re-entry built but off pending either more data or a
-  genuinely different confirmation (e.g., requiring the re-entry to also clear a volume/structure bar well past what
-  v2/v3 required) — shipping it now would be re-adding the same drag that's been disproven twice.
-  Code: `backtest._sa134_manage_pivot_booking` (2-candle confirmation, volume-gated re-entry with its own tighter
-  stop), wired only into `run_sa134_portfolio`. 11 unit tests incl. hand-built genuine-reversal, no-follow-through,
-  temporary-pullback and quiet-re-break cases, 184/184 passing, baseline fingerprint and causality untouched.
-  **Default OFF** (combined feature) until Umar decides on the exit-only-vs-full split above.
+  **Decision (Umar, 9 Nov): drop continuation re-entry entirely.** Rather than leave it behind a dead switch, the
+  re-entry code (`"Scenario 2 watch"` — the volume-gated re-break scan, the tighter structural stop, the
+  `continuation_reentry` leg) has been **removed** from `_sa134_manage_pivot_booking`, not just defaulted off. A
+  genuine reversal and a temporary pullback now get the identical treatment: book the profit. Resuming the original
+  direction after a real pullback is left entirely to the next session's own fresh SA1/SA4 scan — there is no
+  separate re-entry rule anymore. `SA134_PIVOT_PROFIT_BOOKING` now runs the exit only; there is no longer a
+  `SA134_PIVOT_REENTRY` flag.
+  Code: `backtest._sa134_manage_pivot_booking` (two-candle confirmation, exit-only, 4 parameters simpler than before),
+  wired only into `run_sa134_portfolio`. 7 unit tests (pivots=None passthrough, genuine-reversal, no-follow-through),
+  177/177 passing, baseline fingerprint and causality untouched. **Still default OFF** — the feature itself beats
+  baseline (table above) but hasn't been turned on live; ask before enabling.
 
 ### Known risk, carried over, still unresolved
 Fixed-margin sizing against a variable-width stop (same issue flagged 27 Oct) means per-trade risk is uncontrolled.

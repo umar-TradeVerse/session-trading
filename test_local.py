@@ -666,111 +666,52 @@ with C.override(SA134_PIVOT_CONFLUENCE=True):
     check("feature ON, breakout level confluent with P: SA1 fires",
           s and s["state"], "ready")
 
-print("Pivot profit-booking (SA134_PIVOT_PROFIT_BOOKING) — exit-side only, OFF by default")
+print("Pivot profit-booking (SA134_PIVOT_PROFIT_BOOKING) — exit-only, OFF by default")
 _PB_STEP = 900000
 _pb_pivots = {"P": 99000.0, "R1": 100697.0, "R2": 101500.0, "R3": 102500.0,
               "S1": 97000.0, "S2": 96000.0, "S3": 95000.0}
-_level0 = 100000.0
 
-
-def Kv(o, h, l, c, t, v=1.0):
-    return {"t": t, "open": o, "high": h, "low": l, "close": c, "volume": v}
-
-
-# good_volume needs SA134_VOL_WINDOW (20) quiet candles of real lookback before
-# the re-break candle it judges -- pad the front of every series with 20 of them
-# so entry_i shifts to 20; the actual scenario candles are unchanged otherwise.
-_PAD = [Kv(100000, 100050, 99950, 100000, i * _PB_STEP, 1.0) for i in range(20)]
-_PB0 = 20 * _PB_STEP
-
-with C.override(SA134_PIVOT_PROFIT_BOOKING=True, SA134_PIVOT_REENTRY=True):
+with C.override(SA134_PIVOT_PROFIT_BOOKING=True):
     # pivots=None (no prior day yet) -- must reduce to a plain _sa134_manage trade
-    _cs_plain = _PAD + [K(100100, 100200, 99900, 100050, _PB0),
-                        K(100050, 103100, 100000, 103050, _PB0 + _PB_STEP)]
-    chain = B._sa134_manage_pivot_booking(_cs_plain, 20, 1, 100000.0, 98500.0, 1.0,
-                                           100 * _PB_STEP, _level0, None, 1000.0)
-    plain = B._sa134_manage(_cs_plain, 20, 1, 100000.0, 98500.0, 1.0, 100 * _PB_STEP)
+    _cs_plain = [K(100100, 100200, 99900, 100050, 0), K(100050, 103100, 100000, 103050, _PB_STEP)]
+    chain = B._sa134_manage_pivot_booking(_cs_plain, 0, 1, 100000.0, 98500.0, 1.0,
+                                           100 * _PB_STEP, None)
+    plain = B._sa134_manage(_cs_plain, 0, 1, 100000.0, 98500.0, 1.0, 100 * _PB_STEP)
     check("pivots=None: exactly one leg, identical to plain _sa134_manage",
           (len(chain) == 1, chain[0]["exit_reason"], round(chain[0]["pnl_inr"], 2)),
           (True, plain["exit_reason"], round(plain["pnl_inr"], 2)))
 
     # genuine reversal: reaches R1, a reversal-shaped candle appears, and the
     # candle AFTER that genuinely follows through (closes further down) --
-    # two-candle confirmation, not one -- then NEVER re-breaks level0 again
-    _cs_reversal = _PAD + [
-        K(100100, 100200, 99900, 100050, _PB0 + 0 * _PB_STEP),    # quiet
-        K(100050, 100800, 100000, 100700, _PB0 + 1 * _PB_STEP),   # pushes to R1 (100697) -> at_pivot
-        K(100700, 101200, 100500, 100600, _PB0 + 2 * _PB_STEP),   # reversal-shaped (long upper wick)
-        K(100600, 100650, 100350, 100400, _PB0 + 3 * _PB_STEP),   # follow-through: closes lower still
-        K(100400, 100450, 100300, 100350, _PB0 + 4 * _PB_STEP),   # fill candle (its OPEN is the exit)
+    # two-candle confirmation, not one
+    _cs_reversal = [
+        K(100100, 100200, 99900, 100050, 0 * _PB_STEP),    # quiet
+        K(100050, 100800, 100000, 100700, 1 * _PB_STEP),   # pushes to R1 (100697) -> at_pivot
+        K(100700, 101200, 100500, 100600, 2 * _PB_STEP),   # reversal-shaped (long upper wick)
+        K(100600, 100650, 100350, 100400, 3 * _PB_STEP),   # follow-through: closes lower still
+        K(100400, 100450, 100300, 100350, 4 * _PB_STEP),   # fill candle (its OPEN is the exit)
     ]
-    chain = B._sa134_manage_pivot_booking(_cs_reversal, 20, 1, 100000.0, 98500.0, 1.0,
-                                           100 * _PB_STEP, _level0, _pb_pivots, 1000.0)
-    check("genuine reversal: pivot+2-candle confirmation closes the trade",
+    chain = B._sa134_manage_pivot_booking(_cs_reversal, 0, 1, 100000.0, 98500.0, 1.0,
+                                           100 * _PB_STEP, _pb_pivots)
+    check("genuine reversal: pivot+2-candle confirmation books the trade",
           chain[0]["exit_reason"], "pivot_profit_booking")
-    check("genuine reversal: no re-break before day_end -> exactly one leg (no re-entry)",
-          len(chain), 1)
     check("genuine reversal: pnl_inr > 0 (booked while still in profit)",
           chain[0]["pnl_inr"] > 0, True)
 
     # a reversal-shaped candle that DOESN'T follow through (price resumes the
     # original direction right after -- the 29 Oct Tokyo failure mode) must
     # NOT book early
-    _cs_no_follow_through = _PAD + [
-        K(100100, 100200, 99900, 100050, _PB0 + 0 * _PB_STEP),
-        K(100050, 100800, 100000, 100700, _PB0 + 1 * _PB_STEP),   # at_pivot
-        K(100700, 101200, 100500, 100600, _PB0 + 2 * _PB_STEP),   # reversal-shaped
-        K(100600, 101400, 100550, 101300, _PB0 + 3 * _PB_STEP),   # NO follow-through -- resumes UP
-        K(101300, 101500, 101200, 101450, _PB0 + 4 * _PB_STEP),
+    _cs_no_follow_through = [
+        K(100100, 100200, 99900, 100050, 0 * _PB_STEP),
+        K(100050, 100800, 100000, 100700, 1 * _PB_STEP),   # at_pivot
+        K(100700, 101200, 100500, 100600, 2 * _PB_STEP),   # reversal-shaped
+        K(100600, 101400, 100550, 101300, 3 * _PB_STEP),   # NO follow-through -- resumes UP
+        K(101300, 101500, 101200, 101450, 4 * _PB_STEP),
     ]
-    chain = B._sa134_manage_pivot_booking(_cs_no_follow_through, 20, 1, 100000.0, 98500.0, 1.0,
-                                           100 * _PB_STEP, _level0, _pb_pivots, 1000.0)
+    chain = B._sa134_manage_pivot_booking(_cs_no_follow_through, 0, 1, 100000.0, 98500.0, 1.0,
+                                           100 * _PB_STEP, _pb_pivots)
     check("reversal-shaped candle with no follow-through: does not book early",
           chain[0]["exit_reason"] != "pivot_profit_booking", True)
-
-    # temporary pullback: same reversal + confirmation, but price then dips
-    # under level0 and cleanly re-breaks it ON A VOLUME SPIKE (3x the quiet
-    # background -- the 4 Nov Tokyo fix: a quiet re-break isn't trustworthy)
-    _cs_pullback = _cs_reversal + [
-        K(100350, 100380, 99500, 99600, _PB0 + 5 * _PB_STEP),         # dips below level0
-        K(99600, 99700, 99400, 99500, _PB0 + 6 * _PB_STEP),           # still below
-        Kv(99600, 100700, 99900, 100600, _PB0 + 7 * _PB_STEP, 3.0),   # re-break on volume
-        K(100650, 100900, 100550, 100800, _PB0 + 8 * _PB_STEP),      # re-entry fill candle
-        K(100800, 100850, 100700, 100750, _PB0 + 9 * _PB_STEP),      # quiet -> runs out of data
-    ]
-    chain = B._sa134_manage_pivot_booking(_cs_pullback, 20, 1, 100000.0, 98500.0, 1.0,
-                                           100 * _PB_STEP, _level0, _pb_pivots, 1000.0)
-    check("temporary pullback: original leg still books at the pivot",
-          chain[0]["exit_reason"], "pivot_profit_booking")
-    check("temporary pullback: a continuation re-entry fires", len(chain), 2)
-    check("temporary pullback: re-entry is the SAME direction (continuation, not a flip)",
-          chain[1]["kind"] == "continuation_reentry" and chain[1]["direction"], 1)
-    check("temporary pullback: re-entry stop is the re-break candle's OWN low, not level0's",
-          round(chain[1]["sl"], 2), round(99900.0 * (1 - 1 * 0.015), 2))
-    check("temporary pullback: re-entry runs out of data (no SL/TP hit after it)",
-          chain[1]["exit_reason"], "ran_out_of_data")
-
-    # a QUIET re-break (no volume) must NOT trigger a re-entry
-    _cs_quiet_rebreak = _cs_reversal + [
-        K(100350, 100380, 99500, 99600, _PB0 + 5 * _PB_STEP),
-        K(99600, 99700, 99400, 99500, _PB0 + 6 * _PB_STEP),
-        K(99600, 100700, 99900, 100600, _PB0 + 7 * _PB_STEP),         # same re-break, NO volume spike
-        K(100650, 100900, 100550, 100800, _PB0 + 8 * _PB_STEP),
-        K(100800, 100850, 100700, 100750, _PB0 + 9 * _PB_STEP),
-    ]
-    chain = B._sa134_manage_pivot_booking(_cs_quiet_rebreak, 20, 1, 100000.0, 98500.0, 1.0,
-                                           100 * _PB_STEP, _level0, _pb_pivots, 1000.0)
-    check("quiet re-break (no volume confirmation): no re-entry fires", len(chain), 1)
-
-with C.override(SA134_PIVOT_PROFIT_BOOKING=True):
-    # SA134_PIVOT_REENTRY defaults OFF -- the recommended "exit-only" deployment
-    # (backtested better than baseline; re-entry hasn't shown an edge yet, see
-    # CLAUDE.md). Same volume-confirmed re-break as the pullback test above,
-    # but with the sub-switch left at its default: must NOT re-enter.
-    chain = B._sa134_manage_pivot_booking(_cs_pullback, 20, 1, 100000.0, 98500.0, 1.0,
-                                           100 * _PB_STEP, _level0, _pb_pivots, 1000.0)
-    check("SA134_PIVOT_REENTRY off by default: exit books, no re-entry even on a volume re-break",
-          len(chain), 1)
 
 print("Optional rules — the two trades flagged on the charts (all OFF by default)")
 def cd(o, h, l, c, i=0):

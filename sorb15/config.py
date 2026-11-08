@@ -251,25 +251,19 @@ SA134_PIVOT_CONFLUENCE = _b("SA134_PIVOT_CONFLUENCE", False)
 # the Oct/Nov window it was evaluated on (see CLAUDE.md) -- a guess at "close
 # enough to call it the same level," nothing more.
 SA134_PIVOT_TOLERANCE_PCT = _f("SA134_PIVOT_TOLERANCE_PCT", 0.003)
-# Umar's profit-booking redesign (9 Nov): close the WHOLE open position the
-# moment price reaches a same-side pivot (R1-3 for a LONG, S1-3 for a SHORT)
-# AND the very next candle is a reversal_candle against the trade -- "don't
-# let a profitable trade turn into a loss." Then watches the trade's OWN
-# original level for a fresh clean re-break in the SAME direction before
-# day-end: found -> re-enter (it was a pullback, not a reversal), resume
-# ordinary staged-TP management; not found -> nothing more this day (it was a
-# genuine reversal -- the next day's sessions are unaffected either way).
-# Entry rules and liquidity detection are untouched; this only changes what
-# happens to a position AFTER entry. Off by default like every optional rule.
+# Umar's profit-booking redesign (9 Nov, iterated same day after a hard chart
+# review): close the WHOLE open position the moment price reaches a same-side
+# pivot (R1-3 for a LONG, S1-3 for a SHORT) AND the TWO candles after that
+# keep closing further against the trade (a single reversal-shaped candle
+# fires on ordinary pullback noise inside a still-strong trend, not just real
+# reversals -- see the 29 Oct Tokyo case in CLAUDE.md) -- "don't let a
+# profitable trade turn into a loss." Exit-only: a continuation-re-entry half
+# was tried twice (volume gate + a tighter structural stop) and still didn't
+# have an edge, so Umar had it dropped rather than kept behind a dead switch
+# (full iteration and numbers in CLAUDE.md). Entry rules and liquidity
+# detection are untouched; this only changes what happens to a position
+# AFTER entry. Off by default like every optional rule.
 SA134_PIVOT_PROFIT_BOOKING = _b("SA134_PIVOT_PROFIT_BOOKING", False)
-# Sub-switch: with SA134_PIVOT_PROFIT_BOOKING on, this controls just the
-# continuation-re-entry half. Backtested evidence (9 Nov, full period and
-# Oct-Nov, see CLAUDE.md): the profit-booking EXIT beats baseline on its own;
-# the re-entry has lost money on every version tried so far (even after a
-# volume gate + a tighter structural stop). Defaults OFF so turning on
-# SA134_PIVOT_PROFIT_BOOKING alone runs the exit half only -- the recommended
-# deployment. Set True only to re-test the full two-scenario design.
-SA134_PIVOT_REENTRY = _b("SA134_PIVOT_REENTRY", False)
 
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)
