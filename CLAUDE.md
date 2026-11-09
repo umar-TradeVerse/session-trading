@@ -320,7 +320,12 @@ T, S = report.frames(trades, signals); print(report.overall(T)); print(report.by
 - **Taker fee 0.059%/side** — never confirmed against his CoinDCX account (0.05% + 18% GST would fit). Maker 0%, unused (all exits are market/stop).
 - **Slippage 0.02%/side**, funding 0.01%/8h, USD/INR 88, maintenance margin 0.5%.
 - **SA2 stop buffer 0.45%** was chosen by a parameter sweep, not given by Umar. The doji/pin/tap/touch tolerances and the 2-candle momentum window are my interpretations of his wording.
-- Daily loss limit ₹500 and the 4-loss halt are my safety rules.
+- ~~Daily loss limit ₹500 and the 4-loss halt are my safety rules.~~ **Removed from live/paper 10 Nov, Umar's explicit
+  instruction** — he never asked for either, and paper got stuck halted through 10 Nov because of the 4-loss rule
+  right after the pivot-booking fix landed. `main()` now forces `DAILY_LOSS_LIMIT_INR=0, MAX_CONSEC_LOSSES=0`;
+  `config.py`'s own raw defaults (500/4) are untouched only so the old SA1-5 engine's baseline fingerprint test keeps
+  meaning what it always has — they no longer reach live or paper. There is now **no loss-based circuit breaker on
+  either service** — watch day_pnl manually if that matters to you.
 - **Slippage is applied to the fill prices, so it sits INSIDE the "gross" figure.** The report's `cost_inr` = fees + funding only. (An early notebook mislabelled this; corrected.) Always break it out: gross before slippage / slippage / fees+funding.
 - Sizing is coarse: 0.001 BTC steps ≈ ₹7,100. Average real risk is ~₹82 (not ₹100); ~1 trade in 10 cannot split a 50% partial.
 
