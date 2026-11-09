@@ -811,7 +811,14 @@ def main():
     48.1%), continuation re-entry dropped entirely (never had an edge). This
     is the first time anything in this live loop other than entry detection
     has been live-wired from a feature that was ONLY ever exercised in the
-    backtest before today -- watch its first few live exits closely."""
+    backtest before today -- watch its first few live exits closely.
+
+    DAILY_LOSS_LIMIT_INR and MAX_CONSEC_LOSSES forced to 0 (off) 10 Nov, Umar's
+    explicit instruction -- these were never his rule (config.py's own comment
+    already admitted they were added unilaterally), and paper had just gotten
+    stuck halted through a day it shouldn't have been. config.py's raw
+    defaults stay 500/4 only so the old engine's baseline fingerprint test
+    keeps meaning what it always has; live/paper actually run with both off."""
     capital = 10042.53 if not C.DRY_RUN else 10000
     shifted_sessions = {
         "London":   {"open": dt.time(15, 0), "deadline": dt.time(16, 45), "end": dt.time(20, 0)},
@@ -819,7 +826,8 @@ def main():
     }
     with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
                     ORDERBOOK_FILTER=True, SA134_ENFORCE_COMPANION_PAIRS=True,
-                    SESSIONS=shifted_sessions, SA134_PIVOT_PROFIT_BOOKING=True):
+                    SESSIONS=shifted_sessions, SA134_PIVOT_PROFIT_BOOKING=True,
+                    DAILY_LOSS_LIMIT_INR=0, MAX_CONSEC_LOSSES=0):
         _main_loop()
 
 

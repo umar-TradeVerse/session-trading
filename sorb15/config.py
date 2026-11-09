@@ -180,6 +180,15 @@ FUNDING_RATE_8H = _f("FUNDING_RATE_8H", 0.0001)
 MAINT_MARGIN = _f("MAINT_MARGIN", 0.005)
 
 # ── circuit breakers ────────────────────────────────────────────────────────
+# These were never Umar's rule -- added unilaterally (see the old CLAUDE.md
+# admission: "Daily loss limit Rs500 and the 4-loss halt are my safety rules"),
+# and he explicitly asked (10 Nov) to have them removed from live/paper. Left
+# as the raw config.py default here ONLY so the old SA1-5 engine's baseline
+# fingerprint test (built against this exact value) stays meaningful -- the
+# actual removal is in main()'s C.override(...), the same pattern this project
+# already uses for "change a fundamental constant without disturbing the
+# fingerprint" (see SESSIONS/CAPITAL_INR there). Live and paper run with BOTH
+# off (0) regardless of what's written here.
 DAILY_LOSS_LIMIT_INR = _f("DAILY_LOSS_LIMIT_INR", 500)
 MAX_CONSEC_LOSSES = _i("MAX_CONSEC_LOSSES", 4)   # losses in a row, counted across days
 HALT_DAYS = _i("HALT_DAYS", 1)                    # after a streak, skip this many extra days
