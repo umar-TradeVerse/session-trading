@@ -793,15 +793,21 @@ def main():
     instruction to go live with -- hardcoded here for the same reason: a
     missing env var on the droplet must never silently turn either back off.
 
-    SESSIONS is shifted +1h on London and New York to track their REAL current
-    (standard-time) opens -- NYSE 9:30am ET and LSE 8:00am UK time, both now on
-    winter/standard time (US fell back 1 Nov, UK 25 Oct). Backtested worse than
-    the old fixed blocks (full period net -15,648 to -26,485 vs -2,294 baseline,
-    depending on variant) -- Umar's explicit call to deploy anyway and watch it
-    live rather than trust the backtest here. Tokyo is untouched: Japan has no
-    DST, so its real open never moves. config.SESSIONS itself stays the old
-    values (so the baseline fingerprint/regression tests keep meaning what they
-    always have) -- this override is what actually reaches the live/paper bots.
+    SESSIONS: New York shifted +1h to track NYSE's REAL current (standard-
+    time) open -- 9:30am ET, now 20:00 IST since the US fell back 1 Nov.
+    London corrected 10 Nov (Umar caught a real bug): the original "+1h to
+    everything" blanket DST shift wrongly bumped London to 15:00 -- London
+    runs on its OWN base config.SESSIONS value (14:00-15:45-19:00) instead,
+    which is what LSE's real 8:00am UK-time open (now GMT, UK fell back
+    25 Oct) actually is (not exactly -- 8:00 GMT is precisely 13:30 IST, half
+    an hour earlier than this; flagged once, Umar's explicit call was 14:00).
+    Backtested worse than the old fixed blocks (full period net -15,648 to
+    -26,485 vs -2,294 baseline, depending on variant) -- Umar's explicit call
+    to deploy anyway and watch it live rather than trust the backtest here.
+    Tokyo is untouched: Japan has no DST, so its real open never moves.
+    config.SESSIONS itself stays the old values (so the baseline fingerprint/
+    regression tests keep meaning what they always have) -- this override is
+    what actually reaches the live/paper bots.
 
     SA134_PIVOT_PROFIT_BOOKING turned on 9 Nov, Umar's explicit instruction
     after the full iteration documented in CLAUDE.md: real bug found and
@@ -821,7 +827,7 @@ def main():
     keeps meaning what it always has; live/paper actually run with both off."""
     capital = 10042.53 if not C.DRY_RUN else 10000
     shifted_sessions = {
-        "London":   {"open": dt.time(15, 0), "deadline": dt.time(16, 45), "end": dt.time(20, 0)},
+        "London":   {"open": dt.time(14, 0), "deadline": dt.time(15, 45), "end": dt.time(19, 0)},
         "New York": {"open": dt.time(20, 0), "deadline": dt.time(21, 45), "end": dt.time(2, 15)},
     }
     with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
