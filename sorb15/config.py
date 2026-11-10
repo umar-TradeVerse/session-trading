@@ -284,6 +284,36 @@ SA134_PIVOT_PROFIT_BOOKING = _b("SA134_PIVOT_PROFIT_BOOKING", False)
 # pivot check is even evaluated.
 SA134_PIVOT_MIN_PROFIT_R = _f("SA134_PIVOT_MIN_PROFIT_R", 0.3)
 
+# Umar's pivot-reversal re-entry (10 Nov), evidenced on real Gold charts: 30 Oct
+# London SA4 LONG stopped out right near the S2 pivot, then fell straight through
+# S3; 03 Nov London SA1 SHORT stopped out right near S1, then ran up through P
+# and R1. In both, the ORIGINAL trade's own stop doubled as a pivot-zone test --
+# the market rejected that zone in the direction the stop-out itself showed, hard.
+# Rule: the moment an SA1/SA4 trade closes via stop_loss, check (same helper and
+# tolerance as the entry-side confluence filter and pivot-booking) whether the
+# exit price sits within SA134_PIVOT_TOLERANCE_PCT of a pivot on the side the
+# REVERSE direction would need (R1-3/P for a new LONG, S1-3/P for a new SHORT).
+# If so, flip and re-enter once, at the next candle's open, with the stop at the
+# ORIGINAL range candle's own opposite extreme (the same H/L the original trade
+# was anchored to) plus the usual SA134_SL_BUFFER_PCT hunt tolerance -- not a new,
+# invented level. Managed exactly like any other SA134 trade (staged 2R/3R/4R,
+# day-end). Off by default like every optional rule -- not yet backtested across
+# the full symbol set or deployed live.
+SA134_PIVOT_REVERSAL_REENTRY = _b("SA134_PIVOT_REVERSAL_REENTRY", False)
+
+# Umar's SA1/SA4 entry confirmation (10 Nov) -- a deliberately different thesis
+# from SA134_PIVOT_CONFLUENCE above, not an extension of it: a SHORT should be
+# launched FROM a resistance zone (R1-3 or P -- there's room to fall to the next
+# support before anything gets in the way), a LONG FROM a support zone (S1-3 or
+# P -- room to rise to the next resistance). A SHORT whose broken level instead
+# sits near SUPPORT, or a LONG near RESISTANCE, is rejected outright, not just
+# left unconfirmed -- Umar's own words: that's most likely a liquidity hunt,
+# with the opposite direction (or at least a change in momentum) most likely to
+# fire next. Mirrors _pivot_confluent's keys exactly backwards -- see
+# backtest.py's _pivot_zone_confirms. Same SA134_PIVOT_TOLERANCE_PCT tolerance.
+# Off by default like every optional rule here -- not yet backtested.
+SA134_PIVOT_ZONE_CONFIRM = _b("SA134_PIVOT_ZONE_CONFIRM", False)
+
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)
 STATE_FILE = os.getenv("STATE_FILE", "/tmp/sorb15_state.json")

@@ -74,19 +74,54 @@ CFD) — no fix available there either. So this overlay is real for BTC and a co
   day in response: `ORDERBOOK_WALL_MULT` 5.0→**8.0**, `ORDERBOOK_GATE_PCT` 0.3%→**0.15%** — gate stays on (Umar wants
   to keep watching it live, not disable it), just fires less often. Outcome of the loosened version: unknown, watch it.
 
-### Session times shifted for DST (`main()`'s `C.override(SESSIONS=...)`, both services)
-`config.SESSIONS` itself is untouched (so the baseline-fingerprint regression test still means what it always has) —
-`main()` overrides it for the live/paper processes only. New York's original 19:00 IST open matched NYSE's real
-9:30am-ET open **exactly** during US daylight saving — confirmed independently via web search, not just computed.
-Both the US (fell back 1 Nov) and UK (fell back 25 Oct) are now on winter/standard time, so the real anchors moved:
-NYSE now opens at 20:00 IST, LSE at 13:30 IST. Deployed: **London 15:00–16:45–20:00, New York 20:00–21:45–02:15**
-(both +1h; Tokyo untouched — Japan has no DST, so its real open never moves).
-- **Backtested worse, deployed anyway at Umar's explicit instruction to monitor live rather than trust the
-  backtest**: shifting both London+NY, full period net −₹26,485 vs −₹2,294 baseline; NY-only, −₹15,648. Neither
-  variant improved on the stale-but-empirically-better fixed blocks. Outcome of running it live: unknown, watch it.
-- Fixed a real bug this surfaced: `main.ALL_SESSIONS` was a module-level dict frozen at import time, BEFORE
-  `main()`'s override ever runs — the shift would have been silently ignored by `window()`/`active_session()`.
-  Converted to `main.all_sessions()`, read fresh every call; regression test added so this can't silently recur.
+### New York session hours — now genuinely DST-aware (10 Nov), replacing a flat shift that was broken by construction
+London is pinned at **14:00–15:45–19:00** year-round (`config.SESSIONS`'s own default) — Umar's explicit call, no UK
+DST adjustment, even though LSE's real open does shift with UK time. New York is different: it used to be pinned to
+a single flat time too (first 19:00, later 20:00), and **any single flat value is wrong for roughly half the year**
+— NYSE's 9:30am ET open lands at 19:00 IST while the US is on daylight time (2nd Sunday of March to the 1st Sunday
+of November) and 20:00 IST the rest of the year. Caught 10 Nov when a 20 Oct BTC trade didn't match the real chart:
+Oct was still DST (should've been 19:00), but the deployed override had NY flat at 20:00 everywhere.
+- Fixed properly instead of re-guessing another flat value: `backtest.us_dst_active(day)` (2nd-Sunday-March /
+  1st-Sunday-November, the actual US rule since 2007) and `backtest.ny_session_for(day)` compute New York's hours
+  PER DAY — 19:00 in DST, 20:00 in standard time, automatically, forever (no more manual re-shifting every spring
+  and fall). Wired into `sa134_session_windows` (the SA134/live engine) only — the OLD SA1-5 engine's
+  `session_windows` is deliberately left untouched so the baseline-fingerprint regression test keeps meaning what
+  it always has. `main()`'s old flat `SESSIONS=...` override is gone entirely — `main.all_sessions(day)`/`window()`
+  now compute New York's hours fresh per calendar day the same way.
+- Also fixed the real bug this surfaced earlier: `main.all_sessions` used to be read once and frozen; now it's a
+  function, read fresh (and per-day) on every call. Regression tests added (`test_local.py`) pin both the DST
+  calendar math itself and the 20 Oct/10 Nov split on both engines, so this can't silently drift back.
+
+### `SA134_PIVOT_REVERSAL_REENTRY` and `SA134_PIVOT_ZONE_CONFIRM` — built, backtested, DEPLOYED 10 Nov
+Both built and iterated the same day as this turn-on, per Umar's explicit instruction to implement everything
+discussed and backtested this session rather than leave it behind dead flags — neither has a single live data point
+yet; watch closely.
+- **Pivot-reversal re-entry** (`backtest._sa134_manage_pivot_reversal`): the moment an SA1/SA4 trade stops out, checks
+  if the exit price sits within `SA134_PIVOT_TOLERANCE_PCT` of a pivot on the side the OPPOSITE direction would need
+  (`_pivot_confluent`); if so, flips and re-enters once at the next candle's open, stopped at the original range
+  candle's own opposite extreme + the usual 1.5% hunt buffer. Evidenced on 30 Oct (SA4 LONG stopped right at S2, fell
+  through S3) and 03 Nov (SA1 SHORT stopped right at S1, ran up through P/R1 — though the actual re-entry on THIS
+  specific trade lost −₹378.80 once run through to the next Tokyo open, since the pop faded overnight — a real,
+  honest miss on the very case it was built from). Composes with pivot-booking (a real bug, fixed same day: the two
+  features were wired as mutually exclusive at first, silently turning pivot-booking off whenever this was also on).
+  Gold-only backtest: 19 reversal trades full period, net +₹908.79, 52.6% win — fragile, close to a coin flip.
+- **Pivot-zone entry confirmation** (`backtest._pivot_zone_confirms`): gates every SA1/SA4 entry — a SHORT's broken
+  level must sit near a RESISTANCE pivot (R1-3/P), a LONG's near a SUPPORT pivot (S1-3/P); the opposite (SHORT near
+  support, LONG near resistance) is rejected outright as a likely liquidity hunt. Deliberately the MIRROR of
+  `_pivot_confluent`'s keys, not an extension of it — a different thesis (trade FROM the structurally-favorable zone,
+  vs. fade INTO the zone a stop-hunt just revealed). **Overfitting warning, not resolved before deployment**: Gold-only,
+  this improved Oct-Nov (−₹1,668.56 → −₹1,452.84, win 42.5%→48.5%) but made the FULL period meaningfully WORSE
+  (−₹27,489.26 → −₹33,277.18, win 38.8%→34.7%) — the classic shape of a rule fit to the window being watched rather
+  than a structural edge. Deployed anyway, Umar's explicit call.
+- **Combined, all 5 symbols, Jan 1 – 10 Nov 2026** (portfolio run, 2 slots, companion-pairs enforced — the actual
+  shape live runs in): 429 trades, net **−₹25,702.14**, win rate 47.3%. By symbol: BTC +₹3,099.59 (56.5%), NatGas
+  +₹1,425.09 (54.7%) — both net positive; Oil −₹3,396.24 (45.3%), Silver −₹12,711.68 (37.0%), Gold −₹14,118.91 (39.7%).
+  By exit reason: `pivot_profit_booking` +₹64,246.51 (93.2% win, 132 trades) vs. `stop_loss` **−₹79,103.45 (0% win,
+  72 trades)** — stop-losses still outweigh pivot-booking's gains almost 1.25:1. Oct-Nov alone: −₹934.18 (47.5% win),
+  close to breakeven but not there. Oil/NatGas data only goes back to ~April 2026 on CoinDCX (71% coverage) — their
+  numbers above exclude Jan-Mar entirely, not a full like-for-like period with BTC/Gold/Silver.
+- Not yet in `main()`'s live override and may be worth adding later if these prove out: nothing else pending from
+  this pair of features.
 
 ### Built, tested, NOT deployed (backtested worse or didn't survive scrutiny — kept for reference, stay off)
 - **`SA134_LIQUIDITY_HUNT_REVERSAL`** — generalizes SA1's single-first-candle sweep-reversal flip to any candle in
@@ -237,9 +272,9 @@ The live bot (`sorb15/main.py`) no longer runs the SA1–SA5 engine described in
 It now runs **SA1 + SA4 + Tokyo continuation**, Umar's explicit redesign, multi-symbol since 28 Oct
 (BTC, Gold, Silver, Oil, NatGas — `BT.SA134_SYMBOLS`), migrated off Railway to the DigitalOcean droplet
 described above, and now split live/real-money vs paper per the section above this one:
-- Sessions (IST): **Tokyo 05:30–07:15–14:00**, then London and New York (`config.py` — shifted +1h on
-  the live/paper processes as of 5 Nov, see above; these are the UNSHIFTED values `config.py` itself
-  still holds). One position per symbol at a time — a later session is skipped entirely for that
+- Sessions (IST): **Tokyo 05:30–07:15–14:00**, **London 14:00–15:45–19:00** (flat, no DST — see above),
+  **New York 19:00–20:45–01:15 in DST / 20:00–21:45–02:15 in standard time**, computed per calendar day
+  (`BT.ny_session_for`, see above) rather than a fixed value. One position per symbol at a time — a later session is skipped entirely for that
   symbol while an earlier one is still open. Two symbols can run concurrently, up to
   `BT.SA134_MAX_SLOTS` (2), now gated by the companion-pairs policy above.
 - Only SA1 and SA4 fire, both requiring a CLEAN breakout (closes beyond the line with ≤10% of the

@@ -73,15 +73,21 @@ def active_symbols():
 SYMBOLS = active_symbols()          # {"BTC": "B-BTC_USDT", "Gold": "B-XAU_USDT", ...}
 MAX_SLOTS = BT.SA134_MAX_SLOTS      # 2
 
-def all_sessions():
-    """Tokyo (from the shared backtest module) plus London / New York (from config)
-    -- one dict, so window()/active_session() see all three the same way. Read
-    fresh on every call, NOT bound once at import: main() overrides C.SESSIONS
-    for the live/paper services (the DST-adapted London/New York times), and
-    that override only exists for the life of that `with` block -- a
-    module-level binding taken at import time would freeze in the stale
-    pre-override values and silently ignore it."""
-    return {"Tokyo": BT.TOKYO_SESSION, **C.SESSIONS}
+def all_sessions(day=None):
+    """Tokyo (from the shared backtest module) plus London / New York (from
+    config) -- one dict, so window()/active_session() see all three the same
+    way. Read fresh on every call, NOT bound once at import: a module-level
+    binding taken at import time would freeze in whatever C.SESSIONS was at
+    import and silently ignore any later override.
+
+    New York's hours are recomputed for `day` (default: today) via
+    BT.ny_session_for -- US daylight saving shifts its real-world open by an
+    hour, see that function's docstring. `day` matters near the Oct/Nov or
+    Mar DST boundary: window() always passes the specific calendar day it is
+    asking about, not just "today", so a session instance keeps the hours
+    that were actually in effect that day."""
+    day = day or now_ist().date()
+    return {"Tokyo": BT.TOKYO_SESSION, **C.SESSIONS, "New York": BT.ny_session_for(day)}
 
 
 # ── time ────────────────────────────────────────────────────────────────────
@@ -106,18 +112,25 @@ def at(day, t, ref=None):
 
 
 def window(name, now=None):
-    """(open, deadline, end) of the session instance containing `now`, or the next."""
+    """(open, deadline, end) of the session instance containing `now`, or the
+    next. Looks up all_sessions(day) fresh for EACH candidate day, not once
+    up front -- New York's hours can differ from one calendar day to the next
+    right around the DST boundary, so the day a window actually falls on
+    decides which hours it gets, not whatever day "now" happens to be."""
     now = now or now_ist()
-    s = all_sessions()[name]
     for day in (now.date() - dt.timedelta(days=1), now.date(), now.date() + dt.timedelta(days=1)):
+        s = all_sessions(day)[name]
         o = at(day, s["open"])
         e = at(day, s["end"], o)
         if o <= now < e:
             return o, at(day, s["deadline"], o), e
     day = now.date()
+    s = all_sessions(day)[name]
     o = at(day, s["open"])
     if o < now:
-        o = at(day + dt.timedelta(days=1), s["open"])
+        day = day + dt.timedelta(days=1)
+        s = all_sessions(day)[name]
+        o = at(day, s["open"])
     return o, at(o.date(), s["deadline"], o), at(o.date(), s["end"], o)
 
 
@@ -326,10 +339,13 @@ def enter(sym, pair, spec, sig, session, rc, sess):
     lag_s = (now_ms() - (trigger["t"] + STEP_MS)) / 1000
     entry_px = sess[-1]["close"]
     # Stop = the FIRST (range) candle's own opposite extreme (L for a LONG, H
-    # for a SHORT) -- not the broken level +/- a buffer, and not recomputed
-    # from wherever entry actually filled (Umar's explicit call, 10 Nov:
-    # anchor to the range candle, no matter how late entry itself lands).
-    sl = L if d == 1 else H
+    # for a SHORT), anchored regardless of how late entry itself lands --
+    # PLUS the SA134_SL_BUFFER_PCT tolerance beyond that extreme, so a brief
+    # liquidity-hunt wick just past the level doesn't close the trade (Umar's
+    # explicit call, 10 Nov: restored the buffer same-day after confirming on
+    # the real chart that 4 Nov and 10 Nov Tokyo were hunted, not genuinely
+    # stopped out, under the unbuffered rule).
+    sl = L * (1 - BT.SA134_SL_BUFFER_PCT) if d == 1 else H * (1 + BT.SA134_SL_BUFFER_PCT)
     label = f"{sym} {session}"
 
     def avoid(why):
@@ -807,22 +823,6 @@ def main():
     against, the liquidity-hunt-watch machinery) stays in place, just unused
     while this stays unset.
 
-    SESSIONS: New York shifted +1h to track NYSE's REAL current (standard-
-    time) open -- 9:30am ET, now 20:00 IST since the US fell back 1 Nov.
-    London corrected 10 Nov (Umar caught a real bug): the original "+1h to
-    everything" blanket DST shift wrongly bumped London to 15:00 -- London
-    runs on its OWN base config.SESSIONS value (14:00-15:45-19:00) instead,
-    which is what LSE's real 8:00am UK-time open (now GMT, UK fell back
-    25 Oct) actually is (not exactly -- 8:00 GMT is precisely 13:30 IST, half
-    an hour earlier than this; flagged once, Umar's explicit call was 14:00).
-    Backtested worse than the old fixed blocks (full period net -15,648 to
-    -26,485 vs -2,294 baseline, depending on variant) -- Umar's explicit call
-    to deploy anyway and watch it live rather than trust the backtest here.
-    Tokyo is untouched: Japan has no DST, so its real open never moves.
-    config.SESSIONS itself stays the old values (so the baseline fingerprint/
-    regression tests keep meaning what they always have) -- this override is
-    what actually reaches the live/paper bots.
-
     SA134_PIVOT_PROFIT_BOOKING turned on 9 Nov, Umar's explicit instruction
     after the full iteration documented in CLAUDE.md: real bug found and
     fixed (SA134_PIVOT_MIN_PROFIT_R -- the exit no longer arms before the
@@ -838,15 +838,41 @@ def main():
     already admitted they were added unilaterally), and paper had just gotten
     stuck halted through a day it shouldn't have been. config.py's raw
     defaults stay 500/4 only so the old engine's baseline fingerprint test
-    keeps meaning what it always has; live/paper actually run with both off."""
+    keeps meaning what it always has; live/paper actually run with both off.
+
+    The flat SESSIONS override that used to live here (pinning New York to a
+    single fixed open) is GONE as of 10 Nov: it was wrong for most of the
+    year by construction -- a 20:00 IST New York open is only real while the
+    US is on standard time (roughly Nov-Mar); the rest of the year NYSE's
+    9:30am ET open lands at 19:00 IST (Umar caught this from a 20 Oct trade
+    that didn't match the real chart -- Oct was still daylight time). New
+    York's hours are now computed per-day from BT.ny_session_for, automatically
+    right on both sides of the DST boundary -- see all_sessions()/window() and
+    backtest.ny_session_for's docstring. London needs no such override:
+    config.py's own SESSIONS default already has it at 14:00, and it's left
+    un-adjusted for UK DST by Umar's explicit, separate call (see CLAUDE.md).
+
+    SA134_PIVOT_ZONE_CONFIRM and SA134_PIVOT_REVERSAL_REENTRY turned on 10
+    Nov, Umar's explicit instruction to deploy everything built and
+    backtested this session rather than leave it sitting behind dead flags.
+    Both were built and iterated today, same day as this turn-on -- neither
+    has a single live data point yet. Full honest picture from the backtest
+    (see CLAUDE.md for the complete breakdown): the combined ruleset, across
+    all 5 symbols, Jan-Nov 2026, is net -Rs25,702 (72 stop-losses at a
+    combined -Rs79,103 still outweigh pivot-booking's +Rs64,247); BTC and
+    NatGas are net positive on their own (+Rs3,100 / +Rs1,425), Gold and
+    Silver are the heaviest drags (-Rs14,119 / -Rs12,712). Zone-confirm
+    specifically improved Oct-Nov in isolation but made the FULL period worse
+    on Gold alone (-Rs27,489 -> -Rs33,277) -- a real overfitting warning that
+    didn't stop this deployment, per Umar's explicit call to watch live
+    rather than keep trusting the backtest. Watch all three new symbols this
+    enables for the first time (Oil, NatGas joined 28 Oct; this is their
+    first exposure to zone-confirm/pivot-reversal specifically) closely."""
     capital = 10042.53 if not C.DRY_RUN else 10000
-    shifted_sessions = {
-        "London":   {"open": dt.time(14, 0), "deadline": dt.time(15, 45), "end": dt.time(19, 0)},
-        "New York": {"open": dt.time(20, 0), "deadline": dt.time(21, 45), "end": dt.time(2, 15)},
-    }
     with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
                     SA134_ENFORCE_COMPANION_PAIRS=True,
-                    SESSIONS=shifted_sessions, SA134_PIVOT_PROFIT_BOOKING=True,
+                    SA134_PIVOT_PROFIT_BOOKING=True,
+                    SA134_PIVOT_ZONE_CONFIRM=True, SA134_PIVOT_REVERSAL_REENTRY=True,
                     DAILY_LOSS_LIMIT_INR=0, MAX_CONSEC_LOSSES=0):
         _main_loop()
 
@@ -876,7 +902,8 @@ def _main_loop():
                 f"capital   : Rs {C.CAPITAL_INR:,.0f}  (margin/slot Rs {C.CAPITAL_INR / MAX_SLOTS:,.0f})\n"
                 f"sessions  : {_session_times_str()}\n"
                 f"agents    : SA1, SA4 (clean breakout {1 - C.CLEAR_TOUCH_TOLERANCE:.0%} outside)\n"
-                f"stop      : the session's own first (range) candle high/low, never moves\n"
+                f"stop      : the session's own first (range) candle high/low "
+                f"+/-{BT.SA134_SL_BUFFER_PCT:.1%} liquidity-hunt buffer, never moves\n"
                 f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R, else close at the next Tokyo open\n"
                 f"a free slot goes to the fastest qualifying breakout, strength breaks a tie\n"
                 f"pairing   : only BTC+Oil, BTC+NatGas, or Oil+NatGas may be open together "
@@ -932,6 +959,8 @@ def _main_loop():
             # ---- scan every free symbol for a qualifying signal this poll ----
             candidates = []
             for sym, pair in SYMBOLS.items():
+                if sym != "BTC" and o.date().weekday() >= 5:
+                    continue   # Gold/Silver/Oil/NatGas track real-world markets, Mon-Fri only; BTC trades every day
                 if sym in trades or sym in (state.get("hunt_watches") or {}):
                     continue
                 key = f"{o.date()}|{name}|{sym}"

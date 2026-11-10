@@ -588,7 +588,7 @@ with C.override(DRY_RUN=False):
     got = M.check_hunt_watches(state_h5, {"BTC": SPEC}, 0)
 check("zero free slots -> no entry even though the pattern confirmed", got, {})
 
-base_sl = rc_ob["low"]   # the stop is the range candle's own opposite extreme now, no buffer
+base_sl = rc_ob["low"] * (1 - 0.015)   # range candle's opposite extreme, +/-1.5% hunt buffer
 wall_px = base_sl * (1 - 0.003)      # a bit further out than the baseline stop, same side
 # a handful of ordinary resting levels inside the search band too, so the wall
 # has something to stand out against (a real book is thin this far from price)
@@ -632,6 +632,41 @@ check("and the override doesn't leak out afterwards",
       M.all_sessions()["London"]["open"], default_london_open)
 check("Tokyo always comes from backtest.TOKYO_SESSION, unaffected by C.SESSIONS",
       M.all_sessions()["Tokyo"], B.TOKYO_SESSION)
+
+print("main.py's own New York DST wiring (all_sessions(day)/window())")
+check("all_sessions(day): 20 Oct (DST) New York opens at 19:00 IST",
+      M.all_sessions(dt.date(2026, 10, 20))["New York"]["open"], dt.time(19, 0))
+check("all_sessions(day): 10 Nov (standard time) New York opens at 20:00 IST",
+      M.all_sessions(dt.date(2026, 11, 10))["New York"]["open"], dt.time(20, 0))
+oct_ny_open, _, _ = M.window("New York", dt.datetime(2026, 10, 20, 12, 0, tzinfo=M.IST))
+nov_ny_open, _, _ = M.window("New York", dt.datetime(2026, 11, 10, 12, 0, tzinfo=M.IST))
+check("window('New York', ...): picks 19:00 on a DST day", oct_ny_open.time(), dt.time(19, 0))
+check("window('New York', ...): picks 20:00 on a standard-time day", nov_ny_open.time(), dt.time(20, 0))
+
+print("Weekend rule — Gold/Silver/Oil/NatGas Mon-Fri only, BTC every day (10 Nov)")
+sat, sun, mon = dt.date(2026, 11, 7), dt.date(2026, 11, 8), dt.date(2026, 11, 9)
+rnd2 = random.Random(3)
+weekend_candles = {}
+for sym in ("BTC", "Gold"):
+    price, cs = 100.0, []
+    t0w = int(dt.datetime(2026, 11, 6, 0, 0, tzinfo=M.IST).timestamp() * 1000)
+    for i in range(96 * 5):
+        o = price
+        c = o * (1 + rnd2.gauss(0, 0.01))
+        h = max(o, c) * 1.02
+        l = min(o, c) * 0.98
+        cs.append(K(o, h, l, c, t0w + i * STEP))
+        price = c
+    weekend_candles[sym] = cs
+wk_trades, wk_signals = B.run_sa134_portfolio(weekend_candles)
+check("no Gold signal is ever logged as anything but AVOID on Sat/Sun",
+      all(s["action"] == "AVOID" for s in wk_signals
+          if s["symbol"] == "Gold" and s["date"] in (sat, sun)), True)
+check("the weekend-skip reason names the rule",
+      any("Weekend" in s.get("reason", "") for s in wk_signals
+          if s["symbol"] == "Gold" and s["date"] in (sat, sun)), True)
+check("BTC is never weekend-blocked, even on Sat/Sun",
+      any("Weekend" in s.get("reason", "") for s in wk_signals if s["symbol"] == "BTC"), False)
 
 print("ACTIVE_SYMBOLS — splitting the 5-symbol roster across two services")
 with C.override(ACTIVE_SYMBOLS=""):
@@ -925,6 +960,33 @@ check(f"future-scramble audit: {n} trades, 0 changed decisions", bad, [])
 a, _ = B.run(candles, MOMENTUM_WINDOW=1)
 b, _ = B.run(candles, MOMENTUM_WINDOW=3)
 check("overrides take effect and restore", C.MOMENTUM_WINDOW, 2)
+
+print("New York DST — seasonal session shift (10 Nov fix)")
+check("2026 DST starts 2nd Sunday of March", B.us_dst_active(dt.date(2026, 3, 8)), True)
+check("the day before DST starts is still standard time",
+      B.us_dst_active(dt.date(2026, 3, 7)), False)
+check("2026 DST ends 1st Sunday of November", B.us_dst_active(dt.date(2026, 11, 1)), False)
+check("the day before DST ends is still daylight time",
+      B.us_dst_active(dt.date(2026, 10, 31)), True)
+check("20 Oct (DST) New York opens at 19:00 IST, matching the real chart",
+      B.ny_session_for(dt.date(2026, 10, 20))["open"], dt.time(19, 0))
+check("10 Nov (standard time) New York opens at 20:00 IST",
+      B.ny_session_for(dt.date(2026, 11, 10))["open"], dt.time(20, 0))
+check("the deadline and end shift by the same hour",
+      (B.ny_session_for(dt.date(2026, 11, 10))["deadline"],
+       B.ny_session_for(dt.date(2026, 11, 10))["end"]),
+      (dt.time(21, 45), dt.time(2, 15)))
+oct_london = [o for name, o, dl, e in B.sa134_session_windows(dt.date(2026, 10, 20)) if name == "London"][0]
+nov_london = [o for name, o, dl, e in B.sa134_session_windows(dt.date(2026, 11, 10)) if name == "London"][0]
+check("London is never DST-adjusted, either side of the boundary",
+      (oct_london.time(), nov_london.time()), (dt.time(14, 0), dt.time(14, 0)))
+oct_ny = [o for name, o, dl, e in B.sa134_session_windows(dt.date(2026, 10, 20)) if name == "New York"][0]
+nov_ny = [o for name, o, dl, e in B.sa134_session_windows(dt.date(2026, 11, 10)) if name == "New York"][0]
+check("sa134_session_windows: 20 Oct New York opens at 19:00 IST", oct_ny.time(), dt.time(19, 0))
+check("sa134_session_windows: 10 Nov New York opens at 20:00 IST", nov_ny.time(), dt.time(20, 0))
+old_ny = [o for name, o, dl, e in B.session_windows(dt.date(2026, 11, 10)) if name == "New York"][0]
+check("the OLD SA1-5 engine's session_windows is untouched by DST (baseline fingerprint)",
+      old_ny.time(), C.SESSIONS["New York"]["open"])
 
 print(f"\n{ok} passed, {fail} failed")
 sys.exit(1 if fail else 0)

@@ -35,7 +35,49 @@ def _ms(d):
     return int(d.timestamp() * 1000)
 
 
+def _nth_sunday(year, month, n):
+    d = dt.date(year, month, 1)
+    first_sunday = d + dt.timedelta(days=(6 - d.weekday()) % 7)
+    return first_sunday + dt.timedelta(weeks=n - 1)
+
+
+def us_dst_active(day):
+    """True if `day` falls within US daylight saving time -- the rule in
+    effect since 2007: starts the 2nd Sunday of March, ends the 1st Sunday of
+    November. The exact 2am-local transition moment is ignored -- at 15-minute
+    candle granularity, treating the whole transition day as already switched
+    is close enough, and no session opens anywhere near 2am ET anyway."""
+    return _nth_sunday(day.year, 3, 2) <= day < _nth_sunday(day.year, 11, 1)
+
+
+def ny_session_for(day):
+    """New York's session hours (IST) for this specific date. C.SESSIONS'
+    own "New York" entry is the DST (summer) baseline -- NYSE's 9:30am ET
+    open lands at 19:00 IST only while the US is on daylight time (2nd Sunday
+    of March to the 1st Sunday of November); outside that window the US is
+    back on standard time (UTC-5, an hour behind EDT), so the same 9:30am ET
+    open lands an hour LATER in IST -- 20:00 (Umar's explicit correction, 10
+    Nov, after 20 Oct's New York breakout didn't match the chart: Oct was
+    still DST, so 19:00 was right that day; by 10 Nov DST had already ended,
+    so 20:00 was right that day -- a single flat shift can't be right for
+    both). Shifts all three times by +1h outside DST; London is left
+    untouched -- Umar's explicit call (an earlier session), no DST
+    adjustment there even though the real LSE open does shift with UK
+    time -- see CLAUDE.md."""
+    s = C.SESSIONS["New York"]
+    if us_dst_active(day):
+        return s
+    shift = dt.timedelta(hours=1)
+    return {k: (dt.datetime.combine(day, v) + shift).time() for k, v in s.items()}
+
+
 def session_windows(day):
+    """The OLD SA1-5 engine's session windows -- deliberately NOT DST-aware:
+    its baseline fingerprint test (synth.signature()) depends on exactly this
+    function's output staying fixed for its synthetic dates. The SA134
+    engine's own sa134_session_windows, below, applies New York's seasonal
+    DST shift on top of this instead of here, so the old engine's behavior
+    (and its fingerprint) never changes."""
     for name, s in C.SESSIONS.items():
         o = _at(day, s["open"])
         yield name, o, _at(day, s["deadline"], o), _at(day, s["end"], o)
@@ -1074,14 +1116,17 @@ def _run_sa5_breakout_flip(candles):
 #     for a target risk the way qty_for() does for SA1-5.
 
 TOKYO_SESSION = {"open": dt.time(5, 30), "deadline": dt.time(7, 15), "end": dt.time(14, 0)}
-# Originally: SL = the broken level +/- this, universally -- deliberately replacing the raw
-# range-candle extreme, reasoning that a tight range candle's raw extreme gets hit on pure
-# noise. Umar overrode that reasoning explicitly (10 Nov): the PRIMARY SA1/SA4 stop is now the
-# raw range-candle extreme again (L for a LONG, H for a SHORT -- see sa134_entry_signal's
-# callers), no buffer, anchored to the FIRST candle regardless of where entry itself lands.
-# This constant now only still applies to the hunt-reentry feature's own re-entry legs
-# (_sa134_manage_hunt, SA134_HUNT_REENTRY) -- off by default, never shown to have an edge.
-# Run this engine with CLEAR_TOUCH_TOLERANCE=0.10 (an override, not a default) for the
+# History: originally SL = the broken level +/- this, universally. On 10 Nov Umar had it
+# changed to the raw range-candle extreme (L for a LONG, H for a SHORT) with NO buffer at all,
+# anchored to the FIRST candle regardless of where entry itself lands. That lasted one trading
+# day: on 4 Nov and 10 Nov Tokyo (checked on the real chart), price only wicked a hair past the
+# raw extreme before reversing -- a liquidity hunt, not a genuine breakdown -- and the unbuffered
+# stop closed both trades for a loss it shouldn't have taken. Restored (10 Nov, later same day):
+# the PRIMARY SA1/SA4 stop is the range-candle extreme again, but with this buffer added BEYOND
+# it (L*(1-PCT) for a LONG, H*(1+PCT) for a SHORT -- see sa134_entry_signal's callers), so a
+# shallow hunt wick doesn't trigger it. Also still used by the hunt-reentry feature's own
+# re-entry legs (_sa134_manage_hunt, SA134_HUNT_REENTRY) -- off by default, never shown to have
+# an edge. Run this engine with CLEAR_TOUCH_TOLERANCE=0.10 (an override, not a default) for the
 # tightened 90%-outside clean-breakout requirement on both SA1 and SA4.
 SA134_SL_BUFFER_PCT = 0.015
 # Staged take-profit: 50% booked at 2R, 25% at 3R, 25% at 4R. Shared with the
@@ -1117,9 +1162,18 @@ def compatible_with_open(open_syms, candidate_sym):
 
 
 def sa134_session_windows(day):
+    """Like session_windows, but New York's hours are recomputed for `day` via
+    ny_session_for -- the SA134 engine (and live) get the seasonally-correct
+    DST shift; the OLD SA1-5 engine (session_windows, used directly) does not,
+    on purpose -- see ny_session_for's and session_windows' own docstrings."""
     o = _at(day, TOKYO_SESSION["open"])
     yield "Tokyo", o, _at(day, TOKYO_SESSION["deadline"], o), _at(day, TOKYO_SESSION["end"], o)
     for name, o, dl, e in session_windows(day):
+        if name == "New York":
+            s = ny_session_for(day)
+            o = _at(day, s["open"])
+            dl = _at(day, s["deadline"], o)
+            e = _at(day, s["end"], o)
         yield name, o, dl, e
 
 
@@ -1421,6 +1475,26 @@ def _pivot_confluent(level, direction, pivots, tol_pct):
     return any(abs(level - pivots[k]) / level <= tol_pct for k in keys)
 
 
+def _pivot_zone_confirms(level, direction, pivots, tol_pct):
+    """Umar's SA1/SA4 entry confirmation (10 Nov) -- the MIRROR image of
+    _pivot_confluent, and a deliberately different thesis from it: that
+    function asks "did the breakout happen AT a pivot" (used by the pivot-
+    reversal re-entry to fade INTO the zone a stop-hunt just revealed); this
+    one asks "is the trade's OWN direction structurally supported by where
+    price already is" -- a SHORT should be launched FROM a resistance zone
+    (R1-3, P: there's room to fall to the next support), a LONG FROM a
+    support zone (S1-3, P: there's room to rise to the next resistance). A
+    SHORT found instead sitting near support, or a LONG near resistance, is
+    rejected outright -- Umar's own words: that's a likely liquidity hunt,
+    with the opposite direction (or a momentum/direction change) most likely
+    to fire next. None `pivots` (no prior day yet) passes -- see
+    daily_pivot_fib's docstring."""
+    if pivots is None:
+        return True
+    keys = ("S1", "S2", "S3", "P") if direction == 1 else ("R1", "R2", "R3", "P")
+    return any(abs(level - pivots[k]) / level <= tol_pct for k in keys)
+
+
 def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms, pivots):
     """Umar's profit-booking redesign (9 Nov), SA134_PIVOT_PROFIT_BOOKING.
 
@@ -1565,6 +1639,73 @@ def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms,
     return results
 
 
+def _sa134_manage_pivot_reversal(candles, by_t, entry_i, d, entry, sl, qty, day_end_ms, H, L,
+                                  pivots, fixed_margin):
+    """Umar's pivot-reversal re-entry (10 Nov), SA134_PIVOT_REVERSAL_REENTRY.
+
+    Runs the original trade through the ordinary staged 2R/3R/4R management
+    (_sa134_manage), unchanged. If -- and only if -- it closes via stop_loss,
+    checks whether the exit price sits within SA134_PIVOT_TOLERANCE_PCT of a
+    pivot on the side the OPPOSITE direction would need (R1-3/P for a new
+    LONG, S1-3/P for a new SHORT -- _pivot_confluent, same helper and
+    tolerance as the entry-side confluence filter and pivot-booking). If so,
+    flips and re-enters ONCE in that opposite direction, at the next candle's
+    open (the usual "trade on the next candle's open" convention). The new
+    stop is the ORIGINAL range candle's own opposite extreme (the same H/L
+    the original trade was anchored to), plus the usual SA134_SL_BUFFER_PCT
+    hunt tolerance -- not a new, invented level. The reversal leg is managed
+    exactly like any other SA134 trade (_sa134_manage again: staged TP,
+    day-end) -- no recursion, at most one reversal per original stop-out.
+
+    Evidence (both real Gold stop-outs, checked candle-by-candle on the real
+    chart): 30 Oct London SA4 LONG stopped out right at the S2 pivot, then
+    fell straight through S3; 03 Nov London SA1 SHORT stopped out right at
+    S1, then ran up through P and R1. Pivots=None (no prior day yet) always
+    passes through with no reversal attempted.
+
+    Composes with SA134_PIVOT_PROFIT_BOOKING when that's also on: the
+    original leg is run through _sa134_manage_pivot_booking instead of plain
+    _sa134_manage, so it can still book profit at a pivot -- a reversal is
+    only even considered once the original leg has genuinely stopped out,
+    whichever management it used.
+
+    Returns a list: [original_result] or [original_result, reversal_result],
+    each dict shaped like _sa134_manage_hunt's chain entries (kind/direction/
+    entry/sl/qty/entry_ms alongside the ordinary _sa134_result fields)."""
+    if C.SA134_PIVOT_PROFIT_BOOKING:
+        orig = _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty,
+                                            day_end_ms, pivots)[0]
+        results = [orig]
+    else:
+        orig = _sa134_manage(candles, entry_i, d, entry, sl, qty, day_end_ms)
+        results = [dict(orig, kind="original", direction=d, entry=entry, sl=sl, qty=qty,
+                        entry_ms=candles[entry_i]["t"])]
+    if orig["exit_reason"] != "stop_loss" or pivots is None:
+        return results
+
+    new_d = -d
+    if not _pivot_confluent(orig["exit"], new_d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
+        return results
+
+    new_entry_i = by_t.get(orig["exit_ms"])
+    if new_entry_i is None or candles[new_entry_i]["t"] >= day_end_ms:
+        return results
+
+    slip = C.SLIPPAGE
+    new_entry = candles[new_entry_i]["open"] * (1 + slip * new_d)
+    new_sl = H * (1 + SA134_SL_BUFFER_PCT) if new_d == -1 else L * (1 - SA134_SL_BUFFER_PCT)
+    if (new_d == 1 and new_entry <= new_sl) or (new_d == -1 and new_entry >= new_sl):
+        return results
+    new_qty = sizing.qty_for_fixed_notional(new_entry, fixed_margin)
+    if new_qty <= 0:
+        return results
+
+    rev = _sa134_manage(candles, new_entry_i, new_d, new_entry, new_sl, new_qty, day_end_ms)
+    results.append(dict(rev, kind="pivot_reversal", direction=new_d, entry=new_entry,
+                        sl=new_sl, qty=new_qty, entry_ms=candles[new_entry_i]["t"]))
+    return results
+
+
 def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivots=None):
     """Called with a GROWING prefix (prefix = sess[:k+1]) and re-evaluated fresh
     at each new candle k -- same causal convention the shared router uses -- so
@@ -1602,10 +1743,19 @@ def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivo
     SA134_PIVOT_CONFLUENCE when that's on: a breakout whose broken H/L isn't
     also sitting on a same-side daily pivot is treated as if it weren't clean
     at all -- the scan just keeps looking, same as an ordinary impure touch.
+    Independently, SA134_PIVOT_ZONE_CONFIRM gates the same returns through
+    _pivot_zone_confirms -- a SHORT whose broken level isn't near a
+    resistance pivot, or a LONG not near a support one, is rejected the same
+    way (Umar's entry-confirmation rule, 10 Nov -- see config.py).
     """
     def passes(d, level):
-        return not C.SA134_PIVOT_CONFLUENCE or _pivot_confluent(
-            level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT)
+        if C.SA134_PIVOT_CONFLUENCE and not _pivot_confluent(
+                level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
+            return False
+        if C.SA134_PIVOT_ZONE_CONFIRM and not _pivot_zone_confirms(
+                level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
+            return False
+        return True
 
     if len(prefix) >= 1:
         d0 = sa.closes_beyond(prefix[0], H, L)
@@ -1705,7 +1855,8 @@ def _run_sa134_continuation(candles):
         day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
         if day_end_ms > t_end_data:
             day_end_ms = t_end_data
-        pivots = daily_pivot_fib(candles, by_t, day) if C.SA134_PIVOT_CONFLUENCE else None
+        pivots = daily_pivot_fib(candles, by_t, day) \
+            if (C.SA134_PIVOT_CONFLUENCE or C.SA134_PIVOT_ZONE_CONFIRM) else None
 
         for name, o, dl, e in sa134_session_windows(day):
             o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
@@ -1768,11 +1919,14 @@ def _run_sa134_continuation(candles):
                 d = sig["direction"]
                 entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
                 # Stop = the FIRST (range) candle's own opposite extreme (L for
-                # a LONG, H for a SHORT) -- not the broken level +/- a buffer,
-                # and not recomputed from wherever entry actually filled (Umar's
-                # explicit call, 10 Nov: anchor to the range candle, no matter
-                # how late the entry candle itself is).
-                sl = L if d == 1 else H
+                # a LONG, H for a SHORT), anchored regardless of where entry
+                # itself fills -- PLUS the SA134_SL_BUFFER_PCT tolerance beyond
+                # that extreme, so a brief liquidity-hunt wick just past the
+                # level doesn't close the trade (Umar's explicit call, 10 Nov:
+                # restored the buffer after confirming on real charts -- 4 Nov
+                # and 10 Nov Tokyo -- that the raw, unbuffered extreme was
+                # getting clipped by exactly this kind of hunt).
+                sl = L * (1 - SA134_SL_BUFFER_PCT) if d == 1 else H * (1 + SA134_SL_BUFFER_PCT)
                 if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
                     skip("Entry is already beyond its own stop", sig=sig)
                     done = True
@@ -1874,7 +2028,8 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
     for day in days:
         day_end_ms = _ms(_at(day + dt.timedelta(days=1), TOKYO_SESSION["open"]))
         pivots = {s: daily_pivot_fib(candles_by_symbol[s], by_t[s], day) for s in syms} \
-            if (C.SA134_PIVOT_CONFLUENCE or C.SA134_PIVOT_PROFIT_BOOKING) else {}
+            if (C.SA134_PIVOT_CONFLUENCE or C.SA134_PIVOT_PROFIT_BOOKING
+                or C.SA134_PIVOT_REVERSAL_REENTRY or C.SA134_PIVOT_ZONE_CONFIRM) else {}
 
         for name, o, dl, e in sa134_session_windows(day):
             o_ms, dl_ms, e_ms = _ms(o), _ms(dl), _ms(e)
@@ -1887,6 +2042,12 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                        "setup": "no setup", "direction": "-", "breakout": False,
                        "rejection": False, "momentum_shift": False, "tp": "staged 2R/3R/4R"}
 
+                if sym != "BTC" and day.weekday() >= 5:
+                    log.update(action="AVOID", reason="Weekend — Gold/Silver/Oil/NatGas track "
+                                                       "real-world markets, Mon-Fri only; only "
+                                                       "BTC trades every day")
+                    signals.append(log)
+                    continue
                 if busy_until.get(sym) is not None and o_ms < busy_until[sym]:
                     log.update(action="AVOID", reason="A position from an earlier session "
                                                        "is still open — continuing it, not "
@@ -1923,9 +2084,11 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                 d = sig["direction"]
                 entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
                 # Stop = the FIRST (range) candle's own opposite extreme (L for
-                # a LONG, H for a SHORT) -- not the broken level +/- a buffer,
-                # and not recomputed from wherever entry actually filled.
-                sl = L if d == 1 else H
+                # a LONG, H for a SHORT), anchored regardless of where entry
+                # itself fills -- PLUS the SA134_SL_BUFFER_PCT tolerance beyond
+                # that extreme, to survive a liquidity-hunt wick (see the
+                # matching comment in _run_sa134_continuation above).
+                sl = L * (1 - SA134_SL_BUFFER_PCT) if d == 1 else H * (1 + SA134_SL_BUFFER_PCT)
                 base = dict(sub_agent=sig["sub_agent"], setup=sig["setup"],
                             direction="LONG" if d == 1 else "SHORT", breakout=sig["breakout"],
                             rejection=sig["rejection"], momentum_shift=sig["momentum_shift"])
@@ -2013,6 +2176,52 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                             equity_after=round(equity),
                             reason=sig["detail"] if is_orig else
                                    f"hunt reentry ({leg['kind']})",
+                            **{k2: v for k2, v in leg.items()
+                               if k2 not in ("exit_ms", "kind", "direction", "entry", "sl",
+                                             "qty", "entry_ms")}))
+                    last_leg = max(chain, key=lambda lg: lg["exit_ms"])
+                    log.update(**base, action="ENTER", reason=sig["detail"],
+                               entry=round(entry, 2), sl=round(sl, 2),
+                               pnl_inr=round(sum(lg["pnl_inr"] for lg in chain), 2),
+                               exit_reason=chain[0]["exit_reason"])
+                    signals.append(log)
+                    busy_until[sym] = last_leg["exit_ms"]
+                    orig_leg = chain[0]
+                    last_exit[sym] = (orig_leg["exit_reason"], orig_leg["direction"], day)
+                    continue
+
+                if C.SA134_PIVOT_REVERSAL_REENTRY:
+                    chain = _sa134_manage_pivot_reversal(
+                        candles_by_symbol[sym], by_t[sym], entry_global_i, d, entry, sl, qty,
+                        day_end_ms, H, L, pivots.get(sym), fixed_margin)
+                    for leg in chain:
+                        equity += leg["pnl_inr"]
+                        leg_risk_pct = abs(leg["entry"] - leg["sl"]) / leg["entry"]
+                        leg_cost_in_R = (2 * C.TAKER_FEE + 2 * C.SLIPPAGE) / leg_risk_pct
+                        is_orig = leg["kind"] == "original"
+                        trades.append(dict(
+                            symbol=sym, date=day, weekday=day.strftime("%a"), session=name,
+                            sub_agent=sig["sub_agent"] if is_orig else "pivot_reversal",
+                            setup=sig["setup"] if is_orig else
+                                  "Pivot-reversal re-entry: opposite direction after the "
+                                  "original stopped out within SA134_PIVOT_TOLERANCE_PCT "
+                                  "of a pivot",
+                            side="LONG" if leg["direction"] == 1 else "SHORT",
+                            range_high=H, range_low=L, range_pct=(H - L) / L,
+                            level=sig["level"] if is_orig else leg["sl"],
+                            breakout=sig["breakout"] if is_orig else False,
+                            rejection=sig["rejection"] if is_orig else True,
+                            momentum_shift=sig["momentum_shift"] if is_orig else True,
+                            trigger_time=dt.datetime.fromtimestamp(c["trigger_ms"] / 1000, IST)
+                                         if is_orig else
+                                         dt.datetime.fromtimestamp(leg["entry_ms"] / 1000, IST),
+                            entry_time=dt.datetime.fromtimestamp(leg["entry_ms"] / 1000, IST),
+                            entry=leg["entry"], sl=leg["sl"], risk_pct=leg_risk_pct,
+                            cost_in_R=leg_cost_in_R,
+                            exit_time=dt.datetime.fromtimestamp(leg["exit_ms"] / 1000, IST),
+                            equity_after=round(equity),
+                            reason=sig["detail"] if is_orig else
+                                   "pivot-reversal re-entry",
                             **{k2: v for k2, v in leg.items()
                                if k2 not in ("exit_ms", "kind", "direction", "entry", "sl",
                                              "qty", "entry_ms")}))
