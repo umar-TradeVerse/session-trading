@@ -313,6 +313,18 @@ SA134_PIVOT_REVERSAL_REENTRY = _b("SA134_PIVOT_REVERSAL_REENTRY", False)
 # backtest.py's _pivot_zone_confirms. Same SA134_PIVOT_TOLERANCE_PCT tolerance.
 # Off by default like every optional rule here -- not yet backtested.
 SA134_PIVOT_ZONE_CONFIRM = _b("SA134_PIVOT_ZONE_CONFIRM", False)
+# Which symbols use the OPPOSITE of the rule above -- entry confirmed only when
+# FAR from every pivot ("in-between zones"), not near one -- when
+# SA134_PIVOT_ZONE_CONFIRM is on. Comma-separated, same convention as
+# ACTIVE_SYMBOLS. Umar's explicit call (11 Nov), backtested per-symbol, Jan-11
+# Nov 2026: Gold and Silver do better entering in-between (+Rs4,928 / +Rs5,321
+# vs -Rs10,843 / -Rs10,420 under the near-a-zone rule); BTC and Oil do
+# markedly worse the same way (-Rs20,783 / -Rs12,041 vs +Rs535 / -Rs767) --
+# opposite symbols want opposite conditions, not a single global rule. Only
+# the paper service ever trades Gold/Silver and only the live service ever
+# trades BTC/Oil/NatGas, so this one shared constant naturally confines the
+# new behavior to paper without any DRY_RUN check.
+SA134_PIVOT_ZONE_BETWEEN_SYMBOLS = os.getenv("SA134_PIVOT_ZONE_BETWEEN_SYMBOLS", "Gold,Silver")
 
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)

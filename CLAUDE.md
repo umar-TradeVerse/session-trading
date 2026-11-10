@@ -123,6 +123,44 @@ yet; watch closely.
 - Not yet in `main()`'s live override and may be worth adding later if these prove out: nothing else pending from
   this pair of features.
 
+### 11 Nov update: a real live-wiring gap found, zone-confirm made per-symbol, paper-only deployment
+**Found while implementing the per-symbol request below**: `SA134_PIVOT_ZONE_CONFIRM` (and separately,
+`SA134_PIVOT_CONFLUENCE`) was turned on in `main()`'s override but the live polling loop's entry scan
+(`sig = BT.sa134_entry_signal(sess, H, L, di)`) never computed or passed `pivots` at all — so on BOTH services,
+this filter has been a silent no-op since 10 Nov, despite the flag reading "on". The backtest engine never had
+this gap (`run_sa134_portfolio` always computed and passed pivots correctly), so every backtest number quoted
+above is still honest and unaffected — only the LIVE/paper execution path was silently not applying the rule.
+Fixed: the scan loop now calls `daily_pivots_live(pair, o.date())` (same live pivot fetch pivot-booking already
+used) whenever `SA134_PIVOT_CONFLUENCE` or `SA134_PIVOT_ZONE_CONFIRM` is on, and passes `pivots=`/`sym=` into
+`sa134_entry_signal`. `SA134_PIVOT_REVERSAL_REENTRY` has the SAME kind of gap (built and tested only in the
+backtest engine, never wired into `main.py`'s `manage()`) — **not fixed yet**, flagged to Umar, separate task.
+
+**Per-symbol pivot-zone rule** (`SA134_PIVOT_ZONE_BETWEEN_SYMBOLS`, default `"Gold,Silver"`): an ad-hoc backtest
+(Umar's idea, drawing two lines on the BTC chart between pivot levels, not on one) showed Gold and Silver do
+BETTER with entries taken in the open space BETWEEN pivot zones (`_pivot_zone_between`, the literal opposite of
+`_pivot_zone_confirms`) while BTC and Oil do markedly WORSE the same way. Since only paper ever trades Gold/Silver
+and only live ever trades BTC/Oil/NatGas, one shared symbol-set constant cleanly confines the new behavior to
+paper, no `DRY_RUN` check needed. `sa134_entry_signal`/`_sa134_session_candidate` now take an optional `sym=`
+and dispatch between `_pivot_zone_confirms` (near a zone, the original rule) and `_pivot_zone_between` (far from
+every zone) per symbol.
+
+**Final mixed-config backtest, all 5 symbols, Jan 1 – 11 Nov 2026** (BTC/Oil/NatGas: near-zone · Gold/Silver:
+in-between — this is what would actually run if BOTH services were on this code): 385 trades, net **+₹471.45**,
+win rate 52.7% — **the first time this portfolio has backtested net positive over the full period.** By symbol:
+BTC +₹4,890.18 (55.9%), Gold +₹1,163.10 (50.0%), NatGas +₹962.16 (50.9%), Oil −₹11.73 (48.9%, essentially flat),
+Silver −₹6,532.26 (52.0%, improved from −₹10,420 but still the worst symbol — slot-competition with the other
+4 symbols changes which Silver trades actually fire, so it doesn't inherit its standalone +₹5,321 result).
+**Caveat, not resolved**: Oct-Nov alone, inside this same run, is net NEGATIVE (−₹3,094.48, 56.6% win) even
+though the full period is positive — BTC (+₹2,756) and Gold (+₹454) carry the period; NatGas (−₹2,626),
+Oil (−₹1,079) and Silver (−₹2,599) are all down in just the recent window. The positive full-period number is
+earned mostly in the earlier months, not recently.
+
+**Deployed PAPER ONLY, 11 Nov, Umar's explicit instruction** — `sorb15.service` (Gold/Silver) restarted on this
+code; `sorb15-live.service` (BTC/Oil/NatGas, real money) deliberately left on the PRIOR commit, specifically
+because the live-wiring fix above means BTC/Oil/NatGas would, for the first time, actually have the near-zone
+filter enforced — a real behavior change for real money, not a no-op continuation of what was "already running".
+Revisit turning live onto this commit as its own, separate decision.
+
 ### Built, tested, NOT deployed (backtested worse or didn't survive scrutiny — kept for reference, stay off)
 - **`SA134_LIQUIDITY_HUNT_REVERSAL`** — generalizes SA1's single-first-candle sweep-reversal flip to any candle in
   the session, gated by a volume filter (`sa.good_volume`). The tight version (pullback must be the very next candle)

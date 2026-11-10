@@ -972,7 +972,9 @@ def _main_loop():
                     continue
                 H, L = rc["high"], rc["low"]
                 di = sa.deadline_index(sess, ms(dl))
-                sig = BT.sa134_entry_signal(sess, H, L, di)
+                pivots = daily_pivots_live(pair, o.date()) if (
+                    C.SA134_PIVOT_CONFLUENCE or C.SA134_PIVOT_ZONE_CONFIRM) else None
+                sig = BT.sa134_entry_signal(sess, H, L, di, pivots=pivots, sym=sym)
                 label = f"{sym} {name}"
 
                 def close_session(msg, silent=True, _key=key):

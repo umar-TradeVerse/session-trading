@@ -744,6 +744,38 @@ with C.override(SA134_PIVOT_CONFLUENCE=True):
     check("feature ON, breakout level confluent with P: SA1 fires",
           s and s["state"], "ready")
 
+print("Pivot-zone entry confirmation (SA134_PIVOT_ZONE_CONFIRM) and its per-symbol opposite")
+_piv3 = {"P": 85200.0, "R1": 90000.0, "R2": 92000.0, "R3": 94000.0,
+         "S1": 78000.0, "S2": 76000.0, "S3": 74000.0}
+H2, L2 = 87000.0, 86600.0          # a level far from every pivot in _piv3
+_cnd2 = K(86950, 87400, 86940, 87360)
+
+check("_pivot_zone_confirms: None pivots always passes", B._pivot_zone_confirms(H2, 1, None, 0.003), True)
+check("_pivot_zone_confirms: LONG far from every support pivot fails", B._pivot_zone_confirms(H2, 1, _piv3, 0.003), False)
+check("_pivot_zone_confirms: SHORT near resistance (R1) passes", B._pivot_zone_confirms(90050.0, -1, _piv3, 0.003), True)
+check("_pivot_zone_confirms: SHORT near support fails (wrong side)", B._pivot_zone_confirms(78050.0, -1, _piv3, 0.003), False)
+
+check("_pivot_zone_between: None pivots always passes", B._pivot_zone_between(H2, 1, None, 0.003), True)
+check("_pivot_zone_between: level far from every pivot passes", B._pivot_zone_between(H2, 1, _piv3, 0.003), True)
+check("_pivot_zone_between: level sitting on P fails", B._pivot_zone_between(85200.0, 1, _piv3, 0.003), False)
+check("_pivot_zone_between: level near a resistance pivot also fails (symmetric, either side)",
+      B._pivot_zone_between(90050.0, -1, _piv3, 0.003), False)
+
+check("_zone_between_symbols: default is Gold,Silver", B._zone_between_symbols(), {"Gold", "Silver"})
+with C.override(SA134_PIVOT_ZONE_BETWEEN_SYMBOLS="BTC"):
+    check("_zone_between_symbols: override is picked up live", B._zone_between_symbols(), {"BTC"})
+
+with C.override(SA134_PIVOT_ZONE_CONFIRM=True):
+    s = B.sa134_entry_signal([_cnd2], H2, L2, DI, pivots=_piv3, sym="BTC")
+    check("zone-confirm ON, sym NOT in the between-set: near-zone rule -- "
+          "LONG far from support does not fire", s, None)
+    s = B.sa134_entry_signal([_cnd2], H2, L2, DI, pivots=_piv3, sym="Gold")
+    check("zone-confirm ON, sym IN the between-set (default Gold/Silver): "
+          "in-between rule -- the SAME LONG fires", s and s["state"], "ready")
+    s = B.sa134_entry_signal([_cnd2], H2, L2, DI, pivots=_piv3, sym=None)
+    check("zone-confirm ON, no symbol passed: falls back to the near-zone rule",
+          s, None)
+
 print("Pivot profit-booking (SA134_PIVOT_PROFIT_BOOKING) — exit-only, OFF by default")
 _PB_STEP = 900000
 _pb_pivots = {"P": 99000.0, "R1": 100697.0, "R2": 101500.0, "R3": 102500.0,

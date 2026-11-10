@@ -1495,6 +1495,30 @@ def _pivot_zone_confirms(level, direction, pivots, tol_pct):
     return any(abs(level - pivots[k]) / level <= tol_pct for k in keys)
 
 
+def _pivot_zone_between(level, direction, pivots, tol_pct):
+    """The opposite of _pivot_zone_confirms: true only when `level` sits
+    FARTHER than tol_pct from EVERY pivot (R1-3, P, S1-3) -- open space
+    between two adjacent zones, not hugging any line, either side.
+    `direction` is unused (the condition is symmetric) but kept so this
+    is a drop-in alternative to _pivot_zone_confirms at the call site.
+    Umar's call (11 Nov), backtested per-symbol: Gold and Silver do better
+    entering in-between (ad-hoc Jan-11 Nov backtest: Gold +Rs4,928, Silver
+    +Rs5,321, vs -Rs10,843/-Rs10,420 under the near-a-zone rule) while BTC
+    and Oil do markedly worse (-Rs20,783 / -Rs12,041 vs +Rs535 / -Rs767) --
+    opposite symbols want opposite conditions. See
+    SA134_PIVOT_ZONE_BETWEEN_SYMBOLS in config.py for which symbols use
+    this instead of _pivot_zone_confirms. None `pivots` (no prior day yet)
+    passes -- see daily_pivot_fib's docstring."""
+    if pivots is None:
+        return True
+    keys = ("R3", "R2", "R1", "P", "S1", "S2", "S3")
+    return all(abs(level - pivots[k]) / level > tol_pct for k in keys)
+
+
+def _zone_between_symbols():
+    return {s.strip() for s in C.SA134_PIVOT_ZONE_BETWEEN_SYMBOLS.split(",") if s.strip()}
+
+
 def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms, pivots):
     """Umar's profit-booking redesign (9 Nov), SA134_PIVOT_PROFIT_BOOKING.
 
@@ -1706,7 +1730,7 @@ def _sa134_manage_pivot_reversal(candles, by_t, entry_i, d, entry, sl, qty, day_
     return results
 
 
-def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivots=None):
+def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivots=None, sym=None):
     """Called with a GROWING prefix (prefix = sess[:k+1]) and re-evaluated fresh
     at each new candle k -- same causal convention the shared router uses -- so
     the flip-scan below can never see a candle that, in real time, closes after
@@ -1744,17 +1768,21 @@ def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivo
     also sitting on a same-side daily pivot is treated as if it weren't clean
     at all -- the scan just keeps looking, same as an ordinary impure touch.
     Independently, SA134_PIVOT_ZONE_CONFIRM gates the same returns through
-    _pivot_zone_confirms -- a SHORT whose broken level isn't near a
-    resistance pivot, or a LONG not near a support one, is rejected the same
-    way (Umar's entry-confirmation rule, 10 Nov -- see config.py).
+    either _pivot_zone_confirms (a SHORT whose broken level isn't near a
+    resistance pivot, or a LONG not near a support one, is rejected) or, for
+    `sym` in SA134_PIVOT_ZONE_BETWEEN_SYMBOLS, its opposite _pivot_zone_between
+    (rejected unless the level is FAR from every pivot instead) -- Umar's
+    entry-confirmation rule, 10 Nov, made per-symbol 11 Nov once Gold/Silver
+    backtested better the other way round (see config.py).
     """
     def passes(d, level):
         if C.SA134_PIVOT_CONFLUENCE and not _pivot_confluent(
                 level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
             return False
-        if C.SA134_PIVOT_ZONE_CONFIRM and not _pivot_zone_confirms(
-                level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
-            return False
+        if C.SA134_PIVOT_ZONE_CONFIRM:
+            check = _pivot_zone_between if sym in _zone_between_symbols() else _pivot_zone_confirms
+            if not check(level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
+                return False
         return True
 
     if len(prefix) >= 1:
@@ -1969,7 +1997,7 @@ def _run_sa134_continuation(candles):
     return trades, signals
 
 
-def _sa134_session_candidate(sess, H, L, dl_ms, candles=None, base_i=None, pivots=None):
+def _sa134_session_candidate(sess, H, L, dl_ms, candles=None, base_i=None, pivots=None, sym=None):
     """The single-symbol entry-detection loop from _run_sa134_continuation, isolated
     so run_sa134_portfolio can run it once per free symbol and THEN allocate slots
     across symbols -- instead of each symbol deciding in isolation whether it alone
@@ -1979,7 +2007,8 @@ def _sa134_session_candidate(sess, H, L, dl_ms, candles=None, base_i=None, pivot
     for k in range(len(sess)):
         prefix = sess[:k + 1]
         kdi = sa.deadline_index(prefix, dl_ms)
-        sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=base_i, pivots=pivots)
+        sig = sa134_entry_signal(prefix, H, L, kdi, candles=candles, base_i=base_i, pivots=pivots,
+                                  sym=sym)
         if sig is None:
             continue
         if sig.get("state") == "pending":
@@ -2069,7 +2098,7 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                 H, L = rc["high"], rc["low"]
                 entry_i, sig, avoid = _sa134_session_candidate(sess, H, L, dl_ms,
                                                                  candles=candles, base_i=i0 + 1,
-                                                                 pivots=pivots.get(sym))
+                                                                 pivots=pivots.get(sym), sym=sym)
 
                 if entry_i is None:
                     if sig is not None:
