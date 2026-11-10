@@ -325,7 +325,11 @@ def enter(sym, pair, spec, sig, session, rc, sess):
     trigger = sess[sig["trigger_i"]]
     lag_s = (now_ms() - (trigger["t"] + STEP_MS)) / 1000
     entry_px = sess[-1]["close"]
-    sl = level0 * (1 - d * BT.SA134_SL_BUFFER_PCT)
+    # Stop = the FIRST (range) candle's own opposite extreme (L for a LONG, H
+    # for a SHORT) -- not the broken level +/- a buffer, and not recomputed
+    # from wherever entry actually filled (Umar's explicit call, 10 Nov:
+    # anchor to the range candle, no matter how late entry itself lands).
+    sl = L if d == 1 else H
     label = f"{sym} {session}"
 
     def avoid(why):
@@ -789,9 +793,19 @@ def main():
     the paper service (DRY_RUN=true, Gold/Silver) keeps the round Rs 10,000
     it's always backtested against.
 
-    ORDERBOOK_FILTER and SA134_ENFORCE_COMPANION_PAIRS are Umar's explicit
-    instruction to go live with -- hardcoded here for the same reason: a
-    missing env var on the droplet must never silently turn either back off.
+    SA134_ENFORCE_COMPANION_PAIRS is Umar's explicit instruction to go live
+    with -- hardcoded here for the same reason: a missing env var on the
+    droplet must never silently turn it back off.
+
+    ORDERBOOK_FILTER removed 10 Nov, Umar's explicit instruction ("remove
+    this, its not helping"). It only ever worked for BTC in practice (the
+    only symbol with a real CoinDCX order book) and the one live data point
+    this project ever got from it (5 Nov) was a false-avoid on a textbook
+    SA4 short that blew straight through the wall it was gated on. No longer
+    forced on here -- reverts to config.ORDERBOOK_FILTER's own default
+    (off). The code (coindcx.orderbook/nearest_wall, main._orderbook_wall_
+    against, the liquidity-hunt-watch machinery) stays in place, just unused
+    while this stays unset.
 
     SESSIONS: New York shifted +1h to track NYSE's REAL current (standard-
     time) open -- 9:30am ET, now 20:00 IST since the US fell back 1 Nov.
@@ -831,7 +845,7 @@ def main():
         "New York": {"open": dt.time(20, 0), "deadline": dt.time(21, 45), "end": dt.time(2, 15)},
     }
     with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
-                    ORDERBOOK_FILTER=True, SA134_ENFORCE_COMPANION_PAIRS=True,
+                    SA134_ENFORCE_COMPANION_PAIRS=True,
                     SESSIONS=shifted_sessions, SA134_PIVOT_PROFIT_BOOKING=True,
                     DAILY_LOSS_LIMIT_INR=0, MAX_CONSEC_LOSSES=0):
         _main_loop()
@@ -852,20 +866,22 @@ def _main_loop():
     missing = C.validate()
     specs = sync_specs()
     mode = "DRY RUN — paper account, no orders" if C.DRY_RUN else "LIVE TRADING"
+    ob_status = ("live BTC order-book stop-widening + liquidity-hunt reversal ON "
+                 "(wall against a breakout -> watch for a sweep + reversal, trade "
+                 "that instead; other 4 symbols have no order book on CoinDCX — "
+                 "no-op there, never backtested)") if C.ORDERBOOK_FILTER else "OFF"
     notify.send(f"🟢 <b>SORB-15 started</b>\n<pre>mode      : {mode}\n"
                 f"symbols   : {', '.join(SYMBOLS)} ({MAX_SLOTS} concurrent slots)\n"
                 f"leverage  : {C.LEVERAGE}x\n"
                 f"capital   : Rs {C.CAPITAL_INR:,.0f}  (margin/slot Rs {C.CAPITAL_INR / MAX_SLOTS:,.0f})\n"
                 f"sessions  : {_session_times_str()}\n"
                 f"agents    : SA1, SA4 (clean breakout {1 - C.CLEAR_TOUCH_TOLERANCE:.0%} outside)\n"
-                f"stop      : broken level +/- {BT.SA134_SL_BUFFER_PCT:.1%}, never moves\n"
+                f"stop      : the session's own first (range) candle high/low, never moves\n"
                 f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R, else close at the next Tokyo open\n"
                 f"a free slot goes to the fastest qualifying breakout, strength breaks a tie\n"
                 f"pairing   : only BTC+Oil, BTC+NatGas, or Oil+NatGas may be open together "
                 f"(Gold/Silver trade solo only)\n"
-                f"order book: live BTC order-book stop-widening + liquidity-hunt reversal ON "
-                f"(wall against a breakout -> watch for a sweep + reversal, trade that instead; "
-                f"other 4 symbols have no order book on CoinDCX — no-op there, never backtested)</pre>")
+                f"order book: {ob_status}</pre>")
     if missing:
         log.warning("missing env vars (ok in dry run): %s", missing)
     state = notify.load()

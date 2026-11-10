@@ -1074,10 +1074,15 @@ def _run_sa5_breakout_flip(candles):
 #     for a target risk the way qty_for() does for SA1-5.
 
 TOKYO_SESSION = {"open": dt.time(5, 30), "deadline": dt.time(7, 15), "end": dt.time(14, 0)}
-# SL = the broken level +/- this, universally (replaces the raw range-candle extreme --
-# a tight range candle's raw extreme gets hit on pure noise, so every stop gets this buffer,
-# not just narrow ones). Run this engine with CLEAR_TOUCH_TOLERANCE=0.10 (an override, not a
-# default) for the tightened 90%-outside clean-breakout requirement on both SA1 and SA4.
+# Originally: SL = the broken level +/- this, universally -- deliberately replacing the raw
+# range-candle extreme, reasoning that a tight range candle's raw extreme gets hit on pure
+# noise. Umar overrode that reasoning explicitly (10 Nov): the PRIMARY SA1/SA4 stop is now the
+# raw range-candle extreme again (L for a LONG, H for a SHORT -- see sa134_entry_signal's
+# callers), no buffer, anchored to the FIRST candle regardless of where entry itself lands.
+# This constant now only still applies to the hunt-reentry feature's own re-entry legs
+# (_sa134_manage_hunt, SA134_HUNT_REENTRY) -- off by default, never shown to have an edge.
+# Run this engine with CLEAR_TOUCH_TOLERANCE=0.10 (an override, not a default) for the
+# tightened 90%-outside clean-breakout requirement on both SA1 and SA4.
 SA134_SL_BUFFER_PCT = 0.015
 # Staged take-profit: 50% booked at 2R, 25% at 3R, 25% at 4R. Shared with the
 # live engine (sorb15/main.py) so both size and exit the same legs the same way.
@@ -1762,8 +1767,12 @@ def _run_sa134_continuation(candles):
                     break
                 d = sig["direction"]
                 entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
-                level0 = H if d == 1 else L
-                sl = level0 * (1 - d * SA134_SL_BUFFER_PCT)
+                # Stop = the FIRST (range) candle's own opposite extreme (L for
+                # a LONG, H for a SHORT) -- not the broken level +/- a buffer,
+                # and not recomputed from wherever entry actually filled (Umar's
+                # explicit call, 10 Nov: anchor to the range candle, no matter
+                # how late the entry candle itself is).
+                sl = L if d == 1 else H
                 if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
                     skip("Entry is already beyond its own stop", sig=sig)
                     done = True
@@ -1913,7 +1922,10 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
 
                 d = sig["direction"]
                 entry = sess[entry_i]["open"] * (1 + C.SLIPPAGE * d)
-                sl = sig["level"] * (1 - d * SA134_SL_BUFFER_PCT)
+                # Stop = the FIRST (range) candle's own opposite extreme (L for
+                # a LONG, H for a SHORT) -- not the broken level +/- a buffer,
+                # and not recomputed from wherever entry actually filled.
+                sl = L if d == 1 else H
                 base = dict(sub_agent=sig["sub_agent"], setup=sig["setup"],
                             direction="LONG" if d == 1 else "SHORT", breakout=sig["breakout"],
                             rejection=sig["rejection"], momentum_shift=sig["momentum_shift"])

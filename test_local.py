@@ -588,7 +588,7 @@ with C.override(DRY_RUN=False):
     got = M.check_hunt_watches(state_h5, {"BTC": SPEC}, 0)
 check("zero free slots -> no entry even though the pattern confirmed", got, {})
 
-base_sl = 100000.0 * (1 - 1 * B.SA134_SL_BUFFER_PCT)
+base_sl = rc_ob["low"]   # the stop is the range candle's own opposite extreme now, no buffer
 wall_px = base_sl * (1 - 0.003)      # a bit further out than the baseline stop, same side
 # a handful of ordinary resting levels inside the search band too, so the wall
 # has something to stand out against (a real book is thin this far from price)
