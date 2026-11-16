@@ -325,6 +325,11 @@ SA134_PIVOT_ZONE_CONFIRM = _b("SA134_PIVOT_ZONE_CONFIRM", False)
 # trades BTC/Oil/NatGas, so this one shared constant naturally confines the
 # new behavior to paper without any DRY_RUN check.
 SA134_PIVOT_ZONE_BETWEEN_SYMBOLS = os.getenv("SA134_PIVOT_ZONE_BETWEEN_SYMBOLS", "Gold,Silver")
+# A third option for the symbols above don't use: broader than the original near-a-zone rule
+# but not as loose as "far from everything" -- confirmed unless the level sits near the
+# specific WRONG-side pivot zone (support for a SHORT, resistance for a LONG), accepting both
+# the near-correct-zone case AND the in-between case. Comma-separated, same convention.
+SA134_PIVOT_ZONE_RELAXED_SYMBOLS = os.getenv("SA134_PIVOT_ZONE_RELAXED_SYMBOLS", "")
 
 # ── runtime ─────────────────────────────────────────────────────────────────
 POLL_SECONDS = _i("POLL_SECONDS", 20)

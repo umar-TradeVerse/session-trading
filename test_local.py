@@ -761,9 +761,29 @@ check("_pivot_zone_between: level sitting on P fails", B._pivot_zone_between(852
 check("_pivot_zone_between: level near a resistance pivot also fails (symmetric, either side)",
       B._pivot_zone_between(90050.0, -1, _piv3, 0.003), False)
 
+check("_pivot_zone_not_opposite: None pivots always passes", B._pivot_zone_not_opposite(H2, 1, None, 0.003), True)
+check("_pivot_zone_not_opposite: LONG far from everything still passes (the in-between case)",
+      B._pivot_zone_not_opposite(H2, 1, _piv3, 0.003), True)
+check("_pivot_zone_not_opposite: LONG near support (the correct zone) passes",
+      B._pivot_zone_not_opposite(78050.0, 1, _piv3, 0.003), True)
+check("_pivot_zone_not_opposite: LONG near resistance (the wrong zone) is rejected",
+      B._pivot_zone_not_opposite(90050.0, 1, _piv3, 0.003), False)
+check("_pivot_zone_not_opposite: SHORT near resistance (correct) passes",
+      B._pivot_zone_not_opposite(90050.0, -1, _piv3, 0.003), True)
+check("_pivot_zone_not_opposite: SHORT near support (the wrong zone) is rejected",
+      B._pivot_zone_not_opposite(78050.0, -1, _piv3, 0.003), False)
+check("_pivot_zone_not_opposite: near P is never 'wrong' for either direction",
+      (B._pivot_zone_not_opposite(85200.0, 1, _piv3, 0.003),
+       B._pivot_zone_not_opposite(85200.0, -1, _piv3, 0.003)), (True, True))
+
 check("_zone_between_symbols: default is Gold,Silver", B._zone_between_symbols(), {"Gold", "Silver"})
 with C.override(SA134_PIVOT_ZONE_BETWEEN_SYMBOLS="BTC"):
     check("_zone_between_symbols: override is picked up live", B._zone_between_symbols(), {"BTC"})
+check("_zone_relaxed_symbols: default is empty", B._zone_relaxed_symbols(), set())
+with C.override(SA134_PIVOT_ZONE_CONFIRM=True, SA134_PIVOT_ZONE_RELAXED_SYMBOLS="BTC"):
+    s = B.sa134_entry_signal([_cnd2], H2, L2, DI, pivots=_piv3, sym="BTC")
+    check("zone-confirm ON, sym in the relaxed set: the in-between LONG now fires too",
+          s and s["state"], "ready")
 
 with C.override(SA134_PIVOT_ZONE_CONFIRM=True):
     s = B.sa134_entry_signal([_cnd2], H2, L2, DI, pivots=_piv3, sym="BTC")

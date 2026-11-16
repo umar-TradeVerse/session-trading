@@ -1515,8 +1515,30 @@ def _pivot_zone_between(level, direction, pivots, tol_pct):
     return all(abs(level - pivots[k]) / level > tol_pct for k in keys)
 
 
+def _pivot_zone_not_opposite(level, direction, pivots, tol_pct):
+    """A third, broader option: confirmed unless `level` sits near the
+    specific WRONG-side pivot zone for this direction (support for a SHORT,
+    resistance for a LONG) -- i.e. accepts both _pivot_zone_confirms' case
+    (near the correct zone) AND _pivot_zone_between's case (out in open
+    space), rejecting only the one case _pivot_zone_confirms was built to
+    catch: a SHORT launched from support, or a LONG from resistance. P is
+    never "wrong" for either direction (matching _pivot_zone_confirms, where
+    it's accepted on both sides), so only the opposite R1-3/S1-3 triplet is
+    checked. Umar's call (11 Nov): test this for BTC/Oil/NatGas against the
+    strict near-zone rule and deploy whichever backtests better. None
+    `pivots` (no prior day yet) passes -- see daily_pivot_fib's docstring."""
+    if pivots is None:
+        return True
+    wrong_keys = ("R1", "R2", "R3") if direction == 1 else ("S1", "S2", "S3")
+    return not any(abs(level - pivots[k]) / level <= tol_pct for k in wrong_keys)
+
+
 def _zone_between_symbols():
     return {s.strip() for s in C.SA134_PIVOT_ZONE_BETWEEN_SYMBOLS.split(",") if s.strip()}
+
+
+def _zone_relaxed_symbols():
+    return {s.strip() for s in C.SA134_PIVOT_ZONE_RELAXED_SYMBOLS.split(",") if s.strip()}
 
 
 def _sa134_manage_pivot_booking(candles, entry_i, d, entry, sl, qty, day_end_ms, pivots):
@@ -1780,7 +1802,12 @@ def sa134_entry_signal(prefix, H, L, deadline_i, candles=None, base_i=None, pivo
                 level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
             return False
         if C.SA134_PIVOT_ZONE_CONFIRM:
-            check = _pivot_zone_between if sym in _zone_between_symbols() else _pivot_zone_confirms
+            if sym in _zone_between_symbols():
+                check = _pivot_zone_between
+            elif sym in _zone_relaxed_symbols():
+                check = _pivot_zone_not_opposite
+            else:
+                check = _pivot_zone_confirms
             if not check(level, d, pivots, C.SA134_PIVOT_TOLERANCE_PCT):
                 return False
         return True
