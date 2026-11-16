@@ -806,12 +806,20 @@ def main():
     CAPITAL_INR is tied to DRY_RUN itself, not to a separate env var, for the
     same drift-proofing reason: the real-money service (DRY_RUN=false) uses
     Rs 10,042.53 -- the actual usable futures-wallet balance Umar confirmed --
-    the paper service (DRY_RUN=true, Gold/Silver) keeps the round Rs 10,000
-    it's always backtested against.
+    the paper service (DRY_RUN=true, Gold only as of 16 Nov) keeps the round
+    Rs 10,000 it's always backtested against.
 
-    SA134_ENFORCE_COMPANION_PAIRS is Umar's explicit instruction to go live
-    with -- hardcoded here for the same reason: a missing env var on the
-    droplet must never silently turn it back off.
+    SA134_ENFORCE_COMPANION_PAIRS forced OFF 16 Nov, Umar's explicit instruction,
+    when Silver moved onto the live service (BTC/Oil/NatGas/Silver) and Gold
+    moved to paper alone: no pairing restriction at all now, any symbol may take
+    either free slot -- "if first two condition matches let that get executed,
+    if 3rd also matched ignore." Briefly tried adding Silver to the existing
+    pairs set instead (SA134_COMPANION_PAIRS in backtest.py); backtested worse
+    for the portfolio than dropping the restriction entirely, which also
+    backtested as the best of everything tried for Silver specifically
+    (Jan-16 Nov: net +Rs9,331.93 live, 53.5% win -- see CLAUDE.md for the full
+    breakdown). Still hardcoded here, same drift-proofing reason as always: a
+    missing env var on the droplet must never silently turn this back on.
 
     ORDERBOOK_FILTER removed 10 Nov, Umar's explicit instruction ("remove
     this, its not helping"). It only ever worked for BTC in practice (the
@@ -870,7 +878,7 @@ def main():
     first exposure to zone-confirm/pivot-reversal specifically) closely."""
     capital = 10042.53 if not C.DRY_RUN else 10000
     with C.override(CLEAR_TOUCH_TOLERANCE=0.10, CAPITAL_INR=capital,
-                    SA134_ENFORCE_COMPANION_PAIRS=True,
+                    SA134_ENFORCE_COMPANION_PAIRS=False,
                     SA134_PIVOT_PROFIT_BOOKING=True,
                     SA134_PIVOT_ZONE_CONFIRM=True, SA134_PIVOT_REVERSAL_REENTRY=True,
                     DAILY_LOSS_LIMIT_INR=0, MAX_CONSEC_LOSSES=0):
@@ -906,8 +914,8 @@ def _main_loop():
                 f"+/-{BT.SA134_SL_BUFFER_PCT:.1%} liquidity-hunt buffer, never moves\n"
                 f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R, else close at the next Tokyo open\n"
                 f"a free slot goes to the fastest qualifying breakout, strength breaks a tie\n"
-                f"pairing   : only BTC+Oil, BTC+NatGas, or Oil+NatGas may be open together "
-                f"(Gold/Silver trade solo only)\n"
+                f"pairing   : none -- any symbol may take either free slot "
+                f"(SA134_ENFORCE_COMPANION_PAIRS off)\n"
                 f"order book: {ob_status}</pre>")
     if missing:
         log.warning("missing env vars (ok in dry run): %s", missing)

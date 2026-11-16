@@ -1146,7 +1146,12 @@ SA134_MAX_SLOTS = 2
 # each can still trade SOLO (the first/only open position), but never as the
 # SECOND position alongside anything -- while one is open, the other slot sits
 # unusable until it closes. Checked with compatible_with_open() below, used by
-# both run_sa134_portfolio and main.py's live slot allocation.
+# both run_sa134_portfolio and main.py's live slot allocation. (16 Nov: briefly
+# tried adding Silver to this set when Silver moved onto the live service --
+# backtested WORSE for the portfolio as a whole, and Umar's actual ask turned out
+# to be simpler than pairing anyway -- see SA134_ENFORCE_COMPANION_PAIRS=False in
+# main()'s override instead: no pairing restriction at all, just first-2-qualify
+# wins a slot, same as this flag being off entirely.)
 SA134_COMPANION_PAIRS = {frozenset({"BTC", "Oil"}), frozenset({"BTC", "NatGas"}),
                          frozenset({"Oil", "NatGas"})}
 

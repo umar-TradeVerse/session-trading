@@ -32,14 +32,23 @@ and trades the reversal. Live-only, never backtested.
 Two independent systemd services on a DigitalOcean droplet (`tradeverse-bots`, 206.189.138.66, IP whitelisted on
 CoinDCX), both running the identical `sorb15/main.py` / `sorb15/backtest.py` engine described in the next section —
 split only by which symbols each is allowed to touch and by `DRY_RUN`:
-- **`sorb15-live.service`** — **REAL MONEY**. `DRY_RUN=false`. Symbols: **BTC, Oil, NatGas** only
-  (`ACTIVE_SYMBOLS=BTC,Oil,NatGas` in `.env.live`). Capital **₹10,042.53** — the actual usable futures-wallet balance
-  Umar confirmed, not a round number (tied to `DRY_RUN` itself in `main()`, so it can never drift via a stale env var).
-  State/heartbeat: `/tmp/sorb15_live_state.json`, `/tmp/sorb15_live_heartbeat`. Own watchdog:
-  `sorb15-live-watchdog.timer` → `sorb15-live-watchdog.service` → `/usr/local/bin/sorb15-live-watchdog.sh` (same
-  20-minute-stale-heartbeat restart logic as the paper watchdog, independent of it).
-- **`sorb15.service`** — paper only, unchanged `DRY_RUN=true`. Symbols: **Gold, Silver** only
-  (`ACTIVE_SYMBOLS=Gold,Silver` in `.env`). Capital ₹10,000 (the round number it's always backtested against).
+- **`sorb15-live.service`** — **REAL MONEY**. `DRY_RUN=false`. Symbols: **BTC, Oil, NatGas, Silver** (Silver added
+  16 Nov, Umar's explicit instruction — `ACTIVE_SYMBOLS=BTC,Oil,NatGas,Silver` in `.env.live`). Capital **₹10,042.53**
+  — the actual usable futures-wallet balance Umar confirmed, not a round number (tied to `DRY_RUN` itself in
+  `main()`, so it can never drift via a stale env var). State/heartbeat: `/tmp/sorb15_live_state.json`,
+  `/tmp/sorb15_live_heartbeat`. Own watchdog: `sorb15-live-watchdog.timer` → `sorb15-live-watchdog.service` →
+  `/usr/local/bin/sorb15-live-watchdog.sh` (same 20-minute-stale-heartbeat restart logic as the paper watchdog,
+  independent of it).
+- **`sorb15.service`** — paper only, unchanged `DRY_RUN=true`. Symbols: **Gold** only (Silver moved to live 16 Nov
+  — `ACTIVE_SYMBOLS=Gold` in `.env`). Capital ₹10,000 (the round number it's always backtested against).
+- **`SA134_ENFORCE_COMPANION_PAIRS` forced OFF 16 Nov**, replacing the old BTC+Oil/BTC+NatGas/Oil+NatGas-only
+  pairing rule: no restriction at all now, any symbol may take either free slot, first-2-qualifying-signals win
+  (Umar's own words: "if first two condition matches let that get executed if 3rd also matched ignore"). Tried
+  adding Silver to the existing pairs set first — backtested worse for the portfolio (net +₹471 → −₹756, Jan-16
+  Nov) even though it helped Silver itself; dropping the pairing restriction entirely backtested as the best of
+  everything tried, for both Silver specifically and the live portfolio as a whole: **BTC/Oil/NatGas/Silver net
+  +₹9,331.93, 53.5% win, Jan 1 – 16 Nov 2026** (Silver alone: +₹10,241.27, 54.1% win — far better than either
+  solo-only [−₹6,532.26] or paired [−₹1,861.02]). Gold alone on paper over the same period: +₹4,206.25, 49.5% win.
 - `main.active_symbols()` reads `C.ACTIVE_SYMBOLS` (comma-separated) to split `BT.SA134_SYMBOLS` between the two
   processes — empty/unset means every symbol (the pre-split single-service default).
 - **Verified the real order path once**, deliberately, per the long-standing open-decision-4 below: `verify_orders.py`
