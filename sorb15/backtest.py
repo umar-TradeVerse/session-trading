@@ -1128,7 +1128,26 @@ TOKYO_SESSION = {"open": dt.time(5, 30), "deadline": dt.time(7, 15), "end": dt.t
 # re-entry legs (_sa134_manage_hunt, SA134_HUNT_REENTRY) -- off by default, never shown to have
 # an edge. Run this engine with CLEAR_TOUCH_TOLERANCE=0.10 (an override, not a default) for the
 # tightened 90%-outside clean-breakout requirement on both SA1 and SA4.
-SA134_SL_BUFFER_PCT = 0.015
+#
+# 18 Nov: tightened 1.5% -> 0.5% after Umar asked for a smaller buffer on the back of the
+# 16 Nov live trades ("SL was kept way too high"). Unlike every entry-filter idea tried this
+# week, this one SURVIVES a split-sample test, which is why it was adopted (4 live symbols,
+# Jan-Nov, P-exclusion fix in place):
+#            1.5%                     0.5%
+#   Jan-Jun  +Rs13,306  PF 1.20       +Rs11,041  PF 1.17
+#   Jul-Nov  -Rs 5,338  PF 0.90       +Rs 5,902  PF 1.15
+#   FULL     +Rs 7,968  PF 1.07       +Rs16,943  PF 1.16   MDD -12,294 -> -9,383
+# The 1.5% setting is the one that falls apart out-of-sample (1.20 -> 0.90); 0.5% holds
+# (1.17 -> 1.15). Mechanism: total stop damage barely moves (-Rs86.5k -> -Rs88.1k) but it
+# arrives as 120 small stop-outs instead of 68 large ones (avg -Rs1,272 -> -Rs734), and
+# because every target is a multiple of R, a smaller R puts 2R/3R/4R within reach far more
+# often. The 4/10 Nov Tokyo liquidity hunts that justified the buffer originally are still
+# covered -- Oct-Nov is the strongest window of all under 0.5% (+Rs6,002, PF 1.63).
+# KNOWN EXCEPTION: NatGas degrades badly (+Rs3,559 PF 1.36 -> -Rs1,098 PF 0.93, win rate
+# 54.1% -> 38.8%) -- plausibly 0.5% sits inside its ordinary volatility. Deliberately NOT
+# special-cased here: a per-symbol buffer needs its own split-sample validation first, and
+# this file has enough per-symbol carve-outs already.
+SA134_SL_BUFFER_PCT = 0.005
 # Staged take-profit: 50% booked at 2R, 25% at 3R, 25% at 4R. Shared with the
 # live engine (sorb15/main.py) so both size and exit the same legs the same way.
 SA134_TP_R = (2, 3, 4)

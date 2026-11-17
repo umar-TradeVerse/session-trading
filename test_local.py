@@ -86,6 +86,23 @@ check("direction SHORT", r["direction"], -1)
 check("a breakout that overlaps the range is not SA4's",
       sa.SA4_breakout_momentum_check([K(85000, 85100, 84300, 84700)], H_, L_, DI), None)
 
+# 18 Nov: a breakout that has been fully given back must not still enter. Umar's
+# 16-17 Nov review found a BTC SHORT entered at 21:30 on a breakout from ~45 minutes
+# earlier that price had long since climbed back above.
+stale_doji = K(84700, 84900, 84650, 84710)    # drifts back UP, high is above the broken low
+back_in = K(84710, 84880, 84700, 84850)       # closes back INSIDE the range (above L_)
+sv = sa.SA4_breakout_momentum_check([K(85100, 85150, 84790, 84810), brk, stale_doji, back_in],
+                                    H_, L_, DI)
+check("reversal candle then a close back inside the broken level -> VETO", sv["state"], "veto")
+check("and it says why", "no longer valid" in sv["detail"], True)
+# the ordinary "momentum held" path must still work: reversal candle, unconfirmed,
+# but price is still OUTSIDE the range -- that breakout is alive and should enter
+hold = K(84460, 84520, 84300, 84380)
+rh = sa.SA4_breakout_momentum_check([K(85100, 85150, 84790, 84810), brk, doji, hold],
+                                    H_, L_, DI)
+check("reversal unconfirmed but still outside the level -> READY", rh["state"], "ready")
+check("and that is the momentum-held case", "momentum held" in rh["detail"], True)
+
 print("SA3 — continuation of an open SA2 trade only")
 openl = {"sub_agent": "SA2", "direction": -1, "level": 85200}
 s = sa.SA3_ny_continuation([K(84980, 85045, 84940, 84990), K(84990, 85055, 84900, 84920)],
@@ -603,7 +620,9 @@ with C.override(DRY_RUN=False):
     got = M.check_hunt_watches(state_h5, {"BTC": SPEC}, 0)
 check("zero free slots -> no entry even though the pattern confirmed", got, {})
 
-base_sl = rc_ob["low"] * (1 - 0.015)   # range candle's opposite extreme, +/-1.5% hunt buffer
+# range candle's opposite extreme, plus the hunt buffer -- read from the constant
+# rather than hardcoded, so retuning the buffer doesn't break these order-book tests
+base_sl = rc_ob["low"] * (1 - B.SA134_SL_BUFFER_PCT)
 wall_px = base_sl * (1 - 0.003)      # a bit further out than the baseline stop, same side
 # a handful of ordinary resting levels inside the search band too, so the wall
 # has something to stand out against (a real book is thin this far from price)

@@ -258,7 +258,17 @@ def SA4_breakout_momentum_check(sess, H, L, deadline_i):
 def _momentum_check(sess, d, i, base):
     """The momentum window after a signal candle at index i, direction d.
     pending until the window has closed; veto if a reversal candle is followed by a
-    close past it; otherwise ready. Shared by SA4 and the optional SA1/SA2 veto."""
+    close past it; otherwise ready. Shared by SA4 and the optional SA1/SA2 veto.
+
+    18 Nov: a reversal candle whose follow-up has drifted back INSIDE the broken
+    range now vetoes too, not just one that closes past the reversal candle itself.
+    Umar's 16-17 Nov review: a BTC entry fired at 21:30 on a breakout that had
+    happened ~45 minutes earlier and had long since been given back -- the old
+    rule only asked "did price close past the reversal candle", never "is the
+    breakout still valid at all", so a stale, fully-retraced breakout still
+    entered at the original direction. Backtested effect is tiny (+Rs425 over
+    Jan-Nov, ONE trade different; BTC/Oil/NatGas byte-identical) -- this is a
+    correctness fix for a real case seen live, not a profitability change."""
     for j in range(i + 1, i + 1 + C.MOMENTUM_WINDOW):
         if j >= len(sess):
             return {**base, "state": "pending", "rejection": False,
@@ -274,11 +284,16 @@ def _momentum_check(sess, d, i, base):
         nxt = sess[j + 1]
         flipped = ((d == -1 and nxt["close"] > cj["high"]) or
                    (d == 1 and nxt["close"] < cj["low"]))
-        if flipped:
+        # The breakout is stale if price has closed back inside the level it broke.
+        level = base.get("level")
+        back_inside = level is not None and (
+            (d == -1 and nxt["close"] > level) or (d == 1 and nxt["close"] < level))
+        if flipped or back_inside:
+            why = "momentum flipped " + ("UP" if d == -1 else "DOWN") if flipped \
+                else "price closed back inside the broken level — breakout no longer valid"
             return {**base, "state": "veto", "veto": True, "rejection": True,
                     "momentum_shift": True, "trigger_i": j + 1,
-                    "detail": "doji/reversal then a close past it — momentum flipped "
-                              + ("UP" if d == -1 else "DOWN")}
+                    "detail": "doji/reversal then " + why}
         return {**base, "state": "ready", "rejection": True, "momentum_shift": False,
                 "trigger_i": j + 1,
                 "detail": "reversal candle formed but the next candle did not confirm — "
