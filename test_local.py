@@ -431,6 +431,12 @@ def live_enter(market=None, position=None, stop=None):
     ex.open_position = position or (lambda *a, **k: None)
     ex.set_stop = stop or (lambda pid, px: {"ok": 1})
     ex.exit_position = lambda pid: closed.append(pid) or {"ok": 1}
+    # enter() places real resting TP orders as of 18 Nov -- these MUST be stubbed
+    # or this test reaches out to the live exchange and tries to place them for
+    # real (it only looked harmless here because the test keys are invalid).
+    ex.limit_order = lambda side, q, price, pair=None: {"id": "TP"}
+    ex.order_id_of = lambda r: r.get("id") if isinstance(r, dict) else None
+    ex.cancel = lambda oid: {"ok": 1}
     now = M.now_ms()
     sess = [K(100000, 100100, 99950, 100020, now - STEP - 5000)]     # trigger closed 5s ago
     rc = {"high": 100000.0, "low": 99000.0}
@@ -654,6 +660,88 @@ ex.candles = real_candles
 for k, v in real.items():
     setattr(ex, k, v)
 notify.send, M.time.sleep = real_send, real_sleep
+
+print("Exchange-side TP orders — real resting limit orders (18 Nov, Umar's call)")
+# These are NOT reduce-only (CoinDCX has no such flag), so an orphan that fills
+# after the position closed would OPEN a fresh position the wrong way. The
+# cancel-on-every-exit and no-double-close paths below are the load-bearing ones.
+_rl, _rc, _roid, _rop, _roo, _rmo = (ex.limit_order, ex.cancel, ex.order_id_of,
+                                     ex.open_position, ex.open_orders, ex.market_order)
+notify.send = lambda text, silent=False: None
+
+placed, cancelled, market_calls = [], [], []
+ex.limit_order = lambda side, q, price, pair=None: (
+    placed.append((side, q, price)) or {"id": f"o{len(placed)}"})
+ex.order_id_of = lambda r: r.get("id") if isinstance(r, dict) else None
+ex.cancel = lambda oid: cancelled.append(oid)
+ex.market_order = lambda side, q, pair=None, **k: market_calls.append((side, round(q, 8)))
+
+with C.override(DRY_RUN=False):
+    ids = M.place_tp_orders("B-BTC_USDT", 1, [102000.0, 103000.0, 104000.0], [0.005, 0.002, 0.003])
+check("a LONG places three SELL limit orders", [p[0] for p in placed], ["sell"] * 3)
+check("at the 2R/3R/4R levels", [p[2] for p in placed], [102000.0, 103000.0, 104000.0])
+check("with the staged leg quantities", [p[1] for p in placed], [0.005, 0.002, 0.003])
+check("and their ids are kept so they can be cancelled", ids, ["o1", "o2", "o3"])
+
+placed.clear()
+with C.override(DRY_RUN=False):
+    M.place_tp_orders("B-BTC_USDT", -1, [98000.0], [0.01])
+check("a SHORT places BUY limit orders", placed[0][0], "buy")
+
+placed.clear()
+with C.override(DRY_RUN=True):
+    ids = M.place_tp_orders("B-BTC_USDT", 1, [102000.0], [0.01])
+check("DRY_RUN places no real orders", (placed, ids), ([], [None]))
+
+# the load-bearing one: a STOP-OUT ends the trade with place_order=False, and
+# must still clear the resting TPs or they outlive the position
+cancelled.clear()
+tr = mk_trade()
+tr["tp_order_ids"] = ["a1", "a2", "a3"]
+with C.override(DRY_RUN=False):
+    M.end_trade(tr, 98500.0, "stop_loss", {"day_pnl": 0.0, "consec_losses": 0, "halted": False})
+check("a stop-out still cancels every resting TP order", sorted(cancelled), ["a1", "a2", "a3"])
+
+# no double-close: the resting order already filled this leg
+cancelled.clear(); market_calls.clear()
+tr = mk_trade(qty=0.01)
+leg0 = tr["leg_qtys"][0]
+tr["tp_order_ids"] = ["x1", None, None]
+ex.open_position = lambda pair=None: {"qty": round(0.01 - leg0, 8), "id": 1}
+with C.override(DRY_RUN=False):
+    q, px = M.settle_tp_leg(tr, 0, leg0, 102000.0, 1, "B-BTC_USDT", 0.0)
+check("TP already filled on the exchange -> no second close", market_calls, [])
+check("priced at the limit level, not slipped", px, 102000.0)
+check("the full leg is still booked", q, leg0)
+check("that leg's order id is cleared", tr["tp_order_ids"][0], None)
+
+# the resting order did NOT fill -> this must finish the job
+cancelled.clear(); market_calls.clear()
+tr = mk_trade(qty=0.01)
+tr["tp_order_ids"] = ["y1", None, None]
+ex.open_position = lambda pair=None: {"qty": 0.01, "id": 1}
+with C.override(DRY_RUN=False):
+    q, px = M.settle_tp_leg(tr, 0, leg0, 102000.0, 1, "B-BTC_USDT", 0.0)
+check("TP did not fill -> market-close the shortfall", market_calls, [("sell", leg0)])
+
+# startup sweep for orders a dead run left behind
+cancelled.clear()
+ex.open_position = lambda pair=None: None
+ex.open_orders = lambda pair=None: [{"id": "z1"}, {"id": "z2"}]
+with C.override(DRY_RUN=False):
+    M.reconcile_orphan_orders({"BTC": "B-BTC_USDT"})
+check("startup sweep cancels orders with no position behind them",
+      sorted(cancelled), ["z1", "z2"])
+
+cancelled.clear()
+ex.open_position = lambda pair=None: {"qty": 0.01, "id": 1}
+with C.override(DRY_RUN=False):
+    M.reconcile_orphan_orders({"BTC": "B-BTC_USDT"})
+check("but never touches orders while a position is open", cancelled, [])
+
+(ex.limit_order, ex.cancel, ex.order_id_of, ex.open_position, ex.open_orders,
+ ex.market_order) = _rl, _rc, _roid, _rop, _roo, _rmo
+notify.send = real_send
 
 print("all_sessions() — must read C.SESSIONS live, not freeze it at import")
 default_london_open = M.all_sessions()["London"]["open"]

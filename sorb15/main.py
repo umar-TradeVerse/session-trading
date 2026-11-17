@@ -267,6 +267,123 @@ def place_stop(position_id, price):
             raise RuntimeError("the exchange does not show a stop on the position")
 
 
+def place_tp_orders(pair, d, tp_levels, leg_qtys):
+    """Resting limit orders at 2R/3R/4R, so the targets survive this process
+    dying (Umar's call, 18 Nov -- before this, only the stop lived on the
+    exchange and a dead bot meant no profit target at all).
+
+    DANGER, and the reason every exit path must call cancel_tp_orders(): these
+    are NOT reduce-only. CoinDCX's futures payload has no such flag -- see
+    coindcx.market_order's docstring -- so a leftover TP order that fills after
+    the position is already closed OPENS A FRESH POSITION the other way, with
+    no stop on it. The one hole that cannot be closed from here is the bot
+    dying AFTER a stop-out but BEFORE it cancels: nothing is running to clean
+    up. reconcile_orphan_orders() sweeps that up on the next startup.
+
+    Never fatal: the stop is what protects the trade, so a TP that will not
+    place is reported and the trade continues."""
+    if C.DRY_RUN:
+        return [None] * len(tp_levels)
+    side = "sell" if d == 1 else "buy"
+    ids, failed = [], []
+    for k, (lvl, q) in enumerate(zip(tp_levels, leg_qtys)):
+        if q <= 0:
+            ids.append(None)
+            continue
+        try:
+            ids.append(ex.order_id_of(ex.limit_order(side, q, lvl, pair=pair)))
+        except Exception as err:
+            log.warning("TP%d order at %.2f failed: %s", k + 1, lvl, err)
+            ids.append(None)
+            failed.append(f"TP{k + 1} @ {lvl:,.2f}")
+    if failed:
+        notify.send("⚠️ <b>TP order(s) not placed</b> — the stop is on, the trade is "
+                    f"protected, but these targets are poll-only:\n<pre>{', '.join(failed)}</pre>")
+    return ids
+
+
+def cancel_tp_orders(trade):
+    """Cancel whatever TP orders are still resting. Safe to call repeatedly and
+    on every exit path -- an already-filled or already-cancelled id just errors
+    and is ignored."""
+    for oid in (trade.get("tp_order_ids") or []):
+        if not oid:
+            continue
+        try:
+            ex.cancel(oid)
+        except Exception as err:
+            log.warning("could not cancel TP order %s: %s", oid, err)
+    trade["tp_order_ids"] = []
+
+
+def settle_tp_leg(trade, k, q, level_px, d, pair, slip):
+    """One target was reached. The resting limit order may ALREADY have filled
+    it, so closing it again here would double-close (and can flip the position).
+
+    Cancel that leg's order first, then ask the exchange what is actually still
+    open, and only market-close the shortfall.
+
+    Returns (qty_closed, fill_price). qty_closed is the leg's FULL quantity once
+    the leg is resolved -- whether the resting order did it, this market order
+    did it, or a mix -- and less than that only if the market order also failed.
+    A mixed fill is priced at the slipped price for the whole leg: part of it
+    really filled at the limit, so this understates the leg slightly, which is
+    the safe direction to be wrong in."""
+    oid = (trade.get("tp_order_ids") or [None] * 3)[k]
+    if oid:
+        try:
+            ex.cancel(oid)
+        except Exception as err:
+            log.info("TP%d order %s could not be cancelled (likely already filled): %s",
+                     k + 1, oid, err)
+        trade["tp_order_ids"][k] = None
+
+    expected_remaining = round(trade["open_qty"] - q, 8)
+    try:
+        live = ex.open_position(pair=pair)
+    except Exception as err:
+        log.warning("could not read the position while settling TP%d: %s", k + 1, err)
+        live = None
+    if live is None:
+        return q, level_px                      # nothing left open: the order filled it
+    tol = max(C.QTY_STEP, 1e-8) / 2
+    shortfall = round(live["qty"] - expected_remaining, 8)
+    if shortfall <= tol:
+        return q, level_px                      # the resting order already did it
+    try:
+        ex.market_order("sell" if d == 1 else "buy", shortfall, pair=pair)
+    except Exception as err:
+        notify.send(f"🚨 <b>TP{k + 1} CLOSE FAILED</b> {trade['symbol']} "
+                    f"{trade['session']}\n<pre>{err}\nCHECK THE POSITION NOW</pre>")
+        return max(round(q - shortfall, 8), 0.0), level_px   # only what already filled
+    return q, level_px * (1 - slip * d)
+
+
+def reconcile_orphan_orders(symbols):
+    """Startup sweep: cancel resting orders on any pair with no open position.
+    These are TP orders left behind when the bot died between a close and its
+    own cleanup -- exactly the case place_tp_orders cannot handle while down.
+    Left alone, one of them filling would open an unprotected position."""
+    if C.DRY_RUN:
+        return
+    for sym, pair in symbols.items():
+        try:
+            if ex.open_position(pair=pair) is not None:
+                continue
+            stale = ex.open_orders(pair=pair)
+            if not stale:
+                continue
+            for o in stale:
+                try:
+                    ex.cancel(o.get("id"))
+                except Exception as err:
+                    log.warning("orphan cancel failed for %s: %s", sym, err)
+            notify.send(f"🧹 Cancelled {len(stale)} leftover order(s) on {sym} "
+                        f"— no position was open against them.")
+        except Exception as err:
+            log.warning("orphan sweep failed for %s: %s", sym, err)
+
+
 # ── live-only order-book overlay ─────────────────────────────────────────────
 # Cannot be backtested (see config.ORDERBOOK_FILTER) -- read that before touching
 # this. Both functions fail OPEN: an API hiccup here must never block a trade or
@@ -410,6 +527,7 @@ def enter(sym, pair, spec, sig, session, rc, sess):
             leg_qtys.append(q)
             remaining = round(remaining - q, 8)
         leg_qtys.append(round(remaining, 8))
+        tp_order_ids = place_tp_orders(pair, d, tp_levels, leg_qtys)
 
     notional_inr = qty * entry_px * C.USDINR
     risk_inr = notional_inr * risk_px / entry_px
@@ -423,6 +541,7 @@ def enter(sym, pair, spec, sig, session, rc, sess):
              "entry_bar": entry_bar, "opened_at": int(time.time()),
              "client_id": cid, "range_high": H, "range_low": L,
              "tp_levels": tp_levels, "leg_qtys": leg_qtys, "tp_hit": [False, False, False],
+             "tp_order_ids": tp_order_ids,
              "day_end_ms": ms(day_end_for(now_ist())), "pivots": pivots}
     notify.send(notify.signal_block(sig, label, H, L, round(entry_px, 2), round(sl, 2), "ENTER",
                                     sig.get("detail", ""),
@@ -518,6 +637,7 @@ def enter_hunt_reversal(sym, pair, spec, sig, session, H, L, entry_px, sl):
             leg_qtys.append(q)
             remaining = round(remaining - q, 8)
         leg_qtys.append(round(remaining, 8))
+        tp_order_ids = place_tp_orders(pair, d, tp_levels, leg_qtys)
 
     notional_inr = qty * entry_px * C.USDINR
     risk_inr = notional_inr * risk_px / entry_px
@@ -530,6 +650,7 @@ def enter_hunt_reversal(sym, pair, spec, sig, session, H, L, entry_px, sl):
              "entry_bar": entry_bar, "opened_at": int(time.time()),
              "client_id": cid, "range_high": H, "range_low": L,
              "tp_levels": tp_levels, "leg_qtys": leg_qtys, "tp_hit": [False, False, False],
+             "tp_order_ids": tp_order_ids,
              "day_end_ms": ms(day_end_for(now_ist()))}
     notify.send(notify.signal_block(sig, label, H, L, round(entry_px, 2), round(sl, 2), "ENTER",
                                     sig.get("detail", ""),
@@ -704,6 +825,11 @@ def finish(trade, exit_px, pnl, reason, state, day_delta=None):
 def end_trade(trade, exit_px, reason, state, place_order=False):
     """Close whatever quantity is still open (0 once every leg has already been
     booked) and report the trade's full realised P&L."""
+    # Always first, on EVERY exit path including a stop-out: a TP order left
+    # resting after the position is gone is not reduce-only, so filling it would
+    # open a fresh position the other way. See place_tp_orders.
+    if not C.DRY_RUN:
+        cancel_tp_orders(trade)
     qty = trade["open_qty"]
     final_leg = 0.0
     if qty > 1e-9:
@@ -778,7 +904,12 @@ def manage(trade, state):
             q = trade["leg_qtys"][k]
             px = trade["tp_levels"][k] * (1 - slip * d)
             if not C.DRY_RUN:
-                ex.market_order("sell" if d == 1 else "buy", q, pair=pair)
+                # A resting limit order may already have filled this level. Let
+                # settle_tp_leg cancel it and reconcile against the real position
+                # size -- closing it again here would double-close the leg.
+                q, px = settle_tp_leg(trade, k, q, trade["tp_levels"][k], d, pair, slip)
+                if q <= 1e-9:
+                    continue
             hours = (since[-1]["t"] - trade["entry_bar"]) / 3_600_000
             pnl = leg_pnl(trade, px, q, hours)
             trade["open_qty"] = round(trade["open_qty"] - q, 8)
@@ -926,13 +1057,17 @@ def _main_loop():
                 f"agents    : SA1, SA4 (clean breakout {1 - C.CLEAR_TOUCH_TOLERANCE:.0%} outside)\n"
                 f"stop      : the session's own first (range) candle high/low "
                 f"+/-{BT.SA134_SL_BUFFER_PCT:.1%} liquidity-hunt buffer, never moves\n"
-                f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R, else close at the next Tokyo open\n"
+                f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R as REAL resting limit orders "
+                f"on the exchange, else close at the next Tokyo open\n"
                 f"a free slot goes to the fastest qualifying breakout, strength breaks a tie\n"
                 f"pairing   : none -- any symbol may take either free slot "
                 f"(SA134_ENFORCE_COMPANION_PAIRS off)\n"
                 f"order book: {ob_status}</pre>")
     if missing:
         log.warning("missing env vars (ok in dry run): %s", missing)
+    # Before anything else: sweep up TP orders a previous run may have left
+    # resting with no position behind them -- see reconcile_orphan_orders.
+    reconcile_orphan_orders({s: BT.SA134_SYMBOLS[s] for s in SYMBOLS})
     state = notify.load()
 
     while True:
