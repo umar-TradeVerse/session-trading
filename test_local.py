@@ -199,7 +199,7 @@ sent = []
 cs1 = [K(100000, 103100, 99950, 103050, T0)]                     # through +2R: target 1 fires
 t, st = run_manage(mk_trade(), [cs1], NOW, sent)
 check("target 1 (2R) books the first leg", t["tp_hit"][0], True)
-check("the stop itself never moves off entry's 1.5%-buffered level", t["sl"], 98500.0)
+check("the stop itself never moves off the level it was set at", t["sl"], 98500.0)
 check("the booked leg's size remains open", round(t["open_qty"], 4),
       round(0.01 - mk_trade()["leg_qtys"][0], 4))
 
@@ -660,6 +660,29 @@ ex.candles = real_candles
 for k, v in real.items():
     setattr(ex, k, v)
 notify.send, M.time.sleep = real_send, real_sleep
+
+print("Per-symbol stop buffer — NatGas stays at 1.5% while the rest moved to 0.5%")
+check("the global buffer is 0.5%", B.SA134_SL_BUFFER_PCT, 0.005)
+check("NatGas is carved out at 1.5%", B.sl_buffer_for("NatGas"), 0.015)
+for _s in ("BTC", "Silver", "Oil", "Gold"):
+    check(f"{_s} uses the global 0.5%", B.sl_buffer_for(_s), 0.005)
+check("an unknown symbol falls back to the global", B.sl_buffer_for("NOPE"), 0.005)
+# the live bot must read the carve-out, not the bare global -- a NatGas SHORT's
+# stop sits 1.5% above the range high, not 0.5%
+_ng_sl = 100.0 * (1 + B.sl_buffer_for("NatGas"))
+check("a NatGas stop uses 1.5%, not the global", round(_ng_sl, 4), 101.5)
+check("a BTC stop still uses 0.5%", round(100.0 * (1 + B.sl_buffer_for("BTC")), 4), 100.5)
+
+print("Startup banner — must never claim something this process isn't doing")
+check("the banner names each buffer in force, not one number",
+      ("1.5%" in M._stop_buffer_str() and "NatGas" in M._stop_buffer_str()), True)
+with C.override(DRY_RUN=True):
+    check("DRY_RUN does NOT claim real resting exchange orders",
+          "REAL resting" in M._tp_venue_str(), False)
+    check("and says what it actually does instead",
+          "polled in-process" in M._tp_venue_str(), True)
+with C.override(DRY_RUN=False):
+    check("live DOES claim them", "REAL resting" in M._tp_venue_str(), True)
 
 print("Exchange-side TP orders — real resting limit orders (18 Nov, Umar's call)")
 # These are NOT reduce-only (CoinDCX has no such flag), so an orphan that fills

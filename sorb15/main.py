@@ -462,7 +462,11 @@ def enter(sym, pair, spec, sig, session, rc, sess):
     # explicit call, 10 Nov: restored the buffer same-day after confirming on
     # the real chart that 4 Nov and 10 Nov Tokyo were hunted, not genuinely
     # stopped out, under the unbuffered rule).
-    sl = L * (1 - BT.SA134_SL_BUFFER_PCT) if d == 1 else H * (1 + BT.SA134_SL_BUFFER_PCT)
+    # sl_buffer_for(sym), not the bare global: NatGas is deliberately held at the
+    # old 1.5% while the rest run 0.5% (see SA134_SL_BUFFER_BY_SYMBOL). Reading
+    # the global here would silently ignore that carve-out on the live bot.
+    _buf = BT.sl_buffer_for(sym)
+    sl = L * (1 - _buf) if d == 1 else H * (1 + _buf)
     label = f"{sym} {session}"
 
     def avoid(why):
@@ -709,7 +713,7 @@ def check_hunt_watches(state, specs, free_slots):
         new_d = -d0
         entry_px = confirm_c["close"] * (1 + C.SLIPPAGE * new_d)
         new_level = sweep_c["low"] if new_d == 1 else sweep_c["high"]
-        sl = new_level * (1 - new_d * BT.SA134_SL_BUFFER_PCT)
+        sl = new_level * (1 - new_d * BT.sl_buffer_for(sym))
         sig = {"sub_agent": "HUNT", "setup": "Liquidity-hunt reversal off a real order-book wall",
                "direction": new_d, "level": wall_px, "breakout": True, "rejection": True,
                "momentum_shift": True,
@@ -1030,6 +1034,28 @@ def main():
         _main_loop()
 
 
+def _stop_buffer_str():
+    """The buffer(s) actually in force for the symbols THIS process trades, so
+    the banner can't claim a single number when a symbol is carved out (NatGas
+    runs 1.5% while the rest run 0.5% -- see SA134_SL_BUFFER_BY_SYMBOL)."""
+    by_buf = {}
+    for s in SYMBOLS:
+        by_buf.setdefault(BT.sl_buffer_for(s), []).append(s)
+    if len(by_buf) == 1:
+        return f"{next(iter(by_buf)):.1%}"
+    return ", ".join(f"{buf:.1%} ({'/'.join(syms)})"
+                     for buf, syms in sorted(by_buf.items()))
+
+
+def _tp_venue_str():
+    """DRY_RUN places no orders at all, so the banner must not claim resting
+    exchange orders there -- same principle as _session_times_str below: the
+    banner never states something this process isn't really doing."""
+    if C.DRY_RUN:
+        return " (polled in-process — DRY_RUN places no real orders)"
+    return " as REAL resting limit orders on the exchange"
+
+
 def _session_times_str():
     """Reads the ACTUAL session windows in effect (all_sessions(), which honors
     main()'s SESSIONS override) instead of a hardcoded string, so the startup
@@ -1056,9 +1082,9 @@ def _main_loop():
                 f"sessions  : {_session_times_str()}\n"
                 f"agents    : SA1, SA4 (clean breakout {1 - C.CLEAR_TOUCH_TOLERANCE:.0%} outside)\n"
                 f"stop      : the session's own first (range) candle high/low "
-                f"+/-{BT.SA134_SL_BUFFER_PCT:.1%} liquidity-hunt buffer, never moves\n"
-                f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R as REAL resting limit orders "
-                f"on the exchange, else close at the next Tokyo open\n"
+                f"+/-{_stop_buffer_str()} liquidity-hunt buffer, never moves\n"
+                f"targets   : 50% @ 2R, 25% @ 3R, 25% @ 4R{_tp_venue_str()}, "
+                f"else close at the next Tokyo open\n"
                 f"a free slot goes to the fastest qualifying breakout, strength breaks a tie\n"
                 f"pairing   : none -- any symbol may take either free slot "
                 f"(SA134_ENFORCE_COMPANION_PAIRS off)\n"

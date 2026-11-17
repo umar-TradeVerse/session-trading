@@ -1148,6 +1148,31 @@ TOKYO_SESSION = {"open": dt.time(5, 30), "deadline": dt.time(7, 15), "end": dt.t
 # special-cased here: a per-symbol buffer needs its own split-sample validation first, and
 # this file has enough per-symbol carve-outs already.
 SA134_SL_BUFFER_PCT = 0.005
+# Per-symbol override of the buffer above. Empty = every symbol uses the same
+# one. Populated only where a symbol has been shown, on its OWN split-sample,
+# to need something different -- not wherever the full-window number happens to
+# look nicer, which is how overfitting gets in.
+#
+# NatGas (18 Nov): kept at the OLD 1.5% when everything else moved to 0.5%.
+# This is not a parameter fitted to NatGas -- 1.5% was the global default until
+# that day, so the question was only "should NatGas have come along", and its
+# own split says no:
+#              0.5%                      1.5%
+#   Jan-Jun    -Rs2,033  PF 0.67         +Rs1,095  PF 1.27
+#   Jul-Nov    +Rs  934  PF 1.10         +Rs2,464  PF 1.41
+#   FULL       -Rs1,098  PF 0.93         +Rs3,559  PF 1.36
+# Positive in BOTH halves at 1.5%, negative-then-marginal at 0.5%. Portfolio
+# with the carve-out: +Rs22,460 PF 1.23 (vs +Rs17,369 PF 1.17), better in both
+# halves, with BTC and Oil byte-identical -- so the gain is NatGas itself, not
+# slot reshuffling. Only 37 NatGas trades back this, which is thin; the reason
+# to trust it anyway is the direction is consistent across both halves and no
+# search over buffer values was involved. Plausible mechanism: NatGas is the
+# most volatile of the four, so 0.5% sits inside its ordinary candle noise.
+SA134_SL_BUFFER_BY_SYMBOL = {"NatGas": 0.015}
+
+
+def sl_buffer_for(sym):
+    return SA134_SL_BUFFER_BY_SYMBOL.get(sym, SA134_SL_BUFFER_PCT)
 # Staged take-profit: 50% booked at 2R, 25% at 3R, 25% at 4R. Shared with the
 # live engine (sorb15/main.py) so both size and exit the same legs the same way.
 SA134_TP_R = (2, 3, 4)
@@ -2012,6 +2037,7 @@ def _run_sa134_continuation(candles):
                 # restored the buffer after confirming on real charts -- 4 Nov
                 # and 10 Nov Tokyo -- that the raw, unbuffered extreme was
                 # getting clipped by exactly this kind of hunt).
+                # single-symbol runner: no `sym` here, so the global buffer applies
                 sl = L * (1 - SA134_SL_BUFFER_PCT) if d == 1 else H * (1 + SA134_SL_BUFFER_PCT)
                 if (d == 1 and entry <= sl) or (d == -1 and entry >= sl):
                     skip("Entry is already beyond its own stop", sig=sig)
@@ -2175,7 +2201,8 @@ def _run_sa134_portfolio(candles_by_symbol, max_slots):
                 # itself fills -- PLUS the SA134_SL_BUFFER_PCT tolerance beyond
                 # that extreme, to survive a liquidity-hunt wick (see the
                 # matching comment in _run_sa134_continuation above).
-                sl = L * (1 - SA134_SL_BUFFER_PCT) if d == 1 else H * (1 + SA134_SL_BUFFER_PCT)
+                _buf = sl_buffer_for(sym)
+                sl = L * (1 - _buf) if d == 1 else H * (1 + _buf)
                 base = dict(sub_agent=sig["sub_agent"], setup=sig["setup"],
                             direction="LONG" if d == 1 else "SHORT", breakout=sig["breakout"],
                             rejection=sig["rejection"], momentum_shift=sig["momentum_shift"])

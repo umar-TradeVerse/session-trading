@@ -1,6 +1,8 @@
 # SORB-15 — session opening-range breakout bot (multi-symbol, CoinDCX futures)
 
-Owner: Umar. These are **his rules** for a session high/low ("liquidity") breakout strategy. Status as of **5 Nov 2026**.
+Owner: Umar. These are **his rules** for a session high/low ("liquidity") breakout strategy. Status as of **18 Nov 2026**
+— the newest section is "17–18 Nov: two real bugs from a live-trade review…"; read it before changing the stop
+buffer, the pivot-zone entry rule, or anything touching take-profit orders.
 His original ask was simple: *backtest the rules I gave on real data.* That line used to also say "don't drag him into
 credentials or deployment unless he asks" — he has since asked, repeatedly and explicitly: DigitalOcean droplet setup,
 new API keys pasted in chat, going live with real money on 3 symbols. Credentials and deployment are now squarely in
@@ -169,6 +171,79 @@ code; `sorb15-live.service` (BTC/Oil/NatGas, real money) deliberately left on th
 because the live-wiring fix above means BTC/Oil/NatGas would, for the first time, actually have the near-zone
 filter enforced — a real behavior change for real money, not a no-op continuation of what was "already running".
 Revisit turning live onto this commit as its own, separate decision.
+
+### 17–18 Nov: two real bugs from a live-trade review, a validated stop change, TP orders on the exchange
+Umar reviewed three real-money trades (2 BTC, 1 Silver) from 16 Nov and raised five things. Everything below is
+DEPLOYED to both services (commits `159b86b`, `982dc1c`, `d43f997`, plus the NatGas carve-out), droplet confirmed
+healthy, no open positions carried through the restart.
+
+**Bug 1 — P was confirming entries on both sides** (`_pivot_zone_confirms`). The 16 Nov BTC New York SHORT was
+confirmed on a level 0.0985% from P while every real R-level sat >2.5% away. P counted as "resistance" for a SHORT
+*and* "support" for a LONG, so it could never reject anything. Now only R1-3 confirms a SHORT, only S1-3 a LONG.
+Costs **+₹9,331.93 → +₹7,760.30** (4 live symbols, Jan–Nov) — that drop is the bug's own contribution being
+removed, confirmed reproducible across two runs. Umar flagged the profit drop as worrying; it is the honest price
+of the fix, not a regression.
+
+**Bug 2 — losses were overstated on manual closes** (`main.manage`). When a position vanished from the exchange the
+code assumed it filled at `trade["sl"]`. Umar's manual close worth ~₹500 was reported as ₹1,500+. Now reads
+`ex.last_price()`. Still an approximation — CoinDCX's trade-history API is not wired up — and the message says so.
+Not backtestable: live reporting path only, changes no trade decision.
+
+**Stop buffer 1.5% → 0.5%, except NatGas.** Umar: "SL was kept way too high." Adopted because — unlike every
+entry-filter idea tried this week — it **survives a split-sample test**:
+
+| | Jan–Jun | Jul–Nov | FULL |
+|---|---|---|---|
+| 1.5% | +₹13,306 PF 1.20 | **−₹5,338 PF 0.90** | +₹7,968 PF 1.07 |
+| 0.5% | +₹11,041 PF 1.17 | **+₹5,902 PF 1.15** | +₹16,943 PF 1.16 |
+
+The *old* 1.5% setting is the one that falls apart out-of-sample. Mechanism: total stop damage barely moves
+(−₹86.5k → −₹88.1k) but arrives as 120 small stop-outs instead of 68 large ones (avg −₹1,272 → −₹734), and a
+smaller R puts 2R/3R/4R in reach far more often. The 4/10 Nov Tokyo liquidity hunts that justified the buffer
+originally are still covered — Oct–Nov is the strongest window of all under 0.5% (+₹6,002, PF 1.63).
+**NatGas is carved out at 1.5%** (`SA134_SL_BUFFER_BY_SYMBOL`) on its own split: 0.5% gives −₹2,033 (PF 0.67) in
+H1 and +₹934 in H2, while 1.5% is positive in BOTH halves (PF 1.27 / 1.41). This is not a parameter fitted to
+NatGas — 1.5% was the global default until 18 Nov, so the only question was whether NatGas should have come along,
+and it shouldn't. Portfolio with the carve-out: **+₹22,460, PF 1.23**, better in both halves, with BTC and Oil
+byte-identical (so the gain is NatGas, not slot reshuffling). Only 37 NatGas trades back it — thin, but consistent
+in direction across both halves with no search over values. `main.py` must call `BT.sl_buffer_for(sym)`, never the
+bare global, or the carve-out is silently ignored live.
+
+**Stale breakouts no longer enter** (`subagents._momentum_check`). A BTC entry fired at 21:30 on a breakout from
+~45 minutes earlier that price had long since given back: the old rule only asked "did price close past the
+reversal candle", never "is the breakout still valid". Now a follow-up closing back INSIDE the broken level vetoes
+too. Worth +₹426 over Jan–Nov (one trade) — a correctness fix for a real live case, not a profitability change.
+
+**Take-profits are now REAL resting limit orders** (Umar's Issue #4, "TP WAS NOT SET"). Previously only the stop
+lived on the exchange; targets were polled in-process, so a dead bot meant no profit target at all.
+⚠ **These are NOT reduce-only** — CoinDCX's futures payload has no such flag (see `coindcx.market_order`). A TP
+left resting after the position closed would, if it fills, **open a fresh position the other way with no stop on
+it.** Umar chose this over a single exchange-side TP with the risk spelled out. Mitigations: `end_trade()` cancels
+on EVERY exit path including stop-outs (which end with `place_order=False` and would otherwise leave all three
+alive); `settle_tp_leg()` prevents `manage()` double-closing a leg by cancelling, re-reading the real position size
+and market-closing only the shortfall; `reconcile_orphan_orders()` sweeps at startup. The one hole nothing can
+cover: the bot dying between a stop-out and its own cleanup. **None of this is reachable by backtest, and DRY_RUN
+places no orders — so the paper service never exercises it. The first live trade is the first real test.**
+
+**Four filter ideas tested and REJECTED — do not re-run these without reading this first.** Each looked good on
+the full sample or one window and collapsed under split-sample or concentration checks:
+- **Pivot-reversal strategy** (enter on a candle reclaiming P/S1-3 or rejecting P/R1-3, replacing the breakout
+  trigger entirely): −₹21,327 over Oct–Nov, all 5 symbols negative. Stop-outs (47, avg −₹751) swamped the
+  profit-bookings (28, avg +₹557).
+- **EMA-21 positional filter** (EMA below the trigger candle for LONG, above for SHORT): removes 39% of trades,
+  improves PF 1.09 → 1.17 and MDD by 32% in the subset view — but net worse live (−₹3,833) because slots freed by
+  a veto get refilled by weaker signals (+31 trades worth −₹6,149).
+- **14 candlestick/chart patterns at the trigger candle**: best-looking of the lot (PF 1.41, MDD −77%) and it does
+  not hold — Jan–Jun PF 1.89 → Jul–Nov PF 0.99, and ex-Silver it loses money (−₹1,136).
+- **Engulfing only**: entire result is 13 Silver trades, mostly H1. Ex-Silver −₹1,593 (PF 0.66), Jul–Nov PF 0.71.
+  Worth noting the "engulfing is just a big-bodied candle" hypothesis was tested and is **false** — a decisive-body
+  control behaves completely differently (−₹3,164) — but being a distinct signal didn't make it a profitable one.
+
+**Methodology note, learned the hard way here.** With ~380 baseline trades, filters that cut to subsets of 28–83
+cannot support a search over many ideas: pick the best of twelve noisy numbers and you will find an edge that
+isn't there. Variant C of the pattern filter was the tell — best in the Oct–Nov window, worst over the full year.
+**Split-sample (Jan–Jun vs Jul–Nov) and an ex-Silver check from the START, before looking at the full-window
+number**, is what separated the one real change (the stop buffer) from four false positives.
 
 ### Built, tested, NOT deployed (backtested worse or didn't survive scrutiny — kept for reference, stay off)
 - **`SA134_LIQUIDITY_HUNT_REVERSAL`** — generalizes SA1's single-first-candle sweep-reversal flip to any candle in
