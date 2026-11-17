@@ -320,10 +320,14 @@ SA134_PIVOT_ZONE_CONFIRM = _b("SA134_PIVOT_ZONE_CONFIRM", False)
 # Nov 2026: Gold and Silver do better entering in-between (+Rs4,928 / +Rs5,321
 # vs -Rs10,843 / -Rs10,420 under the near-a-zone rule); BTC and Oil do
 # markedly worse the same way (-Rs20,783 / -Rs12,041 vs +Rs535 / -Rs767) --
-# opposite symbols want opposite conditions, not a single global rule. Only
-# the paper service ever trades Gold/Silver and only the live service ever
-# trades BTC/Oil/NatGas, so this one shared constant naturally confines the
-# new behavior to paper without any DRY_RUN check.
+# opposite symbols want opposite conditions, not a single global rule.
+# NOTE (18 Nov): this used to read "only paper trades Gold/Silver, so this
+# confines the new behavior to paper". That is NO LONGER TRUE -- Silver moved
+# to the live service on 16 Nov, so SILVER TRADES REAL MONEY on the in-between
+# rule and paper is Gold alone. Nothing was changed (the rule is per-symbol by
+# design, live and backtest read this same default, and Silver is the
+# portfolio's best performer), but this list is not a paper/live boundary any
+# more -- check it against ACTIVE_SYMBOLS on BOTH services before editing it.
 SA134_PIVOT_ZONE_BETWEEN_SYMBOLS = os.getenv("SA134_PIVOT_ZONE_BETWEEN_SYMBOLS", "Gold,Silver")
 # A third option for the symbols above don't use: broader than the original near-a-zone rule
 # but not as loose as "far from everything" -- confirmed unless the level sits near the

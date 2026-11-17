@@ -149,11 +149,18 @@ backtest engine, never wired into `main.py`'s `manage()`) — **not fixed yet**,
 **Per-symbol pivot-zone rule** (`SA134_PIVOT_ZONE_BETWEEN_SYMBOLS`, default `"Gold,Silver"`): an ad-hoc backtest
 (Umar's idea, drawing two lines on the BTC chart between pivot levels, not on one) showed Gold and Silver do
 BETTER with entries taken in the open space BETWEEN pivot zones (`_pivot_zone_between`, the literal opposite of
-`_pivot_zone_confirms`) while BTC and Oil do markedly WORSE the same way. Since only paper ever trades Gold/Silver
-and only live ever trades BTC/Oil/NatGas, one shared symbol-set constant cleanly confines the new behavior to
-paper, no `DRY_RUN` check needed. `sa134_entry_signal`/`_sa134_session_candidate` now take an optional `sym=`
+`_pivot_zone_confirms`) while BTC and Oil do markedly WORSE the same way. One shared symbol-set constant keeps
+the rule per-symbol, no `DRY_RUN` check needed. `sa134_entry_signal`/`_sa134_session_candidate` now take an optional `sym=`
 and dispatch between `_pivot_zone_confirms` (near a zone, the original rule) and `_pivot_zone_between` (far from
 every zone) per symbol.
+
+> **Correction (18 Nov):** the original wording here said this "cleanly confines the new behavior to paper"
+> because "only paper ever trades Gold/Silver". **That stopped being true on 16 Nov when Silver moved to the
+> live service.** `SA134_PIVOT_ZONE_BETWEEN_SYMBOLS` still defaults to `"Gold,Silver"`, so **Silver trades real
+> money on the in-between rule** — paper now means Gold alone. This is NOT a bug and nothing was changed: the
+> rule is per-symbol by design, backtest and live agree (both read the same default), and Silver is the best
+> performer in the portfolio by a wide margin. But the constant is no longer a paper/live boundary, so do not
+> reason about it as one, and check this list against `ACTIVE_SYMBOLS` on both services before changing either.
 
 **Final mixed-config backtest, all 5 symbols, Jan 1 – 11 Nov 2026** (BTC/Oil/NatGas: near-zone · Gold/Silver:
 in-between — this is what would actually run if BOTH services were on this code): 385 trades, net **+₹471.45**,
@@ -189,25 +196,39 @@ code assumed it filled at `trade["sl"]`. Umar's manual close worth ~₹500 was r
 `ex.last_price()`. Still an approximation — CoinDCX's trade-history API is not wired up — and the message says so.
 Not backtestable: live reporting path only, changes no trade decision.
 
+> ⚠ **Numbers in this section were first written with `SA134_PIVOT_REVERSAL_REENTRY=True`, which the live bot
+> does not implement** (see "Re-entry is advertised but not wired" at the end of this section). They were
+> corrected on 18 Nov to the re-entry-OFF basis — what the deployed bot can actually do. The relative
+> comparisons were never affected (both arms of every comparison carried the same handicap), only the levels.
+
 **Stop buffer 1.5% → 0.5%, except NatGas.** Umar: "SL was kept way too high." Adopted because — unlike every
-entry-filter idea tried this week — it **survives a split-sample test**:
+entry-filter idea tried this week — it **survives a split-sample test** (figures below are re-entry OFF, i.e.
+what the live bot actually does):
 
 | | Jan–Jun | Jul–Nov | FULL |
 |---|---|---|---|
-| 1.5% | +₹13,306 PF 1.20 | **−₹5,338 PF 0.90** | +₹7,968 PF 1.07 |
-| 0.5% | +₹11,041 PF 1.17 | **+₹5,902 PF 1.15** | +₹16,943 PF 1.16 |
+| 1.5% everywhere | +₹10,914 PF 1.17 | **−₹5,296 PF 0.89** | +₹5,618 PF 1.05 |
+| 0.5% everywhere | +₹5,959 PF 1.10 | +₹2,268 PF 1.06 | +₹8,228 PF 1.08 |
+| **0.5% + NatGas 1.5% (deployed)** | **+₹8,279 PF 1.14** | **+₹4,877 PF 1.14** | **+₹13,157 PF 1.14** |
 
 The *old* 1.5% setting is the one that falls apart out-of-sample. Mechanism: total stop damage barely moves
 (−₹86.5k → −₹88.1k) but arrives as 120 small stop-outs instead of 68 large ones (avg −₹1,272 → −₹734), and a
 smaller R puts 2R/3R/4R in reach far more often. The 4/10 Nov Tokyo liquidity hunts that justified the buffer
 originally are still covered — Oct–Nov is the strongest window of all under 0.5% (+₹6,002, PF 1.63).
-**NatGas is carved out at 1.5%** (`SA134_SL_BUFFER_BY_SYMBOL`) on its own split: 0.5% gives −₹2,033 (PF 0.67) in
-H1 and +₹934 in H2, while 1.5% is positive in BOTH halves (PF 1.27 / 1.41). This is not a parameter fitted to
-NatGas — 1.5% was the global default until 18 Nov, so the only question was whether NatGas should have come along,
-and it shouldn't. Portfolio with the carve-out: **+₹22,460, PF 1.23**, better in both halves, with BTC and Oil
-byte-identical (so the gain is NatGas, not slot reshuffling). Only 37 NatGas trades back it — thin, but consistent
-in direction across both halves with no search over values. `main.py` must call `BT.sl_buffer_for(sym)`, never the
-bare global, or the carve-out is silently ignored live.
+**NatGas is carved out at 1.5%** (`SA134_SL_BUFFER_BY_SYMBOL`). NatGas alone, re-entry OFF:
+
+| NatGas | Jan–Jun | Jul–Nov | FULL |
+|---|---|---|---|
+| @0.5% | −₹2,178 PF 0.58 | +₹289 PF 1.04 | −₹1,889 PF 0.84 |
+| @1.5% | +₹142 PF 1.03 | +₹2,464 PF 1.41 | +₹2,606 PF 1.24 |
+
+This is not a parameter fitted to NatGas — 1.5% was the global default until 18 Nov, so the only question was
+whether NatGas should have come along, and it shouldn't. Portfolio with the carve-out: **+₹13,157, PF 1.14**,
+better in both halves, with BTC and Oil byte-identical (so the gain is NatGas, not slot reshuffling).
+**Be honest about how thin this is**: 38 NatGas trades, and its first half at 1.5% is only marginally positive
+(+₹142, PF 1.03) — the case rests mostly on 0.5% being clearly BAD in H1 (PF 0.58), not on 1.5% being clearly
+good. Reasonable to revisit once there are more NatGas trades. `main.py` must call `BT.sl_buffer_for(sym)`, never
+the bare global, or the carve-out is silently ignored live.
 
 **Stale breakouts no longer enter** (`subagents._momentum_check`). A BTC entry fired at 21:30 on a breakout from
 ~45 minutes earlier that price had long since given back: the old rule only asked "did price close past the
@@ -226,7 +247,9 @@ cover: the bot dying between a stop-out and its own cleanup. **None of this is r
 places no orders — so the paper service never exercises it. The first live trade is the first real test.**
 
 **Four filter ideas tested and REJECTED — do not re-run these without reading this first.** Each looked good on
-the full sample or one window and collapsed under split-sample or concentration checks:
+the full sample or one window and collapsed under split-sample or concentration checks. (These four were run on
+the re-entry-ON basis and have NOT been restated; every one was rejected on an internal comparison against its
+own baseline, so the gap shifts both sides equally and changes no verdict.)
 - **Pivot-reversal strategy** (enter on a candle reclaiming P/S1-3 or rejecting P/R1-3, replacing the breakout
   trigger entirely): −₹21,327 over Oct–Nov, all 5 symbols negative. Stop-outs (47, avg −₹751) swamped the
   profit-bookings (28, avg +₹557).
@@ -238,6 +261,18 @@ the full sample or one window and collapsed under split-sample or concentration 
 - **Engulfing only**: entire result is 13 Silver trades, mostly H1. Ex-Silver −₹1,593 (PF 0.66), Jul–Nov PF 0.71.
   Worth noting the "engulfing is just a big-bodied candle" hypothesis was tested and is **false** — a decisive-body
   control behaves completely differently (−₹3,164) — but being a distinct signal didn't make it a profitable one.
+
+**Re-entry is advertised but not wired — OPEN, Umar's call (found 18 Nov).** `main()`'s override sets
+`SA134_PIVOT_REVERSAL_REENTRY=True` and the startup banner goes out looking like it's on, but **nothing in
+`main.py` implements it** — grep returns only the docstring and the override itself. It runs in the backtest
+engine (`_sa134_manage_pivot_reversal`) and nowhere else. This is the same live-wiring class of bug found on
+11 Nov for `SA134_PIVOT_ZONE_CONFIRM`, flagged then as a separate task and still not done.
+**Cost of the gap**: 30 of 333 trades in a re-entry-ON run are `pivot_reversal` legs the live bot cannot take —
+**+₹22,460 PF 1.23 (backtest) vs +₹13,157 PF 1.14 (what live can do)**, i.e. 41% of the quoted profit is
+unreachable. Every figure in this section was originally quoted on the ON basis before this was caught; they are
+now stated OFF. Two ways out, neither taken yet: wire it into `manage()` (worth +₹9,303 in backtest, but it is a
+real new behaviour on real money and has never run live), or drop the flag from the override so the banner stops
+claiming it. Right now it is the worst of both — advertised, not running.
 
 **Methodology note, learned the hard way here.** With ~380 baseline trades, filters that cut to subsets of 28–83
 cannot support a search over many ideas: pick the best of twelve noisy numbers and you will find an edge that
