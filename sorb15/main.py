@@ -746,8 +746,22 @@ def manage(trade, state):
         if ex.open_position(pair=pair) is None:
             trade["missing_polls"] += 1      # two misses in a row, so one API blip can't fool us
             if trade["missing_polls"] >= 2:
-                return end_trade(trade, trade["sl"] * (1 - slip * d),
-                                 "stopped out on the exchange (approx fill)", state)
+                # The position is gone, but NOT necessarily via the stop -- it may have
+                # been closed manually, at a very different price (real bug, 16 Nov: a
+                # manual close realised ~Rs500 but was reported as Rs1,500+, because this
+                # used to always assume trade["sl"] as the fill, even when the actual
+                # close was nowhere near the stop). last_price() is still an approximation
+                # (not the real historical fill -- CoinDCX's trade-history API isn't wired
+                # up here), but it's the current market price, not an assumed worst case,
+                # so it's right whenever the close wasn't an actual stop-out.
+                try:
+                    approx_px = ex.last_price(pair=pair)
+                except Exception:
+                    approx_px = trade["sl"] * (1 - slip * d)
+                return end_trade(trade, approx_px,
+                                 "closed on the exchange (approx fill, not the real "
+                                 "historical price — check CoinDCX for the exact fill)",
+                                 state)
             return trade
         trade["missing_polls"] = 0
 

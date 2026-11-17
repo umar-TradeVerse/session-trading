@@ -1481,22 +1481,29 @@ def _pivot_confluent(level, direction, pivots, tol_pct):
 
 
 def _pivot_zone_confirms(level, direction, pivots, tol_pct):
-    """Umar's SA1/SA4 entry confirmation (10 Nov) -- the MIRROR image of
-    _pivot_confluent, and a deliberately different thesis from it: that
-    function asks "did the breakout happen AT a pivot" (used by the pivot-
-    reversal re-entry to fade INTO the zone a stop-hunt just revealed); this
-    one asks "is the trade's OWN direction structurally supported by where
-    price already is" -- a SHORT should be launched FROM a resistance zone
-    (R1-3, P: there's room to fall to the next support), a LONG FROM a
-    support zone (S1-3, P: there's room to rise to the next resistance). A
-    SHORT found instead sitting near support, or a LONG near resistance, is
-    rejected outright -- Umar's own words: that's a likely liquidity hunt,
-    with the opposite direction (or a momentum/direction change) most likely
-    to fire next. None `pivots` (no prior day yet) passes -- see
-    daily_pivot_fib's docstring."""
+    """Umar's SA1/SA4 entry confirmation (10 Nov, corrected 17 Nov) -- the
+    MIRROR image of _pivot_confluent, and a deliberately different thesis
+    from it: that function asks "did the breakout happen AT a pivot" (used
+    by the pivot-reversal re-entry to fade INTO the zone a stop-hunt just
+    revealed); this one asks "is the trade's OWN direction structurally
+    supported by where price already is" -- a SHORT should be launched FROM
+    a resistance zone (R1-3: there's room to fall to the next support), a
+    LONG FROM a support zone (S1-3: there's room to rise to the next
+    resistance). A SHORT found instead sitting near support, or a LONG near
+    resistance, is rejected outright -- Umar's own words: that's a likely
+    liquidity hunt, with the opposite direction (or a momentum/direction
+    change) most likely to fire next.
+
+    P is deliberately EXCLUDED from both sides as of 17 Nov -- real bug
+    found on a live BTC New York trade (16 Nov): the SHORT's broken level
+    sat 0.0985% from P but nowhere near any actual R1/R2/R3 (all >2.5%
+    away), yet the trade was confirmed anyway because P counted as a valid
+    "resistance" line for a SHORT. Umar's explicit correction: only R1-3
+    confirms a SHORT, only S1-3 confirms a LONG, P confirms neither. None
+    `pivots` (no prior day yet) passes -- see daily_pivot_fib's docstring."""
     if pivots is None:
         return True
-    keys = ("S1", "S2", "S3", "P") if direction == 1 else ("R1", "R2", "R3", "P")
+    keys = ("S1", "S2", "S3") if direction == 1 else ("R1", "R2", "R3")
     return any(abs(level - pivots[k]) / level <= tol_pct for k in keys)
 
 

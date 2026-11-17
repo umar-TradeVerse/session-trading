@@ -204,6 +204,21 @@ t, st = run_manage(mk_trade(), [[K(100000, 100100, 99900, 100050, T0)]], at_day_
 check("day end (next Tokyo open) flattens a paper trade that hit neither", t, None)
 check("closed as day_end", any("day_end" in m for m in sent), True)
 
+print("A position that disappears from the exchange closes at the real last price, not the stop (17 Nov fix)")
+quiet = [K(100000, 100100, 99900, 100050, T0)]
+with C.override(DRY_RUN=False):
+    real_ex, real_last = ex.open_position, ex.last_price
+    ex.open_position = lambda *a, **k: None
+    ex.last_price = lambda *a, **k: 99800.0   # manually closed well short of the Rs98,500 stop
+    sent = []
+    t, st = run_manage(mk_trade(), [quiet, quiet], NOW, sent)
+    check("gone from the exchange twice in a row -> closes", t, None)
+    msg = next((m for m in sent if "CLOSED" in m), "")
+    check("P&L is based on the real last price (99,800), not the far-away stop (98,500)",
+          "99,800.00" in msg, True)
+    check("exit price is NOT the stop price", "98,500.00" in msg, False)
+    ex.open_position, ex.last_price = real_ex, real_last
+
 print("Pivot profit-booking (live) — mirrors the backtest's _sa134_manage_pivot_booking")
 _pb_pivots_live = {"P": 99000.0, "R1": 100697.0, "R2": 101500.0, "R3": 102500.0,
                    "S1": 97000.0, "S2": 96000.0, "S3": 95000.0}
@@ -754,6 +769,10 @@ check("_pivot_zone_confirms: None pivots always passes", B._pivot_zone_confirms(
 check("_pivot_zone_confirms: LONG far from every support pivot fails", B._pivot_zone_confirms(H2, 1, _piv3, 0.003), False)
 check("_pivot_zone_confirms: SHORT near resistance (R1) passes", B._pivot_zone_confirms(90050.0, -1, _piv3, 0.003), True)
 check("_pivot_zone_confirms: SHORT near support fails (wrong side)", B._pivot_zone_confirms(78050.0, -1, _piv3, 0.003), False)
+check("_pivot_zone_confirms: SHORT near P (not R1-3) now fails -- 17 Nov fix, "
+      "the real live BTC New York bug", B._pivot_zone_confirms(85250.0, -1, _piv3, 0.003), False)
+check("_pivot_zone_confirms: LONG near P (not S1-3) now fails too",
+      B._pivot_zone_confirms(85250.0, 1, _piv3, 0.003), False)
 
 check("_pivot_zone_between: None pivots always passes", B._pivot_zone_between(H2, 1, None, 0.003), True)
 check("_pivot_zone_between: level far from every pivot passes", B._pivot_zone_between(H2, 1, _piv3, 0.003), True)
